@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans
+                          http://www.springframework.org/schema/beans/spring-beans-2.0.xsd">
+  <bean id="messageSource" class="org.springframework.context.support.ResourceBundleMessageSource">
+    <property name="basenames">
+      <list>
+        <value>messages.common</value>
+        <value>messages.sp</value>
+      </list>
+    </property>
+  </bean>
+
+  <bean id="urlFilenameViewController" class="org.springframework.web.servlet.mvc.UrlFilenameViewController"/>
+
+  <bean id="registerGuardFormValidator" class="org.guanxi.sp.engine.form.RegisterGuardFormValidator"/>
+  <bean id="registerGuardForm" class="org.guanxi.sp.engine.form.RegisterGuardFormController" init-method="init">
+    <property name="sessionForm"><value>true</value></property>
+    <!-- commandName is the form object that is used in <sping:bind> and will hold all the form variables -->
+    <property name="commandName"><value>registerGuard</value></property>
+    <property name="commandClass"><value>org.guanxi.sp.engine.form.RegisterGuard</value></property>
+    <property name="validator"><ref bean="registerGuardFormValidator"/></property>
+    <!-- formView uses prefix and suffix from InternalResourceViewResolver.
+         This is what we'll see after ControlPanelController::formBackingObject() has been called -->
+    <property name="formView"><value>register_guard</value></property>
+    <!-- ControlPanelController will send us here if everything is ok after form submission and processing -->
+    <property name="successView"><value>register_guard</value></property>
+    <property name="errorView"><value>message</value></property>
+    <property name="errorViewDisplayVar"><value>message</value></property>
+    <property name="messageSource"><ref bean="messageSource"/></property>
+  </bean>
+
+  <bean id="registerIdPFormValidator" class="org.guanxi.sp.engine.form.RegisterIdPFormValidator"/>
+  <bean id="registerIdPForm" class="org.guanxi.sp.engine.form.RegisterIdPFormController" init-method="init">
+    <property name="sessionForm"><value>true</value></property>
+    <!-- commandName is the form object that is used in <sping:bind> and will hold all the form variables -->
+    <property name="commandName"><value>registerIdP</value></property>
+    <property name="commandClass"><value>org.guanxi.sp.engine.form.RegisterIdP</value></property>
+    <property name="validator"><ref bean="registerIdPFormValidator"/></property>
+    <!-- formView uses prefix and suffix from InternalResourceViewResolver.
+         This is what we'll see after ControlPanelController::formBackingObject() has been called -->
+    <property name="formView"><value>register_idp</value></property>
+    <!-- ControlPanelController will send us here if everything is ok after form submission and processing -->
+    <property name="successView"><value>message</value></property>
+    <property name="messageSource"><ref bean="messageSource"/></property>
+  </bean>
+
+  <!-- no 'id' required, HandlerMapping beans are automatically detected by the DispatcherServlet -->
+  <bean class="org.springframework.web.servlet.handler.SimpleUrlHandlerMapping">
+    <property name="interceptors">
+      <list>
+        <ref bean="engineServiceGatekeeper" />
+        <ref bean="idpVerifier" />
+      </list>
+    </property>
+
+    <property name="mappings">
+      <props>
+        <prop key="wayfLocation-service.gxEngine">wayfLocationService</prop>
+        <prop key="engineAuthCS.gxEngine">authConsumerService</prop>
+        <prop key="accessDenied.gxEngine">urlFilenameViewController</prop>
+        <prop key="registerGuard.gxEngine">registerGuardForm</prop>
+        <prop key="registerIdP.gxEngine">registerIdPForm</prop>
+      </props>
+    </property>
+  </bean>
+
+  <bean id="viewResolver" class="org.springframework.web.servlet.view.InternalResourceViewResolver">
+    <property name="viewClass">
+      <value>org.springframework.web.servlet.view.JstlView</value>
+    </property>
+    <property name="prefix">
+      <value>/WEB-INF/guanxi_sp_engine/jsp/</value>
+    </property>
+    <property name="suffix">
+      <value>.jsp</value>
+    </property>
+  </bean>
+</beans>

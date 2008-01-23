@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans
+                          http://www.springframework.org/schema/beans/spring-beans-2.0.xsd">
+
+  <bean id="authConsumerService"
+        class="org.guanxi.sp.engine.service.AuthConsumerService"
+        init-method="init"
+        destroy-method="destroy">
+    <!-- The logging engine to use -->
+    <property name="logger"><ref bean="engineLogger"/></property>
+    <!-- The configuration to use with the logging engine -->
+    <property name="loggerConfig"><ref bean="authConsumerServiceLoggerConfig"/></property>
+
+    <property name="podderView"><value>podderRedirector</value></property>
+    <property name="errorView"><value>message</value></property>
+    <property name="errorViewDisplayVar"><value>message</value></property>
+  </bean>
+
+  <bean id="authConsumerServiceLoggerConfig" class="org.guanxi.common.log.Log4JLoggerConfig">
+    <property name="logFile"><value>/WEB-INF/guanxi_sp_engine/logs/engine.log</value></property>
+    <property name="logConfigFile"><value>/WEB-INF/guanxi_sp_engine/config/sp-log4j.xml</value></property>
+    <property name="logLayout"><value>%d{dd MMMM yyyy HH:mm:ss} - %m%n</value></property>
+    <property name="logMaxFileSize"><value>5MB</value></property>
+    <property name="logMaxBackupIndex"><value>5</value></property>
+  </bean>
+
+</beans>

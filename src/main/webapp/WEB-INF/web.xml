@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<web-app version="2.4"
+         xmlns="http://java.sun.com/xml/ns/j2ee"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://java.sun.com/xml/ns/j2ee http://java.sun.com/xml/ns/j2ee/web-app_2_4.xsd">
+
+  <!-- Required by the ContextLoaderListener or the ApplicationListener and ApplicationContextAware
+       beans won't be loaded -->
+
+  <!-- Default is /WEB-INF/applicationContext.xml -->
+  <context-param>
+    <param-name>contextConfigLocation</param-name>
+    <param-value>
+      WEB-INF/guanxi_sp_engine/config/spring/application/*.xml
+    </param-value>
+  </context-param>
+
+  <context-param>
+    <param-name>log4jConfigLocation</param-name>
+    <param-value>/WEB-INF/guanxi-sp-engine/config/spring-log4j.properties</param-value>
+  </context-param>
+
+  <!-- Loads up beans found in context-param::contextConfigLocation -->
+  <listener>
+    <listener-class>
+      org.springframework.web.context.ContextLoaderListener
+    </listener-class>
+  </listener>
+
+  <listener>
+    <listener-class>org.springframework.web.util.Log4jConfigListener</listener-class>
+  </listener>
+
+  <!-- The main Spring DispatcherServlet. Note that we specify bean definition files
+       separately from the ContextLoaderListener, which only deals with middle tier
+       services. -->
+  <servlet>
+    <servlet-name>Guanxi Service Provider Engine</servlet-name>
+    <servlet-class>org.springframework.web.servlet.DispatcherServlet</servlet-class>
+    <init-param>
+      <param-name>contextConfigLocation</param-name>
+      <param-value>
+        WEB-INF/guanxi_sp_engine/config/spring/ui.xml
+        WEB-INF/guanxi_sp_engine/config/spring/common.xml
+        WEB-INF/guanxi_sp_engine/config/spring/security/*.xml
+        WEB-INF/guanxi_sp_engine/config/spring/services/*.xml
+      </param-value>
+    </init-param>
+    <load-on-startup>1</load-on-startup>
+  </servlet>
+
+  <servlet-mapping>
+    <servlet-name>Guanxi Service Provider Engine</servlet-name>
+    <url-pattern>*.gxEngine</url-pattern>
+  </servlet-mapping>
+</web-app>
