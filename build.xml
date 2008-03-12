@@ -85,6 +85,13 @@
       <fileset dir="${webapp.src.dir}" />
     </copy>
     <mkdir dir="${webapp.dir}/WEB-INF/lib"/>
+    <mkdir dir="${webapp.dir}/WEB-INF/classes"/>
+    <copy todir="${webapp.dir}/WEB-INF/classes/messages">
+      <fileset dir="${messages.dir}">
+        <include name="common.properties"/>
+        <include name="sp.properties"/>
+      </fileset>
+    </copy>
   </target>
 
   <target name="jar" description="Builds a JAR file">
