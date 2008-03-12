@@ -17,6 +17,9 @@
 /* CVS Header
    $Id$
    $Log$
+   Revision 1.2  2008/03/12 20:23:04  alistairskye
+   Updated initLogger() as it was using wrong sp-log4j.xml location
+
    Revision 1.1.1.1  2008/01/23 15:30:56  alistairskye
    Standalone Engine module
 
@@ -590,7 +593,7 @@ public class RegisterGuardFormController extends SimpleFormController {
   }
 
   private void initLogger(ServletContext context) throws GuanxiException {
-    DOMConfigurator.configure(context.getRealPath(Logging.DEFAULT_SP_ENGINE_CONFIG_FILE));
+    DOMConfigurator.configure(context.getRealPath("/WEB-INF/config/sp-log4j.xml"));
 
     PatternLayout defaultLayout = new PatternLayout(Logging.DEFAULT_LAYOUT);
 
