@@ -8,6 +8,20 @@
   <!-- Required by the ContextLoaderListener or the ApplicationListener and ApplicationContextAware
        beans won't be loaded -->
 
+  <context-param>
+    <param-name>webAppRootKey</param-name>
+    <param-value>samlengine.root</param-value>
+  </context-param>
+
+  <context-param>
+    <param-name>log4jConfigLocation</param-name>
+    <param-value>/WEB-INF/guanxi_sp_engine/config/spring-log4j.properties</param-value>
+  </context-param>
+
+  <listener>
+    <listener-class>org.springframework.web.util.Log4jConfigListener</listener-class>
+  </listener>
+
   <!-- Default is /WEB-INF/applicationContext.xml -->
   <context-param>
     <param-name>contextConfigLocation</param-name>
@@ -16,20 +30,12 @@
     </param-value>
   </context-param>
 
-  <context-param>
-    <param-name>log4jConfigLocation</param-name>
-    <param-value>/WEB-INF/guanxi_sp_engine/config/spring-log4j.properties</param-value>
-  </context-param>
 
   <!-- Loads up beans found in context-param::contextConfigLocation -->
   <listener>
     <listener-class>
       org.springframework.web.context.ContextLoaderListener
     </listener-class>
-  </listener>
-
-  <listener>
-    <listener-class>org.springframework.web.util.Log4jConfigListener</listener-class>
   </listener>
 
   <!-- The main Spring DispatcherServlet. Note that we specify bean definition files
