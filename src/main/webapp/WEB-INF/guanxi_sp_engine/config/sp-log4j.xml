@@ -6,10 +6,6 @@
     <level value="all" />
   </logger>
 
-  <logger name="org.guanxi.sp.guard">
-    <level value="all" />
-  </logger>
-
   <logger name="org.guanxi.sp.metadata">
     <level value="all" />
   </logger>
