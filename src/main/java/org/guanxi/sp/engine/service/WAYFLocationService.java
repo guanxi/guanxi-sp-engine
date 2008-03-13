@@ -10,54 +10,10 @@
 //:
 //: The Original Code is Guanxi (http://www.guanxi.uhi.ac.uk).
 //:
-//: The Initial Developer of the Original Code is Alistair Young alistair@smo.uhi.ac.uk.
-//: Portions created by SMO WWW Development Group are Copyright (C) 2005 SMO WWW Development Group.
+//: The Initial Developer of the Original Code is Alistair Young alistair@codebrane.com
 //: All Rights Reserved.
 //:
-/* CVS Header
-   $Id$
-   $Log$
-   Revision 1.1.1.1  2008/01/23 15:30:57  alistairskye
-   Standalone Engine module
 
-   Revision 1.12  2007/03/26 13:01:40  alistairskye
-   Updated to fix bug where Guard and Engine context attributes for SSL probing where clashing
-
-   Revision 1.11  2007/01/26 11:27:28  alistairskye
-   Updated to use ID in config file for certificate alias
-
-   Revision 1.10  2006/12/15 09:21:29  alistairskye
-   Added more logging
-
-   Revision 1.9  2006/12/14 14:29:51  alistairskye
-   Updated to make use of config object instead of individual params in context
-
-   Revision 1.8  2006/11/27 10:52:25  alistairskye
-   Now adds the Guard's certificate to the truststore under it's guard ID as an alias instead of the certificate's subject DN
-
-   Revision 1.7  2006/11/23 12:42:58  alistairskye
-   Fixed logging bug
-
-   Revision 1.6  2006/11/23 12:40:00  alistairskye
-   Fixed logging bug
-
-   Revision 1.5  2006/11/23 10:53:22  alistairskye
-   Added some more logging
-
-   Revision 1.4  2006/11/23 10:50:57  alistairskye
-   Added logging
-
-   Revision 1.3  2006/11/22 14:30:29  alistairskye
-   Updated javadoc
-
-   Revision 1.2  2006/11/22 14:28:36  alistairskye
-   Updated javadoc
-   Removed unused imports
-
-   Revision 1.1  2006/11/22 14:23:34  alistairskye
-   REST service for Guards to get the WAYF location from the Engine
-
-*/
 package org.guanxi.sp.engine.service;
 
 import org.springframework.web.servlet.mvc.AbstractController;

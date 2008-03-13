@@ -10,23 +10,9 @@
 //:
 //: The Original Code is Guanxi (http://www.guanxi.uhi.ac.uk).
 //:
-//: The Initial Developer of the Original Code is Alistair Young alistair@smo.uhi.ac.uk.
-//: Portions created by SMO WWW Development Group are Copyright (C) 2005 SMO WWW Development Group.
+//: The Initial Developer of the Original Code is Alistair Young alistair@codebrane.com
 //: All Rights Reserved.
 //:
-/* CVS Header
-   $Id$
-   $Log$
-   Revision 1.1.1.1  2008/01/23 15:30:55  alistairskye
-   Standalone Engine module
-
-   Revision 1.2  2006/11/23 10:41:36  alistairskye
-   Added isEngineSecure()
-
-   Revision 1.1  2006/11/22 14:41:54  alistairskye
-   Guanxi Service Provider utility class
-
-*/
 
 package org.guanxi.sp;
 

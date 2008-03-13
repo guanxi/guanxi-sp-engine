@@ -10,34 +10,9 @@
 //:
 //: The Original Code is Guanxi (http://www.guanxi.uhi.ac.uk).
 //:
-//: The Initial Developer of the Original Code is Alistair Young alistair@smo.uhi.ac.uk.
-//: Portions created by SMO WWW Development Group are Copyright (C) 2005 SMO WWW Development Group.
+//: The Initial Developer of the Original Code is Alistair Young alistair@codebrane.com
 //: All Rights Reserved.
 //:
-/* CVS Header
-   $Id$
-   $Log$
-   Revision 1.1.1.1  2008/01/23 15:30:55  alistairskye
-   Standalone Engine module
-
-   Revision 1.5  2007/05/24 13:38:05  alistairskye
-   Updated to provide protected static access to loadX509CertsFromMetadata() to allow dynamic IdP registration
-
-   Revision 1.4  2006/11/17 15:52:28  alistairskye
-   Added javadoc
-
-   Revision 1.3  2006/05/16 10:24:10  alistairskye
-   Removed loadX509Certs() and X509CertFileFilter.
-   Added loadX509CertsFromMetadata() and MetadataFileFilter.
-   The class now verifies certificates directly from metadata rather than separate certs dir
-
-   Revision 1.2  2006/04/05 13:25:56  alistairskye
-   Updated to use new guanxibeans package structure
-
-   Revision 1.1  2006/01/23 13:50:10  alistairskye
-   Class to verify an X509 certificate chain
-
-*/
 
 package org.guanxi.sp.engine;
 

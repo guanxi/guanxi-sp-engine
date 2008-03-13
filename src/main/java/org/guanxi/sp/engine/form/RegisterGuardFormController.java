@@ -10,94 +10,9 @@
 //:
 //: The Original Code is Guanxi (http://www.guanxi.uhi.ac.uk).
 //:
-//: The Initial Developer of the Original Code is Alistair Young alistair@smo.uhi.ac.uk.
-//: Portions created by SMO WWW Development Group are Copyright (C) 2005 SMO WWW Development Group.
+//: The Initial Developer of the Original Code is Alistair Young alistair@codebrane.com
 //: All Rights Reserved.
 //:
-/* CVS Header
-   $Id$
-   $Log$
-   Revision 1.2  2008/03/12 20:23:04  alistairskye
-   Updated initLogger() as it was using wrong sp-log4j.xml location
-
-   Revision 1.1.1.1  2008/01/23 15:30:56  alistairskye
-   Standalone Engine module
-
-   Revision 1.23  2007/03/30 08:21:50  alistairskye
-   Updated to use Utils.SLASH
-
-   Revision 1.22  2007/01/26 10:10:41  alistairskye
-   Updated to use guard id instead of url in guard's certificate subject
-
-   Revision 1.21  2007/01/26 08:34:45  alistairskye
-   Fixed bug when creating more than one Guard without a restart.
-   Now dynamically loads new Guards.
-   Added scheme and port.
-
-   Revision 1.20  2007/01/25 14:59:36  alistairskye
-   Fixed bug in createGuardMetadataFile() when generating URLs on Windows.
-
-   Revision 1.19  2007/01/15 15:21:02  alistairskye
-   Modified to use latest BouncyCastle library with X509V3CertificateGenerator::generate(key, "BC")
-
-   Revision 1.18  2006/12/15 09:30:28  alistairskye
-   Changed name of logfile - was using Engine's one
-   Fixed bug in init() for getting config
-
-   Revision 1.17  2006/12/14 14:31:22  alistairskye
-   Updated to get it's init-params from the config file instead
-
-   Revision 1.16  2006/11/27 15:33:57  alistairskye
-   Updated to use DSAWithSHA1 as that's the only one BouncyCastle supports for DSA
-
-   Revision 1.15  2006/11/27 14:59:49  alistairskye
-   Updated to support SHA224WITHECDSA encryption
-
-   Revision 1.14  2006/11/27 14:37:33  alistairskye
-   Updated createSignedCertificateChain() as it was hardcoded to create RSA keys. Now gets key type from config file
-
-   Revision 1.13  2006/11/27 14:18:31  alistairskye
-   Updated init() to get keystore info from xml config file instead of web.xml
-
-   Revision 1.12  2006/11/27 09:39:58  alistairskye
-   Added ERROR_MESSAGE to error conditions for sp_error.jsp to display
-
-   Revision 1.11  2006/11/22 14:26:40  alistairskye
-   Added error checking for null root cert
-   Updated createGuardConfigFile() to create WAYFLocationService node instead of wayfMethod
-
-   Revision 1.10  2006/07/25 14:23:23  alistairskye
-   Updated to use new Log directory information
-
-   Revision 1.9  2006/06/02 07:58:24  alistairskye
-   Updated createSignedCert() to fix bug where the Guard certificates were being generated with server authentication extended usage instead of client authentication
-
-   Revision 1.8  2006/05/25 09:56:50  alistairskye
-   Updated createGuardMetadataFile() to create Guard metadata files with correct namespaces
-
-   Revision 1.7  2006/05/04 15:21:57  alistairskye
-   Updated createGuardMetadataFile() to add Keystore and KeystorePassword
-
-   Revision 1.6  2006/05/03 14:54:36  alistairskye
-   Updated createGuardConfigFile() to insert correct location of Engine in Guard config file
-
-   Revision 1.5  2006/05/03 14:46:03  alistairskye
-   Updated createGuardMetadataFile() to create proper Guard extension values based on new applicationName field
-
-   Revision 1.4  2006/05/03 14:29:26  alistairskye
-   Added createGuardMetadataFile()
-
-   Revision 1.3  2006/05/03 12:46:10  alistairskye
-   Added initLogger()
-
-   Revision 1.2  2006/04/06 14:44:10  alistairskye
-   Removed System.out calls, oops!
-
-   Revision 1.1  2006/04/05 14:22:16  alistairskye
-   Guanxi Service Provider Certification Authority. Provides CA functionality to allow the SP to create and sign Guard certificates.
-   Also creates zipped archives of newly created Guard configurations and stores them in the new Guard metadata directory layout.
-
-*/
 
 package org.guanxi.sp.engine.form;
 
