@@ -70,7 +70,7 @@
   <bean class="org.springframework.web.servlet.handler.SimpleUrlHandlerMapping">
     <property name="urlMap">
       <map>
-        <entry key="/*.html"><ref local="staticViewController"/></entry>
+        <entry key="/*.gxError"><ref local="staticViewController"/></entry>
       </map>
     </property>
   </bean>
