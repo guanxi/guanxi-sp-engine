@@ -20,6 +20,7 @@
   <body>
   <div style="border:1px solid black; width:50%; height:20%; background-image:url(<%= request.getContextPath() %>/guanxi_sp/images/formback.gif); background-repeat:repeat-x repeat-y; margin: 0 auto;">
     <div style="padding:20px; margin: 0 auto;">
+      <c:out value="${error}" /><br /><br />
       <c:out value="${message}" />
     </div>
    </div>
