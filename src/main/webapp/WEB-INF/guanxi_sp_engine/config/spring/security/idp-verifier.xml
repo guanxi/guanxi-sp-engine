@@ -11,6 +11,8 @@
     <property name="logger"><ref bean="engineLogger"/></property>
     <!-- The configuration to use with the logging engine -->
     <property name="loggerConfig"><ref bean="idpVerifierLoggerConfig"/></property>
+    <!-- The localised messages -->
+    <property name="messages" ref="messageSource"/>
     <!-- The error page to use -->
     <property name="errorPage"><value>message.gxError</value></property>
   </bean>
