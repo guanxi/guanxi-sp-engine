@@ -60,4 +60,8 @@
     <servlet-name>Guanxi Service Provider Engine</servlet-name>
     <url-pattern>*.gxEngine</url-pattern>
   </servlet-mapping>
+  <servlet-mapping>
+    <servlet-name>Guanxi Service Provider Engine</servlet-name>
+    <url-pattern>*.gxError</url-pattern>
+  </servlet-mapping>
 </web-app>
