@@ -7,6 +7,7 @@ package org.guanxi.sp.engine.security;
 
 import org.springframework.web.servlet.handler.HandlerInterceptorAdapter;
 import org.springframework.web.context.ServletContextAware;
+import org.springframework.context.MessageSource;
 import org.guanxi.common.Utils;
 import org.guanxi.common.GuanxiException;
 import org.guanxi.common.definitions.Guanxi;
@@ -42,6 +43,10 @@ public class IdPVerifier extends HandlerInterceptorAdapter implements ServletCon
   private Log4JLoggerConfig loggerConfig = null;
   /** The Logging setup to use */
   private Log4JLogger logger = null;
+  /** The localised messages to use */
+  private MessageSource messages = null;
+  /** The error page to use */
+  private String errorPage = null;
 
   // Called by Spring as we are ServletContextAware
   public void setServletContext(ServletContext servletContext) { this.servletContext = servletContext; }
@@ -99,9 +104,9 @@ public class IdPVerifier extends HandlerInterceptorAdapter implements ServletCon
     }
     catch(Exception e) {
       log.error("Could not process the AuthenticatonStatement from the IdP", e);
-      request.setAttribute("ERROR_ID", "ID_IDP_AUTH_PARSE_FAILURE");
-      request.setAttribute("ERROR_MESSAGE", e.getMessage());
-      request.getRequestDispatcher("error").forward(request, response);
+      request.setAttribute("error", messages.getMessage("engine.error.cannot.parse.authnstmnt", null, request.getLocale()));
+      request.setAttribute("message", e.getMessage());
+      request.getRequestDispatcher(errorPage).forward(request, response);
       return false;
     }
 
@@ -111,9 +116,9 @@ public class IdPVerifier extends HandlerInterceptorAdapter implements ServletCon
     EntityDescriptorType idpMetadata = (EntityDescriptorType)servletContext.getAttribute(idpProviderID);
     if (idpMetadata == null) {
       log.error("Could not find IdP '" + idpProviderID + "' in the metadata repository");
-      request.setAttribute("ERROR_ID", "ID_NO_IDP_INFO");
-      request.setAttribute("ERROR_MESSAGE", idpProviderID);
-      request.getRequestDispatcher("error").forward(request, response);
+      request.setAttribute("error", messages.getMessage("engine.error.no.idp.metadata", null, request.getLocale()));
+      request.setAttribute("message", idpProviderID);
+      request.getRequestDispatcher(errorPage).forward(request, response);
       return false;
     }
     request.setAttribute(Config.REQUEST_ATTRIBUTE_IDP_METADATA, idpMetadata);
@@ -132,9 +137,9 @@ public class IdPVerifier extends HandlerInterceptorAdapter implements ServletCon
     // If there's no signature on the Response from the IdP, barf
     if (sigType == null) {
       log.error("No signature from IdP");
-      request.setAttribute("ERROR_ID", "ID_IDP_CERT_VERIFY_FAILED");
-      request.setAttribute("ERROR_MESSAGE", idpProviderID);
-      request.getRequestDispatcher("error").forward(request, response);
+      request.setAttribute("error", messages.getMessage("engine.error.no.idp.signtaure", null, request.getLocale()));
+      request.setAttribute("message", idpProviderID);
+      request.getRequestDispatcher(errorPage).forward(request, response);
       return false;
     }
 
@@ -143,9 +148,9 @@ public class IdPVerifier extends HandlerInterceptorAdapter implements ServletCon
     X509Chain x509Chain = (X509Chain)servletContext.getAttribute(Guanxi.CONTEXT_ATTR_X509_CHAIN);
     if (!x509Chain.verifyChain(keyInfoType)) {
       log.error("Can't find a certificate for the IdP");
-      request.setAttribute("ERROR_ID", "ID_IDP_CERT_VERIFY_FAILED");
-      request.setAttribute("ERROR_MESSAGE", idpProviderID);
-      request.getRequestDispatcher("error").forward(request, response);
+      request.setAttribute("error", messages.getMessage("engine.error.idp.sig.failed.verification", null, request.getLocale()));
+      request.setAttribute("message", idpProviderID);
+      request.getRequestDispatcher(errorPage).forward(request, response);
       return false;
     }
 
@@ -157,4 +162,8 @@ public class IdPVerifier extends HandlerInterceptorAdapter implements ServletCon
 
   public void setLogger(Log4JLogger logger) { this.logger = logger; }
   public Log4JLogger getLogger() { return logger; }
+
+  public void setMessages(MessageSource messages) { this.messages = messages; }
+  
+  public void setErrorPage(String errorPage) { this.errorPage = errorPage; }
 }
