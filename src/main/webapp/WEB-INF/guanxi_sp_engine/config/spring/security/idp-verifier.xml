@@ -12,7 +12,7 @@
     <!-- The configuration to use with the logging engine -->
     <property name="loggerConfig"><ref bean="idpVerifierLoggerConfig"/></property>
     <!-- The error page to use -->
-    <property name="errorPage"><value>/WEB-INF/guanxi_sp_engine/jsp/message.jsp</value></property>
+    <property name="errorPage"><value>message.gxError</value></property>
   </bean>
 
   <bean id="idpVerifierLoggerConfig" class="org.guanxi.common.log.Log4JLoggerConfig">
