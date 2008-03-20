@@ -50,7 +50,8 @@
         WEB-INF/guanxi_sp_engine/config/spring/ui.xml
         WEB-INF/guanxi_sp_engine/config/spring/common.xml
         WEB-INF/guanxi_sp_engine/config/spring/security/*.xml
-        WEB-INF/guanxi_sp_engine/config/spring/services/*.xml
+        WEB-INF/guanxi_sp_engine/config/spring/services/**/*.xml
+        WEB-INF/guanxi_sp_engine/config/spring/profiles/**/*.xml
       </param-value>
     </init-param>
     <load-on-startup>1</load-on-startup>
@@ -62,6 +63,10 @@
   </servlet-mapping>
   <servlet-mapping>
     <servlet-name>Guanxi Service Provider Engine</servlet-name>
-    <url-pattern>*.gxError</url-pattern>
+    <url-pattern>/register/*</url-pattern>
+  </servlet-mapping>
+  <servlet-mapping>
+    <servlet-name>Guanxi Service Provider Engine</servlet-name>
+    <url-pattern>/shibb/*</url-pattern>
   </servlet-mapping>
 </web-app>

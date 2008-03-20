@@ -48,20 +48,11 @@
 
   <!-- no 'id' required, HandlerMapping beans are automatically detected by the DispatcherServlet -->
   <bean class="org.springframework.web.servlet.handler.SimpleUrlHandlerMapping">
-    <property name="interceptors">
-      <list>
-        <ref bean="engineServiceGatekeeper" />
-        <ref bean="idpVerifier" />
-      </list>
-    </property>
-
+    <property name="alwaysUseFullPath"><value>true</value></property>
     <property name="mappings">
       <props>
-        <prop key="wayfLocation-service.gxEngine">wayfLocationService</prop>
-        <prop key="engineAuthCS.gxEngine">authConsumerService</prop>
-        <prop key="accessDenied.gxEngine">urlFilenameViewController</prop>
-        <prop key="registerGuard.gxEngine">registerGuardForm</prop>
-        <prop key="registerIdP.gxEngine">registerIdPForm</prop>
+        <prop key="/register/guard">registerGuardForm</prop>
+        <prop key="/register/idp">registerIdPForm</prop>
       </props>
     </property>
   </bean>
@@ -70,11 +61,10 @@
   <bean class="org.springframework.web.servlet.handler.SimpleUrlHandlerMapping">
     <property name="urlMap">
       <map>
-        <entry key="/*.gxError"><ref local="staticViewController"/></entry>
+        <entry key="/*.gxEngine"><ref local="staticViewController"/></entry>
       </map>
     </property>
   </bean>
-
 
   <bean id="viewResolver" class="org.springframework.web.servlet.view.InternalResourceViewResolver">
     <property name="viewClass">
