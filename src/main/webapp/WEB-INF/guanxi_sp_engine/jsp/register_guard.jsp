@@ -11,7 +11,7 @@
   <div id="requestForm" class="guanxiDiv" style="width:40%; height:70%; background-image:url(<%= request.getContextPath() %>/guanxi_sp/images/formback.gif);">
     <div style="padding:20px; margin: 0 auto;">
 
-      <form:form method="post" action="registerGuard.gxEngine" commandName="registerGuard">
+      <form:form method="post" commandName="registerGuard">
 
         <!-- ID of the Guard -->
         <fmt:message key="register.guard.field.guardid"/><br />
