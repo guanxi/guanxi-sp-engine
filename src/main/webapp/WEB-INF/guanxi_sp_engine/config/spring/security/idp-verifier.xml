@@ -14,7 +14,7 @@
     <!-- The localised messages -->
     <property name="messages" ref="messageSource"/>
     <!-- The error page to use -->
-    <property name="errorPage"><value>message.gxError</value></property>
+    <property name="errorPage"><value>message.gxEngine</value></property>
   </bean>
 
   <bean id="idpVerifierLoggerConfig" class="org.guanxi.common.log.Log4JLoggerConfig">
