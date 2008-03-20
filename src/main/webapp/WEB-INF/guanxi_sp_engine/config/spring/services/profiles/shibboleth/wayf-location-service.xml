@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans
+                          http://www.springframework.org/schema/beans/spring-beans-2.0.xsd">
+
+  <!-- ********************************************************************************************* -->
+  <!-- The Engine's WAYF Location service. This is where Guards set up their sessions with
+       the Engine and obtain the WAYF location in return, once the Engine has verfied
+       them. -->
+  <bean id="wayfLocationService"
+        class="org.guanxi.sp.engine.service.WAYFLocationService"
+        init-method="init">
+    <!-- The logging engine to use -->
+    <property name="logger"><ref bean="engineLogger"/></property>
+    <!-- The configuration to use with the logging engine -->
+    <property name="loggerConfig"><ref bean="wayfLocationServiceLoggerConfig"/></property>
+    <!-- The list of Guard to WAYF mappings -->
+    <property name="wayfs">
+      <map>
+        <entry key="__DEFAULT__" value="https://localhost:8443/guanxi_wayf/WAYF" />
+        <entry key="protectedappguard" value="https://localhost2/guanxi_wayf/WAYF" />
+      </map>
+    </property>
+    <property name="viewJSP"><value>wayfLocationService</value></property>
+  </bean>
+
+  <bean id="wayfLocationServiceLoggerConfig" class="org.guanxi.common.log.Log4JLoggerConfig">
+    <property name="logFile"><value>/WEB-INF/guanxi_sp_engine/logs/wayf-location-service.log</value></property>
+    <property name="logConfigFile"><value>/WEB-INF/guanxi_sp_engine/config/sp-log4j.xml</value></property>
+    <property name="logLayout"><value>%d{dd MMMM yyyy HH:mm:ss} - %m%n</value></property>
+    <property name="logMaxFileSize"><value>5MB</value></property>
+    <property name="logMaxBackupIndex"><value>5</value></property>
+  </bean>
+
+  <!-- ********************************************************************************************* -->
+</beans>
