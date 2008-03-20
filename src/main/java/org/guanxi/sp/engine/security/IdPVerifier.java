@@ -95,10 +95,6 @@ public class IdPVerifier extends HandlerInterceptorAdapter implements ServletCon
     ResponseDocument responseDocument = null;
     ResponseType samlResponse = null;
 
-    if (!request.getRequestURI().contains("engineAuthCS.gxEngine")) {
-      return true;
-    }
-
     try {
       // Parse the SAML Response containing the AuthenticationStatement coming from the IdP
       responseDocument = ResponseDocument.Factory.parse(new StringReader(Utils.decodeBase64(request.getParameter("SAMLResponse"))));
