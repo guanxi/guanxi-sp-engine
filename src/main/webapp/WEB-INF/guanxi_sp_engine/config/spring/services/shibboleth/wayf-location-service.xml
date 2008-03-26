@@ -9,7 +9,7 @@
        the Engine and obtain the WAYF location in return, once the Engine has verfied
        them. -->
   <bean id="wayfLocationService"
-        class="org.guanxi.sp.engine.service.WAYFLocationService"
+        class="org.guanxi.sp.engine.service.shibboleth.WAYFLocationService"
         init-method="init">
     <!-- The logging engine to use -->
     <property name="logger"><ref bean="engineLogger"/></property>
