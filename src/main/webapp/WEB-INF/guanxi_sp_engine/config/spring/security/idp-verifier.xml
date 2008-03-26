@@ -5,7 +5,7 @@
                           http://www.springframework.org/schema/beans/spring-beans-2.0.xsd">
 
   <bean id="idpVerifier"
-        class="org.guanxi.sp.engine.security.IdPVerifier"
+        class="org.guanxi.sp.engine.security.shibboleth.IdPVerifier"
         init-method="init">
     <!-- The logging engine to use -->
     <property name="logger"><ref bean="engineLogger"/></property>
