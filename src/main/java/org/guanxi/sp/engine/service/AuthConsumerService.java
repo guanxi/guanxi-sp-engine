@@ -51,6 +51,13 @@ import java.util.Calendar;
 import java.util.TimeZone;
 import java.util.HashMap;
 
+/**
+ * Shibboleth AuthenticationStatement consumer service. This service accepts an AuthenticationStatement
+ * from a Shibboleth Identity Provider and requests attributes for the subject. It then passes those
+ * attributes to the appropriate Guard that started the session that resulted in the
+ * AuthenticationStatement being sent here.
+ * By the time this service reached, the Identity Provider will have been verified.
+ */
 public class AuthConsumerService extends AbstractController implements ServletContextAware {
   /** Our logger */
   private Logger log = null;
@@ -104,8 +111,6 @@ public class AuthConsumerService extends AbstractController implements ServletCo
      */
     EntityDescriptorType guardEntityDescriptor = (EntityDescriptorType)getServletContext().getAttribute(guardSession.replaceAll("GUARD", "ENGINE"));
     GuardRoleDescriptorExtensions guardNativeMetadata = Util.getGuardNativeMetadata(guardEntityDescriptor);
-
-    // POST INTERCEPTOR
 
     // Build a SAML Request to get attributes from the IdP
     RequestDocument samlRequestDoc = RequestDocument.Factory.newInstance();
