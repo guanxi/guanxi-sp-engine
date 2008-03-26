@@ -29,17 +29,21 @@ import org.guanxi.common.log.Log4JLoggerConfig;
 import org.guanxi.common.log.Log4JLogger;
 import org.guanxi.common.GuanxiException;
 import org.guanxi.common.Utils;
+import org.guanxi.common.job.GuanxiJobConfig;
 import org.guanxi.common.security.SecUtils;
 import org.guanxi.common.definitions.Guanxi;
 import org.guanxi.xal.saml_2_0.metadata.EntityDescriptorDocument;
 import org.guanxi.xal.saml_2_0.metadata.EntityDescriptorType;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
+import org.quartz.*;
+import org.quartz.impl.StdSchedulerFactory;
 
 import javax.servlet.ServletContext;
 import java.security.Security;
 import java.security.Provider;
 import java.io.File;
 import java.io.FilenameFilter;
+import java.text.ParseException;
 
 public class Bootstrap implements ApplicationListener, ApplicationContextAware, ServletContextAware {
   /** Our logger */
@@ -59,6 +63,8 @@ public class Bootstrap implements ApplicationListener, ApplicationContextAware, 
   private Config config = null;
   /** If this instance of an Engine loads the BouncyCastle security provider then it should unload it */
   private boolean okToUnloadBCProvider = false;
+  /** The background jobs to start */
+  private GuanxiJobConfig[] gxJobs = null;
 
   /**
    * Initialise the interceptor
@@ -117,6 +123,8 @@ public class Bootstrap implements ApplicationListener, ApplicationContextAware, 
       loadIdPMetadata(config.getIdPMetadataDirectory());
 
       x509Chain = new X509Chain(config.getIdPMetadataDirectory());
+
+      startJobs();
     }
     catch(GuanxiException ge) {
     }
@@ -280,6 +288,45 @@ public class Bootstrap implements ApplicationListener, ApplicationContextAware, 
     }
   }
 
+  private void startJobs() {
+    try {
+      // Get a new scheduler
+      Scheduler scheduler = new StdSchedulerFactory().getScheduler();
+      // Start it up. This won't start any jobs though.
+      scheduler.start();
+
+      for (GuanxiJobConfig gxJob : gxJobs) {
+        // Need a new JobDetail to hold custom data to send to the job we're controlling
+        JobDetail jobDetail = new JobDetail(gxJob.getKey(), Scheduler.DEFAULT_GROUP, Class.forName(gxJob.getJobClass()));
+
+        // Create a new JobDataMap for custom data to be sent to the job...
+        JobDataMap jobDataMap = new JobDataMap();
+        // ...and add the job's custom config object
+        jobDataMap.put(GuanxiJobConfig.JOB_KEY_JOB_CONFIG, gxJob);
+
+        // Put the job's custom data in it's JobDetail
+        jobDetail.setJobDataMap(jobDataMap);
+
+        /* Tell the scheduler when this job will run. Nothing will happen
+         * until the start method is called.
+         */
+        Trigger trigger = new CronTrigger(gxJob.getKey(), Scheduler.DEFAULT_GROUP, gxJob.getCronLine());
+
+        // Start the job
+        scheduler.scheduleJob(jobDetail, trigger);
+      }
+    }
+    catch(ClassNotFoundException cnfe) {
+      log.error("Error locating job class", cnfe);
+    }
+    catch(SchedulerException se) {
+      log.error("Job scheduling error", se);
+    }
+    catch(ParseException pe) {
+      log.error("Error parsing job cronline", pe);
+    }
+  }
+
   public void setLoggerConfig(Log4JLoggerConfig loggerConfig) { this.loggerConfig = loggerConfig; }
   public Log4JLoggerConfig getLoggerConfig() { return loggerConfig; }
 
@@ -289,4 +336,6 @@ public class Bootstrap implements ApplicationListener, ApplicationContextAware, 
 
   public void setConfig(Config config) { this.config = config; }
   public Config getConfig() { return config; }
+
+  public void setGxJobs(GuanxiJobConfig[] gxJobs) { this.gxJobs = gxJobs; }
 }
