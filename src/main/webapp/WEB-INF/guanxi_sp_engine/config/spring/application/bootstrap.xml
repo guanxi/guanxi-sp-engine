@@ -11,6 +11,11 @@
     <property name="loggerConfig"><ref bean="bootstrapLoggerConfig"/></property>
     <!-- Engine config -->
     <property name="config"><ref bean="engineConfig"/></property>
+    <property name="gxJobs">
+      <list>
+        <ref bean="ukFederationMetadataParser" />
+      </list>
+    </property>
   </bean>
 
   <bean id="bootstrapLoggerConfig" class="org.guanxi.common.log.Log4JLoggerConfig">
