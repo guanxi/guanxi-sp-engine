@@ -508,7 +508,7 @@ public class RegisterGuardFormController extends SimpleFormController {
   }
 
   private void initLogger(ServletContext context) throws GuanxiException {
-    DOMConfigurator.configure(context.getRealPath("/WEB-INF/config/sp-log4j.xml"));
+    DOMConfigurator.configure(context.getRealPath("/WEB-INF/guanxi_sp_engine/config/sp-log4j.xml"));
 
     PatternLayout defaultLayout = new PatternLayout(Logging.DEFAULT_LAYOUT);
 
