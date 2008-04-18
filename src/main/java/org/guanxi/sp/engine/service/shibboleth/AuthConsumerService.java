@@ -48,7 +48,6 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.*;
 import java.math.BigInteger;
 import java.util.Calendar;
-import java.util.TimeZone;
 import java.util.HashMap;
 
 /**
@@ -118,9 +117,8 @@ public class AuthConsumerService extends AbstractController implements ServletCo
     samlRequest.setRequestID(Utils.createNCNameID());
     samlRequest.setMajorVersion(new BigInteger("1"));
     samlRequest.setMinorVersion(new BigInteger("1"));
-    Calendar now = Calendar.getInstance(TimeZone.getTimeZone("GMT"));
-    now.clear(Calendar.MILLISECOND);
-    samlRequest.setIssueInstant(now);
+    samlRequest.setIssueInstant(Calendar.getInstance());
+    Utils.zuluXmlObject(samlRequest, 0);
 
     // Add an attribute query to the SAML request
     AttributeQueryType attrQuery = samlRequest.addNewAttributeQuery();
