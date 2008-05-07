@@ -314,6 +314,10 @@ public class Bootstrap implements ApplicationListener, ApplicationContextAware, 
 
         // Start the job
         scheduler.scheduleJob(jobDetail, trigger);
+
+        if (gxJob.isStartImmediately()) {
+          scheduler.triggerJob(gxJob.getKey(), Scheduler.DEFAULT_GROUP);
+        }
       }
     }
     catch(ClassNotFoundException cnfe) {
