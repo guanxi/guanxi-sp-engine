@@ -32,7 +32,8 @@
   <bean id="ukFederationMetadataParser" class="org.guanxi.common.job.SAML2MetadataParserConfig" init-method="init">
     <property name="jobClass"><value>org.guanxi.sp.engine.job.SAML2MetadataParser</value></property>
     <property name="key"><value>ukFederationMetadataParserSP</value></property>
-    <property name="cronLine"><value>10 * * * * ?</value></property>
+    <property name="cronLine"><value>10 0/59 * * * ?</value></property>
+    <property name="startImmediately"><value>true</value></property>
     <property name="metadataURL">
       <value>http://metadata.ukfederation.org.uk/ukfederation-metadata.xml</value>
     </property>
