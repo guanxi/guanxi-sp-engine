@@ -21,8 +21,8 @@
     <div style="border:1px solid black; width:50%; height:20%; background-image:url(images/formback.gif); background-repeat:repeat-x repeat-y; margin: 0 auto;">
       <div style="padding:20px; margin: 0 auto;">
         <fmt:message key="engine.page.text"/><br/><br/>
-        <a href="../registerGuard.gxEngine">Register a Guard</a><br/><br/>
-        <a href="../registerIdP.gxEngine">Register an IdP</a>
+        <a href="../register/guard">Register a Guard</a><br/><br/>
+        <a href="../register/idp">Register an IdP</a>
       </div>
      </div>
 
