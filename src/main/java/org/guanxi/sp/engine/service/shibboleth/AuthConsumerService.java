@@ -56,6 +56,9 @@ import java.util.HashMap;
  * attributes to the appropriate Guard that started the session that resulted in the
  * AuthenticationStatement being sent here.
  * By the time this service reached, the Identity Provider will have been verified.
+ *
+ * @author Alistair Young alistair@codebrane.com
+ * @author Marcin Mielnicki mielniczu@o2.pl - bug fixing
  */
 public class AuthConsumerService extends AbstractController implements ServletContextAware {
   /** Our logger */
@@ -156,7 +159,8 @@ public class AuthConsumerService extends AbstractController implements ServletCo
       soapEnvelopeDoc.save(aaConnection.getOutputStream());
       // ...and read the SAML Response. XMLBeans 2.2.0 has problems parsing from an InputStream though
       InputStream in = aaConnection.getInputStream();
-      BufferedReader buffer = new BufferedReader(new InputStreamReader(in));
+      //BufferedReader buffer = new BufferedReader(new InputStreamReader(in));
+      BufferedReader buffer = new BufferedReader(new InputStreamReader(in, "UTF-8"));
       StringBuffer stringBuffer = new StringBuffer();
       String line = null;
       while ((line = buffer.readLine()) != null) {
