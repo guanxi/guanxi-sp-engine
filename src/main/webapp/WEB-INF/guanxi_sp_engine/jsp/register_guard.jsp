@@ -5,7 +5,7 @@
   <head>
     <title><fmt:message key="register.guard.page.title"/></title>
     <link rel="stylesheet" href="<%= request.getContextPath() %>/guanxi_sp/stylesheet/guanxi_sp.css" type="text/css">
-    <style type="text/css">body {background-image: url(<%= request.getContextPath() %> /guanxi_sp/images/watermark.gif );}</style>
+    <style type="text/css">body {background-image: url(<%= request.getContextPath() %>/guanxi_sp/images/watermark.gif );}</style>
     </head>
   <body>
   <div id="requestForm" class="guanxiDiv" style="width:40%; height:70%; background-image:url(<%= request.getContextPath() %>/guanxi_sp/images/formback.gif);">
