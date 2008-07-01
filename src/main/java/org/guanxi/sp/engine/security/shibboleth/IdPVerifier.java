@@ -101,6 +101,14 @@ public class IdPVerifier extends HandlerInterceptorAdapter implements ServletCon
     ResponseType samlResponse = null;
 
     try {
+      if (request.getParameter("SAMLResponse") == null) {
+        log.error("Could not process the AuthenticatonStatement from the IdP as there isn't one!");
+        request.setAttribute("error", messages.getMessage("engine.error.cannot.parse.authnstmnt", null, request.getLocale()));
+        request.setAttribute("message", messages.getMessage("engine.error.no.authn.stmnt", null, request.getLocale()));
+        request.getRequestDispatcher(errorPage).forward(request, response);
+        return false;
+      }
+
       // Parse the SAML Response containing the AuthenticationStatement coming from the IdP
       responseDocument = ResponseDocument.Factory.parse(new StringReader(Utils.decodeBase64(request.getParameter("SAMLResponse"))));
 
