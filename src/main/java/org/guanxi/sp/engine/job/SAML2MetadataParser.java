@@ -34,6 +34,8 @@ public class SAML2MetadataParser implements Job {
     SAML2MetadataParserConfig config = (SAML2MetadataParserConfig)context.getJobDetail().getJobDataMap().get(GuanxiJobConfig.JOB_KEY_JOB_CONFIG);
 
     try {
+      config.getLog().info("Loading SAML2 metadata from : " + config.getMetadataURL());
+      
       EntitiesDescriptorDocument doc = Utils.parseSAML2Metadata(config.getMetadataURL(), config.getWho());
       EntityDescriptorType[] entityDescriptors = doc.getEntitiesDescriptor().getEntityDescriptorArray();
 
