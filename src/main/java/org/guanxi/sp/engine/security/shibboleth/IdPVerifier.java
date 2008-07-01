@@ -22,6 +22,7 @@ import org.springframework.context.MessageSource;
 import org.guanxi.common.Utils;
 import org.guanxi.common.GuanxiException;
 import org.guanxi.common.definitions.Guanxi;
+import org.guanxi.common.definitions.Shibboleth;
 import org.guanxi.common.log.Log4JLoggerConfig;
 import org.guanxi.common.log.Log4JLogger;
 import org.guanxi.xal.saml_2_0.metadata.EntityDescriptorType;
@@ -34,11 +35,15 @@ import org.guanxi.xal.w3.xmldsig.KeyInfoType;
 import org.guanxi.sp.engine.X509Chain;
 import org.guanxi.sp.engine.Config;
 import org.apache.log4j.Logger;
+import org.apache.xmlbeans.XmlOptions;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.ServletContext;
 import java.io.StringReader;
+import java.io.StringWriter;
+import java.io.IOException;
+import java.util.HashMap;
 
 /**
  * Security interceptor that verifies whether the Engine will trust the IdentityProvider
@@ -98,6 +103,8 @@ public class IdPVerifier extends HandlerInterceptorAdapter implements ServletCon
     try {
       // Parse the SAML Response containing the AuthenticationStatement coming from the IdP
       responseDocument = ResponseDocument.Factory.parse(new StringReader(Utils.decodeBase64(request.getParameter("SAMLResponse"))));
+
+      dumpSAML(responseDocument);
 
       samlResponse = responseDocument.getResponse();
       AssertionType assertion = samlResponse.getAssertionArray()[0];
@@ -162,6 +169,35 @@ public class IdPVerifier extends HandlerInterceptorAdapter implements ServletCon
     }
 
     return true;
+  }
+
+  /**
+   * Dumps the SAML response from the IdP to the logs
+   *
+   * @param samlResponseDoc Response from the IdP containing the AuthenticationStatement
+   */
+  private void dumpSAML(ResponseDocument samlResponseDoc) {
+    // Sort out the namespaces for saving the Response
+    HashMap namespaces = new HashMap();
+    namespaces.put(Shibboleth.NS_SAML_10_PROTOCOL, Shibboleth.NS_PREFIX_SAML_10_PROTOCOL);
+    namespaces.put(Shibboleth.NS_SAML_10_ASSERTION, Shibboleth.NS_PREFIX_SAML_10_ASSERTION);
+    XmlOptions xmlOptions = new XmlOptions();
+    xmlOptions.setSavePrettyPrint();
+    xmlOptions.setSavePrettyPrintIndent(2);
+    xmlOptions.setUseDefaultNamespace();
+    xmlOptions.setSaveAggressiveNamespaces();
+    xmlOptions.setSaveSuggestedPrefixes(namespaces);
+    xmlOptions.setSaveNamespacesFirst();
+
+    StringWriter sw = new StringWriter();
+    try {
+      samlResponseDoc.save(sw, xmlOptions);
+    }
+    catch(IOException ioe) {
+      // Do I care?
+    }
+    
+    log.debug(sw.toString());
   }
 
   public void setLoggerConfig(Log4JLoggerConfig loggerConfig) { this.loggerConfig = loggerConfig; }
