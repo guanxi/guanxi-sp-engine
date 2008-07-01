@@ -296,6 +296,8 @@ public class Bootstrap implements ApplicationListener, ApplicationContextAware, 
       scheduler.start();
 
       for (GuanxiJobConfig gxJob : gxJobs) {
+        log.info("Registering job : " + gxJob.getKey() + " : " + gxJob.getJobClass());
+
         // Need a new JobDetail to hold custom data to send to the job we're controlling
         JobDetail jobDetail = new JobDetail(gxJob.getKey(), Scheduler.DEFAULT_GROUP, Class.forName(gxJob.getJobClass()));
 
