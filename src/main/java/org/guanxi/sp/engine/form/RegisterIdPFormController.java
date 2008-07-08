@@ -24,7 +24,6 @@ import org.guanxi.xal.saml_2_0.metadata.EntityDescriptorDocument;
 import org.guanxi.xal.saml_2_0.metadata.EndpointType;
 import org.guanxi.xal.saml_2_0.metadata.KeyDescriptorType;
 import org.guanxi.common.definitions.Guanxi;
-import org.guanxi.common.Utils;
 import org.guanxi.sp.engine.X509Chain;
 import org.guanxi.sp.engine.Config;
 import org.apache.xmlbeans.XmlOptions;
@@ -48,7 +47,7 @@ public class RegisterIdPFormController extends SimpleFormController {
     try {
       config = (Config)getServletContext().getAttribute(Guanxi.CONTEXT_ATTR_ENGINE_CONFIG);
 
-      String exampleIdPFile = config.getIdPMetadataDirectory() + Utils.SLASH + "ExampleIDP.xml";
+      String exampleIdPFile = config.getIdPMetadataDirectory() + File.separator + "ExampleIDP.xml";
 
       exampleIdpDoc = EntityDescriptorDocument.Factory.parse(new File(exampleIdPFile));
     }
@@ -78,7 +77,7 @@ public class RegisterIdPFormController extends SimpleFormController {
     xmlOptions.setUseDefaultNamespace();
     xmlOptions.setCharacterEncoding("UTF-8");
 
-    String newIdPFile = config.getIdPMetadataDirectory() + Utils.SLASH + request.getParameter("filename") + ".xml";
+    String newIdPFile = config.getIdPMetadataDirectory() + File.separator + request.getParameter("filename") + ".xml";
     exampleIdpDoc.save(new File(newIdPFile), xmlOptions);
 
     EntityDescriptorDocument edDoc = EntityDescriptorDocument.Factory.parse(new File(newIdPFile));

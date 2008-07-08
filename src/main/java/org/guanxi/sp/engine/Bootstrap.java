@@ -28,7 +28,6 @@ import org.apache.log4j.Logger;
 import org.guanxi.common.log.Log4JLoggerConfig;
 import org.guanxi.common.log.Log4JLogger;
 import org.guanxi.common.GuanxiException;
-import org.guanxi.common.Utils;
 import org.guanxi.common.job.GuanxiJobConfig;
 import org.guanxi.common.security.SecUtils;
 import org.guanxi.common.definitions.Guanxi;
@@ -222,7 +221,7 @@ public class Bootstrap implements ApplicationListener, ApplicationContextAware, 
       try {
         // Load up the SAML2 metadata for the Guard
         EntityDescriptorDocument edDoc = EntityDescriptorDocument.Factory.parse(new File(guardFiles[count].getPath() +
-                                                                                         Utils.SLASH +
+                                                                                         File.separator +
                                                                                          guardFiles[count].getName() + ".xml"));
         EntityDescriptorType entityDescriptor = edDoc.getEntityDescriptor();
 
@@ -234,7 +233,7 @@ public class Bootstrap implements ApplicationListener, ApplicationContextAware, 
       catch(Exception e) {
         // If we get here then the Engine won't know anything about the Guard
         log.error("Error while loading Guard metadata : " +
-                  guardFiles[count].getPath() + Utils.SLASH + guardFiles[count].getName() + ".xml",
+                  guardFiles[count].getPath() + File.separator + guardFiles[count].getName() + ".xml",
                   e);
       }
     } // for (int count=0; count < guardFiles.length; count++)

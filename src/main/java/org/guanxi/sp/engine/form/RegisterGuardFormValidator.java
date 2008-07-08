@@ -22,7 +22,6 @@ import org.springframework.validation.ValidationUtils;
 import org.springframework.web.context.ServletContextAware;
 import org.guanxi.sp.engine.Config;
 import org.guanxi.common.definitions.Guanxi;
-import org.guanxi.common.Utils;
 
 import javax.servlet.ServletContext;
 import java.io.File;
@@ -69,8 +68,8 @@ public class RegisterGuardFormValidator implements Validator, ServletContextAwar
 
   private boolean checkForDuplicateGuard(String guardid) {
     Config config = (Config)servletContext.getAttribute(Guanxi.CONTEXT_ATTR_ENGINE_CONFIG);
-    String metadataDirectory = config.getGuardsMetadataDirectory() + Utils.SLASH + guardid.toLowerCase();
-    File ksFile = new File(metadataDirectory + Utils.SLASH + guardid.toLowerCase() + ".jks");
+    String metadataDirectory = config.getGuardsMetadataDirectory() + File.separator + guardid.toLowerCase();
+    File ksFile = new File(metadataDirectory + File.separator + guardid.toLowerCase() + ".jks");
     return ksFile.exists();
   }
 }

@@ -27,7 +27,6 @@ import org.apache.log4j.PatternLayout;
 import org.apache.log4j.RollingFileAppender;
 import org.apache.log4j.xml.DOMConfigurator;
 import org.apache.xmlbeans.XmlOptions;
-import org.guanxi.common.Utils;
 import org.guanxi.common.GuanxiException;
 import org.guanxi.common.definitions.Logging;
 import org.guanxi.common.definitions.Guanxi;
@@ -162,7 +161,7 @@ public class RegisterGuardFormController extends SimpleFormController {
     RegisterGuard form = (RegisterGuard)command;
 
     // Adjust the metadata directory for the new Guard
-    String metadataDirectory = config.getGuardsMetadataDirectory() + Utils.SLASH + form.getGuardid().toLowerCase();
+    String metadataDirectory = config.getGuardsMetadataDirectory() + File.separator + form.getGuardid().toLowerCase();
 
     // Create the new Guard metadata directory
     if (!createGuardMetadataDirectory(metadataDirectory)) {
@@ -195,14 +194,14 @@ public class RegisterGuardFormController extends SimpleFormController {
      * To this end the keystore will be the lowercase equivalent of the Guard ID
      * and it's certificate alias will be the same.
      */
-    String guardKeystore = metadataDirectory + Utils.SLASH + form.getGuardid().toLowerCase() + ".jks";
+    String guardKeystore = metadataDirectory + File.separator + form.getGuardid().toLowerCase() + ".jks";
     createKeystoreWithChain(guardKeystore, form.getGuardid().toLowerCase(),
                             keystorePassword, caBean);
 
     createGuardMetadataFile(metadataDirectory, guardKeystore, keystorePassword, form);
 
     // Load the new Guard so the main Engine can use it
-    loadGuardMetadata(metadataDirectory + Utils.SLASH + form.getGuardid().toLowerCase() + ".xml");
+    loadGuardMetadata(metadataDirectory + File.separator + form.getGuardid().toLowerCase() + ".xml");
 
     // Show the certificate chain to the user
     displayChain(request, response, caBean);
@@ -500,7 +499,7 @@ public class RegisterGuardFormController extends SimpleFormController {
     xmlOptions.setSaveSuggestedPrefixes(ns);
     xmlOptions.setSaveNamespacesFirst();
     try {
-      entityDoc.save(new File(guardDir + Utils.SLASH + form.getGuardid().toLowerCase() + ".xml"), xmlOptions);
+      entityDoc.save(new File(guardDir + File.separator + form.getGuardid().toLowerCase() + ".xml"), xmlOptions);
     }
     catch(Exception e) {
       log.error(e);
