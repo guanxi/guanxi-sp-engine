@@ -30,6 +30,7 @@ import org.apache.xmlbeans.XmlOptions;
 import org.guanxi.common.GuanxiException;
 import org.guanxi.common.definitions.Logging;
 import org.guanxi.common.definitions.Guanxi;
+import org.guanxi.common.filters.RFC2253;
 import org.guanxi.xal.saml_2_0.metadata.*;
 import org.guanxi.xal.saml2.metadata.GuanxiGuardServiceDocument;
 import org.guanxi.xal.saml2.metadata.GuardRoleDescriptorExtensions;
@@ -173,12 +174,12 @@ public class RegisterGuardFormController extends SimpleFormController {
     }
 
     // Build an X509 name
-    String x509DN = "CN=" + form.getGuardid();
-    x509DN += ",OU=" + form.getOrgunit();
-    x509DN += ",O=" + form.getOrg();
-    x509DN += ",L=" + form.getCity();
-    x509DN += ",ST=" + form.getLocality();
-    x509DN += ",C=" + form.getCountry();
+    String x509DN = "CN=" + RFC2253.encode(form.getGuardid());
+    x509DN += ",OU=" + RFC2253.encode(form.getOrgunit());
+    x509DN += ",O=" + RFC2253.encode(form.getOrg());
+    x509DN += ",L=" + RFC2253.encode(form.getCity());
+    x509DN += ",ST=" + RFC2253.encode(form.getLocality());
+    x509DN += ",C=" + RFC2253.encode(form.getCountry());
 
     // Generate a CSR and sign it
     CABean caBean = createSignedCertificateChain(x509DN, config.getKeyType());
