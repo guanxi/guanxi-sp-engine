@@ -37,6 +37,8 @@ import org.guanxi.xal.soap.Body;
 import org.guanxi.xal.soap.Header;
 import org.guanxi.sp.Util;
 import org.guanxi.sp.engine.Config;
+import org.guanxi.sp.engine.idp.IdPManager;
+import org.guanxi.sp.engine.idp.IdPMetadata;
 import org.apache.log4j.Logger;
 import org.apache.xmlbeans.XmlException;
 import org.apache.xmlbeans.XmlOptions;
@@ -140,11 +142,11 @@ public class AuthConsumerService extends AbstractController implements ServletCo
     soapBody.getDomNode().appendChild(soapBody.getDomNode().getOwnerDocument().importNode(samlRequest.getDomNode(), true));
 
     // Initialise the SAML request to the IdP's AA
-    EntityDescriptorType idpMetadata = (EntityDescriptorType)request.getAttribute(Config.REQUEST_ATTRIBUTE_IDP_METADATA);
+    IdPMetadata idpMetadata = (IdPMetadata)request.getAttribute(Config.REQUEST_ATTRIBUTE_IDP_METADATA);
     EntityConnection aaConnection = null;
     Config config = (Config)getServletContext().getAttribute(Guanxi.CONTEXT_ATTR_ENGINE_CONFIG);
     try {
-      aaConnection = new EntityConnection(idpMetadata.getAttributeAuthorityDescriptorArray()[0].getAttributeServiceArray()[0].getLocation(),
+      aaConnection = new EntityConnection(idpMetadata.getAttributeAuthorityURL(),
                                           guardEntityDescriptor.getEntityID(),
                                           guardNativeMetadata.getKeystore(),
                                           guardNativeMetadata.getKeystorePassword(),
@@ -195,7 +197,7 @@ public class AuthConsumerService extends AbstractController implements ServletCo
     // Add the SAML Response from the IdP to the SOAP headers
     Header authHeader = soapEnvelope.addNewHeader();
     Element auth = authHeader.getDomNode().getOwnerDocument().createElementNS("urn:guanxi:sp", "AuthnFromIdP");
-    auth.setAttribute("aa", idpMetadata.getAttributeAuthorityDescriptorArray()[0].getAttributeServiceArray()[0].getLocation());
+    auth.setAttribute("aa", idpMetadata.getAttributeAuthorityURL());
     Node authNode = authHeader.getDomNode().appendChild(auth);
     authNode.appendChild(authNode.getOwnerDocument().importNode(((ResponseType)request.getAttribute(Config.REQUEST_ATTRIBUTE_SAML_RESPONSE)).getDomNode(), true));
 

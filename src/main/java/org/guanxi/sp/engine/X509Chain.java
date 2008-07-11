@@ -16,6 +16,7 @@
 
 package org.guanxi.sp.engine;
 
+import org.guanxi.sp.engine.idp.UKFederationIdPMetadata;
 import org.guanxi.xal.w3.xmldsig.KeyInfoType;
 import org.guanxi.xal.w3.xmldsig.X509DataType;
 import org.guanxi.xal.saml_2_0.metadata.EntityDescriptorDocument;
@@ -137,9 +138,7 @@ public class X509Chain {
          *     <ds:X509Data>
          *       <ds:X509Certificate>
          */
-        KeyInfoType keyInfo = entityDescriptor.getAttributeAuthorityDescriptorArray()[0].getKeyDescriptorArray()[0].getKeyInfo();
-        X509DataType x509Data = keyInfo.getX509DataArray()[0];
-        byte[] bytes = x509Data.getX509CertificateArray()[0];
+        byte[] bytes = new UKFederationIdPMetadata(entityDescriptor).getX509Certificate();
 
         // Add the X509 certificate to the store. The store
         x509Certs.add(certFactory.generateCertificate(new ByteArrayInputStream(bytes)));
