@@ -31,6 +31,8 @@ import org.guanxi.common.GuanxiException;
 import org.guanxi.common.job.GuanxiJobConfig;
 import org.guanxi.common.security.SecUtils;
 import org.guanxi.common.definitions.Guanxi;
+import org.guanxi.sp.engine.idp.IdPManager;
+import org.guanxi.sp.engine.idp.UKFederationIdPMetadata;
 import org.guanxi.xal.saml_2_0.metadata.EntityDescriptorDocument;
 import org.guanxi.xal.saml_2_0.metadata.EntityDescriptorType;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
@@ -251,19 +253,21 @@ public class Bootstrap implements ApplicationListener, ApplicationContextAware, 
   private void loadIdPMetadata(String idpMetadataDir) throws GuanxiException {
     File aaDir = new File(idpMetadataDir);
     File[] idpFiles = aaDir.listFiles(new XMLFileFilter());
-
-    for (int count=0; count < idpFiles.length; count++) {
-      try {
-        EntityDescriptorDocument edDoc = EntityDescriptorDocument.Factory.parse(new File(idpFiles[count].getPath()));
-        EntityDescriptorType entityDescriptor = edDoc.getEntityDescriptor();
-
-        // Bung the IdP's SAML2 EntityDescriptor in the context under the IdP's entityID
-        servletContext.setAttribute(entityDescriptor.getEntityID(), entityDescriptor);
-      }
-      catch(Exception e) {
-        log.error("Error while loading IdP metadata objects", e);
-        throw new GuanxiException(e);
-      }
+    
+    for ( File current : idpFiles ) {
+    	try {
+        	EntityDescriptorDocument edDoc;
+        	EntityDescriptorType entityDescriptor;
+        	
+    		edDoc = EntityDescriptorDocument.Factory.parse(current);
+    		entityDescriptor = edDoc.getEntityDescriptor();
+    		
+    		IdPManager.getManager(servletContext).setMetadata(current.getCanonicalPath(), new UKFederationIdPMetadata(entityDescriptor));
+    	}
+    	catch ( Exception e ) {
+    		log.error("Error while loading IdP metadata objects", e);
+    		throw new GuanxiException(e);
+    	}
     }
 
     log.info("Loaded " + idpFiles.length + " IdP metadata objects");
