@@ -30,39 +30,40 @@ import org.guanxi.common.job.SAML2MetadataParserConfig;
 import org.guanxi.common.job.GuanxiJobConfig;
 
 public class SAML2MetadataParser implements Job {
-  public SAML2MetadataParser() {}
-  
+  public SAML2MetadataParser() {
+  }
+
   public void execute(JobExecutionContext context) throws JobExecutionException {
-	SAML2MetadataParserConfig config;
-	String metadataURL;
-	Logger logger;
-	
-	config = (SAML2MetadataParserConfig)context.getJobDetail().getJobDataMap().get(GuanxiJobConfig.JOB_KEY_JOB_CONFIG);
-	metadataURL = config.getMetadataURL();
-	logger = config.getLog();
-	
-	logger.info("Loading SAML2 metadata from: " + metadataURL);
-	
-	try {
-		EntitiesDescriptorDocument doc;
-		EntityDescriptorType[] entityDescriptors;
-		IdPManager manager;
-		
-		doc = Utils.parseSAML2Metadata(metadataURL, config.getWho());
-		entityDescriptors = doc.getEntitiesDescriptor().getEntityDescriptorArray();
-		
-		manager = IdPManager.getManager(config.getServletContext());
-		manager.removeMetadata(metadataURL);
-		
-		for ( EntityDescriptorType currentMetadata : entityDescriptors ) {
-			if ( currentMetadata.getIDPSSODescriptorArray().length > 0 ) {
-				logger.info("Loading IdP metadata for : " + currentMetadata.getEntityID());
-				manager.addMetadata(metadataURL, new UKFederationIdPMetadata(currentMetadata));
-			}
-		}
-	}
-	catch ( GuanxiException e ) {
-		logger.error("Error parsing metadata", e);
-	}
+    SAML2MetadataParserConfig config;
+    String metadataURL;
+    Logger logger;
+
+    config = (SAML2MetadataParserConfig) context.getJobDetail().getJobDataMap().get(GuanxiJobConfig.JOB_KEY_JOB_CONFIG);
+    metadataURL = config.getMetadataURL();
+    logger = config.getLog();
+
+    logger.info("Loading SAML2 metadata from: " + metadataURL);
+
+    try {
+      EntitiesDescriptorDocument doc;
+      EntityDescriptorType[] entityDescriptors;
+      IdPManager manager;
+
+      doc = Utils.parseSAML2Metadata(metadataURL, config.getWho());
+      entityDescriptors = doc.getEntitiesDescriptor().getEntityDescriptorArray();
+
+      manager = IdPManager.getManager(config.getServletContext());
+      manager.removeMetadata(metadataURL);
+
+      for (EntityDescriptorType currentMetadata : entityDescriptors) {
+        if (currentMetadata.getIDPSSODescriptorArray().length > 0) {
+          logger.info("Loading IdP metadata for : " + currentMetadata.getEntityID());
+          manager.addMetadata(metadataURL, new UKFederationIdPMetadata(currentMetadata));
+        }
+      }
+    }
+    catch (GuanxiException e) {
+      logger.error("Error parsing metadata", e);
+    }
   }
 }
