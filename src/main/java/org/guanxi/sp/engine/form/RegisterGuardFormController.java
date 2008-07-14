@@ -30,6 +30,7 @@ import org.apache.xmlbeans.XmlOptions;
 import org.guanxi.common.GuanxiException;
 import org.guanxi.common.definitions.Logging;
 import org.guanxi.common.definitions.Guanxi;
+import org.guanxi.common.filters.FileName;
 import org.guanxi.common.filters.RFC2253;
 import org.guanxi.xal.saml_2_0.metadata.*;
 import org.guanxi.xal.saml2.metadata.GuanxiGuardServiceDocument;
@@ -160,9 +161,10 @@ public class RegisterGuardFormController extends SimpleFormController {
                                Object command, BindException errors) throws ServletException {
 
     RegisterGuard form = (RegisterGuard)command;
+	String escapedGuardID = FileName.encode(form.getGuardid().toLowerCase());
 
     // Adjust the metadata directory for the new Guard
-    String metadataDirectory = config.getGuardsMetadataDirectory() + File.separator + form.getGuardid().toLowerCase();
+    String metadataDirectory = config.getGuardsMetadataDirectory() + File.separator + escapedGuardID;
 
     // Create the new Guard metadata directory
     if (!createGuardMetadataDirectory(metadataDirectory)) {
@@ -195,14 +197,14 @@ public class RegisterGuardFormController extends SimpleFormController {
      * To this end the keystore will be the lowercase equivalent of the Guard ID
      * and it's certificate alias will be the same.
      */
-    String guardKeystore = metadataDirectory + File.separator + form.getGuardid().toLowerCase() + ".jks";
+    String guardKeystore = metadataDirectory + File.separator + escapedGuardID + ".jks";
     createKeystoreWithChain(guardKeystore, form.getGuardid().toLowerCase(),
                             keystorePassword, caBean);
 
     createGuardMetadataFile(metadataDirectory, guardKeystore, keystorePassword, form);
 
     // Load the new Guard so the main Engine can use it
-    loadGuardMetadata(metadataDirectory + File.separator + form.getGuardid().toLowerCase() + ".xml");
+    loadGuardMetadata(metadataDirectory + File.separator + escapedGuardID + ".xml");
 
     // Show the certificate chain to the user
     displayChain(request, response, caBean);
@@ -500,7 +502,7 @@ public class RegisterGuardFormController extends SimpleFormController {
     xmlOptions.setSaveSuggestedPrefixes(ns);
     xmlOptions.setSaveNamespacesFirst();
     try {
-      entityDoc.save(new File(guardDir + File.separator + form.getGuardid().toLowerCase() + ".xml"), xmlOptions);
+      entityDoc.save(new File(guardDir + File.separator + FileName.encode(form.getGuardid().toLowerCase()) + ".xml"), xmlOptions);
     }
     catch(Exception e) {
       log.error(e);
