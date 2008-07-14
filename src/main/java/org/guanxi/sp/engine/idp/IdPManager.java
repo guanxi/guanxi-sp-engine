@@ -51,8 +51,8 @@ public final class IdPManager {
 	 * This will return the IdPManager for this application.
 	 * If there is no current IdPManager then this will create one.
 	 * 
-	 * @param context
-	 * @return
+	 * @param context  This is the ServletContext which holds the IdPManager
+	 * @return         This will return the IdPManager held by the ServletContext
 	 */
 	public static IdPManager getManager(ServletContext context) {
 		IdPManager manager;
@@ -82,8 +82,8 @@ public final class IdPManager {
 	 * particular source. Existing metadata loaded for this source is
 	 * retained.
 	 * 
-	 * @param source
-	 * @param metadata
+	 * @param source   This is a unique string that represents the source of the metadata.
+	 * @param metadata This is the metadata that has been loaded from the source.
 	 */
 	public void addMetadata(String source, IdPMetadata... metadata) {
 		String entityID;
@@ -105,8 +105,8 @@ public final class IdPManager {
 	 * This returns the metadata associated with a particular entityID.
 	 * If the entityID is not associated with metadata then null is returned.
 	 * 
-	 * @param entityID
-	 * @return
+	 * @param entityID   This is the entityID for the IdP whos metadata is being requested.
+	 * @return           This will return the IdPMetadata for the IdP or null if there is no metadata for the IdP.
 	 */
 	public IdPMetadata getMetadata(String entityID) {
 		return metadataByEntityID.get(entityID);
@@ -117,7 +117,7 @@ public final class IdPManager {
 	 * source. The record of entityIDs associated with that source is also
 	 * cleared.
 	 * 
-	 * @param source
+	 * @param source This is a unique string that represents the source of the metadata.
 	 */
 	public void removeMetadata(String source) {
 		if ( entityIDBySource.containsKey(source) ) {
@@ -132,8 +132,8 @@ public final class IdPManager {
 	 * This will remove any existing metadata from the indicated source,
 	 * replacing it with the provided metadata.
 	 * 
-	 * @param source
-	 * @param metadata
+	 * @param source   This is a unique string that represents the source of the metadata.
+	 * @param metadata This is the metadata that has been loaded from the source.
 	 */
 	public void setMetadata(String source, IdPMetadata... metadata) {
 		String entityID;
