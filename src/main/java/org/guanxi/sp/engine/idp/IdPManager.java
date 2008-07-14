@@ -76,7 +76,7 @@ public final class IdPManager {
 		metadataByEntityID = new TreeMap<String, IdPMetadata>();
 		entityIDBySource = new TreeMap<String, Set<String>>();
 	}
-	
+
 	/**
 	 * This appends metadata to the list of metadata loaded for this
 	 * particular source. Existing metadata loaded for this source is
@@ -85,29 +85,7 @@ public final class IdPManager {
 	 * @param source
 	 * @param metadata
 	 */
-	public void addMetadata(String source, IdPMetadata metadata) {
-		String entityID;
-		Set<String> entityIDList;
-		
-		if ( ! entityIDBySource.containsKey(source) ) {
-			entityIDBySource.put(source, new TreeSet<String>());
-		}
-		
-		entityID = metadata.getEntityID();
-		metadataByEntityID.put(entityID, metadata);
-		
-		entityIDList = entityIDBySource.get(source);
-		entityIDList.add(entityID);
-	}
-	/**
-	 * This appends metadata to the list of metadata loaded for this
-	 * particular source. Existing metadata loaded for this source is
-	 * retained.
-	 * 
-	 * @param source
-	 * @param metadata
-	 */
-	public void addMetadata(String source, IdPMetadata[] metadata) {
+	public void addMetadata(String source, IdPMetadata... metadata) {
 		String entityID;
 		Set<String> entityIDList;
 		
@@ -157,26 +135,7 @@ public final class IdPManager {
 	 * @param source
 	 * @param metadata
 	 */
-	public void setMetadata(String source, IdPMetadata metadata) {
-		String entityID;
-		Set<String> entityIDList;
-		
-		removeMetadata(source);
-		
-		entityIDBySource.put(source, entityIDList = new TreeSet<String>());
-		
-		entityID = metadata.getEntityID();
-		metadataByEntityID.put(entityID, metadata);
-		entityIDList.add(entityID);
-	}
-	/**
-	 * This will remove any existing metadata from the indicated source,
-	 * replacing it with the provided metadata.
-	 * 
-	 * @param source
-	 * @param metadata
-	 */
-	public void setMetadata(String source, IdPMetadata[] metadata) {
+	public void setMetadata(String source, IdPMetadata... metadata) {
 		String entityID;
 		Set<String> entityIDList;
 
