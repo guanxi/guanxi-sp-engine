@@ -27,12 +27,12 @@ import org.springframework.context.event.ContextRefreshedEvent;
 import org.apache.log4j.Logger;
 import org.guanxi.common.log.Log4JLoggerConfig;
 import org.guanxi.common.log.Log4JLogger;
+import org.guanxi.common.metadata.MetadataManager;
+import org.guanxi.common.metadata.IdPMetadataImpl;
 import org.guanxi.common.GuanxiException;
 import org.guanxi.common.job.GuanxiJobConfig;
 import org.guanxi.common.security.SecUtils;
 import org.guanxi.common.definitions.Guanxi;
-import org.guanxi.sp.engine.idp.IdPManager;
-import org.guanxi.sp.engine.idp.UKFederationIdPMetadata;
 import org.guanxi.xal.saml_2_0.metadata.EntityDescriptorDocument;
 import org.guanxi.xal.saml_2_0.metadata.EntityDescriptorType;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
@@ -54,6 +54,7 @@ public class Bootstrap implements ApplicationListener, ApplicationContextAware, 
   /** The Logging setup to use */
   private Log4JLogger logger = null;
   /** Spring ApplicationContext */
+  @SuppressWarnings("unused")
   private ApplicationContext applicationContext = null;
   /** The servlet context */
   private ServletContext servletContext = null;
@@ -262,7 +263,7 @@ public class Bootstrap implements ApplicationListener, ApplicationContextAware, 
     		edDoc = EntityDescriptorDocument.Factory.parse(current);
     		entityDescriptor = edDoc.getEntityDescriptor();
     		
-    		IdPManager.getManager(servletContext).setMetadata(current.getCanonicalPath(), new UKFederationIdPMetadata(entityDescriptor));
+    		MetadataManager.getManager(servletContext).setMetadata(current.getCanonicalPath(), new IdPMetadataImpl(entityDescriptor));
     	}
     	catch ( Exception e ) {
     		log.error("Error while loading IdP metadata objects", e);
