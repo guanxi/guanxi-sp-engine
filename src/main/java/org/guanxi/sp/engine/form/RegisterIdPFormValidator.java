@@ -21,6 +21,7 @@ import org.springframework.validation.Errors;
 import org.springframework.validation.ValidationUtils;
 
 public class RegisterIdPFormValidator implements Validator {
+  @SuppressWarnings("unchecked")
   public boolean supports(Class clazz) {
     return clazz.equals(RegisterIdP.class);
   }
