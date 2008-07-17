@@ -60,6 +60,7 @@ public class RegisterIdPFormController extends SimpleFormController {
     return new RegisterIdP();
   }
 
+  @SuppressWarnings("unchecked")
   public ModelAndView onSubmit(HttpServletRequest request, HttpServletResponse response,
                                Object command, BindException errors) throws Exception {
     exampleIdpDoc.getEntityDescriptor().setEntityID(request.getParameter("entityID"));
