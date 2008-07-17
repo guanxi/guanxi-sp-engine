@@ -51,7 +51,7 @@ public class WAYFLocationService extends AbstractController implements ServletCo
   /** The Logging setup to use */
   private Log4JLogger logger = null;
   /** The list of Guard to WAYF location mappings */
-  private HashMap wayfs = null;
+  private HashMap<String, String> wayfs = null;
   /** The view page to use */
   private String viewJSP = null;
 
@@ -95,6 +95,7 @@ public class WAYFLocationService extends AbstractController implements ServletCo
    * query is sent to an AA.
    * @throws Exception if an error occurred
    */
+  @SuppressWarnings("unchecked")
   public ModelAndView handleRequestInternal(HttpServletRequest request, HttpServletResponse response) throws Exception {
     String guardID  = request.getParameter(Guanxi.WAYF_PARAM_GUARD_ID);
     String sessionID = request.getParameter(Guanxi.WAYF_PARAM_SESSION_ID);
@@ -216,13 +217,12 @@ public class WAYFLocationService extends AbstractController implements ServletCo
     // Find out which WAYF to use for this Guard
     String wayfForGuard = null;
     String defaultWAYFLocation = null;
-    for (Object key : wayfs.keySet()) {
-      String guardId = (String)key;
+    for (String guardId : wayfs.keySet()) {
       if (guardId.equals(DEFAULT_WAYF_MARKER)) {
-        defaultWAYFLocation = (String)wayfs.get(guardId);
+        defaultWAYFLocation = wayfs.get(guardId);
       }
       if (guardId.equals(guardID)) {
-        wayfForGuard = (String)wayfs.get(guardId);
+        wayfForGuard = wayfs.get(guardId);
       }
     }
 
@@ -257,12 +257,12 @@ public class WAYFLocationService extends AbstractController implements ServletCo
   // Setters
   public void setLoggerConfig(Log4JLoggerConfig loggerConfig) { this.loggerConfig = loggerConfig; }
   public void setLogger(Log4JLogger logger) { this.logger = logger; }
-  public void setWayfs(HashMap wayfs) { this.wayfs = wayfs; }
+  public void setWayfs(HashMap<String, String> wayfs) { this.wayfs = wayfs; }
   public void setViewJSP(String viewJSP) { this.viewJSP = viewJSP; }
 
   // Getters
   public Log4JLoggerConfig getLoggerConfig() { return loggerConfig; }
   public Log4JLogger getLogger() { return logger; }
-  public HashMap getWayfs() { return wayfs; }
+  public HashMap<String, String> getWayfs() { return wayfs; }
   public String getViewJSP() { return viewJSP; }
 }
