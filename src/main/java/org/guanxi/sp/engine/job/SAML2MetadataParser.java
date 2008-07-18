@@ -26,7 +26,7 @@ import org.guanxi.common.Utils;
 import org.guanxi.common.GuanxiException;
 import org.guanxi.common.job.SAML2MetadataParserConfig;
 import org.guanxi.common.job.GuanxiJobConfig;
-import org.guanxi.common.metadata.MetadataManager;
+import org.guanxi.common.metadata.IdPMetadataManager;
 import org.guanxi.common.metadata.IdPMetadataImpl;
 
 public class SAML2MetadataParser implements Job {
@@ -47,12 +47,12 @@ public class SAML2MetadataParser implements Job {
     try {
       EntitiesDescriptorDocument doc;
       EntityDescriptorType[] entityDescriptors;
-      MetadataManager manager;
+      IdPMetadataManager manager;
 
       doc = Utils.parseSAML2Metadata(metadataURL, config.getWho());
       entityDescriptors = doc.getEntitiesDescriptor().getEntityDescriptorArray();
 
-      manager = MetadataManager.getManager(config.getServletContext());
+      manager = IdPMetadataManager.getManager(config.getServletContext());
       manager.removeMetadata(metadataURL);
 
       for (EntityDescriptorType currentMetadata : entityDescriptors) {

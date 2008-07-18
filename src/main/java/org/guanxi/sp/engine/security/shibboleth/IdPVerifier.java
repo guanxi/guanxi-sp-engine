@@ -25,7 +25,7 @@ import org.guanxi.common.definitions.Guanxi;
 import org.guanxi.common.definitions.Shibboleth;
 import org.guanxi.common.log.Log4JLoggerConfig;
 import org.guanxi.common.log.Log4JLogger;
-import org.guanxi.common.metadata.MetadataManager;
+import org.guanxi.common.metadata.IdPMetadataManager;
 import org.guanxi.common.metadata.IdPMetadata;
 import org.guanxi.xal.saml_1_0.protocol.ResponseDocument;
 import org.guanxi.xal.saml_1_0.protocol.ResponseType;
@@ -136,7 +136,7 @@ public class IdPVerifier extends HandlerInterceptorAdapter implements ServletCon
     /* Find the IdP's metadata from our store. This is based on it's providerId, which is matched
      * against the entityID in the IdP's EntityDescriptor file.
      */
-    IdPMetadata idpMetadata = MetadataManager.getManager(servletContext).getMetadata(idpProviderID);//(EntityDescriptorType)servletContext.getAttribute(idpProviderID);
+    IdPMetadata idpMetadata = IdPMetadataManager.getManager(servletContext).getMetadata(idpProviderID);//(EntityDescriptorType)servletContext.getAttribute(idpProviderID);
     if (idpMetadata == null) {
       log.error("Could not find IdP '" + idpProviderID + "' in the metadata repository");
       request.setAttribute("error", messages.getMessage("engine.error.no.idp.metadata", null, request.getLocale()));

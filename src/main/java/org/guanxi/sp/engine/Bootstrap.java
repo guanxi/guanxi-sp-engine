@@ -27,7 +27,7 @@ import org.springframework.context.event.ContextRefreshedEvent;
 import org.apache.log4j.Logger;
 import org.guanxi.common.log.Log4JLoggerConfig;
 import org.guanxi.common.log.Log4JLogger;
-import org.guanxi.common.metadata.MetadataManager;
+import org.guanxi.common.metadata.IdPMetadataManager;
 import org.guanxi.common.metadata.IdPMetadataImpl;
 import org.guanxi.common.GuanxiException;
 import org.guanxi.common.job.GuanxiJobConfig;
@@ -263,7 +263,7 @@ public class Bootstrap implements ApplicationListener, ApplicationContextAware, 
     		edDoc = EntityDescriptorDocument.Factory.parse(current);
     		entityDescriptor = edDoc.getEntityDescriptor();
     		
-    		MetadataManager.getManager(servletContext).setMetadata(current.getCanonicalPath(), new IdPMetadataImpl(entityDescriptor));
+    		IdPMetadataManager.getManager(servletContext).setMetadata(current.getCanonicalPath(), new IdPMetadataImpl(entityDescriptor));
     	}
     	catch ( Exception e ) {
     		log.error("Error while loading IdP metadata objects", e);
