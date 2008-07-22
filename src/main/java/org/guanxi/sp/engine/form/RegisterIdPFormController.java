@@ -21,22 +21,35 @@ import org.springframework.web.servlet.ModelAndView;
 import org.springframework.validation.BindException;
 import org.springframework.context.MessageSource;
 import org.guanxi.xal.saml_2_0.metadata.EntityDescriptorDocument;
-import org.guanxi.xal.saml_2_0.metadata.EndpointType;
-import org.guanxi.xal.saml_2_0.metadata.KeyDescriptorType;
+import org.guanxi.xal.w3.xmldsig.X509DataType;
 import org.guanxi.common.definitions.Guanxi;
-import org.guanxi.sp.engine.X509Chain;
+import org.guanxi.common.metadata.IdPMetadata;
+import org.guanxi.common.metadata.IdPMetadataImpl;
+import org.guanxi.common.metadata.IdPMetadataManager;
 import org.guanxi.sp.engine.Config;
+import org.guanxi.sp.engine.X509Chain;
 import org.apache.xmlbeans.XmlOptions;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.File;
+import java.io.IOException;
 
 public class RegisterIdPFormController extends SimpleFormController {
+  /**
+   * This is the configuration for this form
+   */
   private Config config = null;
-  private EntityDescriptorDocument exampleIdpDoc = null;
-  /** The localised messages */
+  /**
+   * This is the example IdP document which is updated with the correct values
+   * for the IdP currently being registered. This is then committed to disk and
+   * loaded again to produce a second separate document.
+   */
+  private EntityDescriptorDocument exampleIdPDoc = null;
+  /**
+   * The localised messages
+   */
   private MessageSource messageSource = null;
 
   public void setMessageSource(MessageSource messageSource) {
@@ -45,13 +58,13 @@ public class RegisterIdPFormController extends SimpleFormController {
 
   public void init() throws ServletException {
     try {
-      config = (Config)getServletContext().getAttribute(Guanxi.CONTEXT_ATTR_ENGINE_CONFIG);
+      config = (Config) getServletContext().getAttribute(Guanxi.CONTEXT_ATTR_ENGINE_CONFIG);
 
       String exampleIdPFile = config.getIdPMetadataDirectory() + File.separator + "ExampleIDP.xml";
 
-      exampleIdpDoc = EntityDescriptorDocument.Factory.parse(new File(exampleIdPFile));
+      exampleIdPDoc = EntityDescriptorDocument.Factory.parse(new File(exampleIdPFile));
     }
-    catch(Exception ge) {
+    catch (Exception ge) {
       throw new ServletException(ge);
     }
   }
@@ -62,34 +75,66 @@ public class RegisterIdPFormController extends SimpleFormController {
 
   @SuppressWarnings("unchecked")
   public ModelAndView onSubmit(HttpServletRequest request, HttpServletResponse response,
-                               Object command, BindException errors) throws Exception {
-    exampleIdpDoc.getEntityDescriptor().setEntityID(request.getParameter("entityID"));
+      Object command, BindException errors) throws Exception {
+    IdPMetadata idpMetadata;
+    File newIdPFile;
+    EntityDescriptorDocument loadedIdPDocument;
+    ModelAndView mAndV;
 
-    EndpointType aa = exampleIdpDoc.getEntityDescriptor().getAttributeAuthorityDescriptorArray(0).getAttributeServiceArray(0);
-    aa.setLocation(request.getParameter("aa"));
+    newIdPFile = new File(config.getIdPMetadataDirectory(), request.getParameter("filename")
+        + ".xml");
+    createIdPFile(newIdPFile, request.getParameter("entityID"), request.getParameter("aa"), 
+        request.getParameter("x509").replaceAll("\r", ""));
 
-    KeyDescriptorType keyDesc = exampleIdpDoc.getEntityDescriptor().getAttributeAuthorityDescriptorArray(0).getKeyDescriptorArray(0);
-    keyDesc.getKeyInfo().getX509DataArray(0).removeX509Certificate(0);
-    keyDesc.getKeyInfo().getX509DataArray(0).addNewX509Certificate().setStringValue(request.getParameter("x509").replaceAll("\r", ""));
+    loadedIdPDocument = EntityDescriptorDocument.Factory.parse(newIdPFile);
+    idpMetadata = new IdPMetadataImpl(loadedIdPDocument.getEntityDescriptor());
+    IdPMetadataManager.getManager(getServletContext()).addMetadata(newIdPFile.getCanonicalPath(),
+        idpMetadata);
 
-    XmlOptions xmlOptions = new XmlOptions();
+    X509Chain.loadX509CertsFromMetadata();
+
+    mAndV = new ModelAndView();
+    mAndV.setViewName(getSuccessView());
+    mAndV.getModel().put("message",
+        messageSource.getMessage("register.idp.success.message", null, request.getLocale()));
+    return mAndV;
+  }
+
+  /**
+   * This creates the initial IdP file that will be loaded on subsequent
+   * restarts of the webapp.
+   * 
+   * @param file
+   *          This is the file that will be created.
+   * @param entityID
+   *          This is the entityID of the IdP.
+   * @param attributeAuthorityURL
+   *          This is the URL of the Attribute Authority for the IdP.
+   * @param signingCertificate
+   *          This is the certificate used to sign the SAML assertions. It is
+   *          base64 encoded. There should be no newlines or spaces in this.
+   * @throws IOException
+   *           This will be thrown if there is a problem writing to the file.
+   */
+  private void createIdPFile(File file, String entityID, String attributeAuthorityURL,
+      String signingCertificate) throws IOException {
+    X509DataType certificateObject;
+    XmlOptions xmlOptions;
+
+    exampleIdPDoc.getEntityDescriptor().setEntityID(entityID);
+    exampleIdPDoc.getEntityDescriptor().getAttributeAuthorityDescriptorArray(0)
+        .getAttributeServiceArray(0).setLocation(attributeAuthorityURL);
+    certificateObject = exampleIdPDoc.getEntityDescriptor().getAttributeAuthorityDescriptorArray(0)
+        .getKeyDescriptorArray(0).getKeyInfo().getX509DataArray(0);
+    certificateObject.removeX509Certificate(0);
+    certificateObject.addNewX509Certificate().setStringValue(signingCertificate);
+
+    xmlOptions = new XmlOptions();
     xmlOptions.setSavePrettyPrint();
     xmlOptions.setSavePrettyPrintIndent(2);
     xmlOptions.setUseDefaultNamespace();
     xmlOptions.setCharacterEncoding("UTF-8");
 
-    String newIdPFile = config.getIdPMetadataDirectory() + File.separator + request.getParameter("filename") + ".xml";
-    exampleIdpDoc.save(new File(newIdPFile), xmlOptions);
-
-    EntityDescriptorDocument edDoc = EntityDescriptorDocument.Factory.parse(new File(newIdPFile));
-    getServletContext().setAttribute(request.getParameter("entityID"), edDoc.getEntityDescriptor());
-
-    X509Chain.loadX509CertsFromMetadata();
-
-    ModelAndView mAndV = new ModelAndView();
-    mAndV.setViewName(getSuccessView());
-    mAndV.getModel().put("message", messageSource.getMessage("register.idp.success.message",
-                                                             null, request.getLocale()));
-    return mAndV;
+    exampleIdPDoc.save(file);
   }
 }
