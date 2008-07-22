@@ -158,12 +158,14 @@ public class Bootstrap implements ApplicationListener, ApplicationContextAware, 
    */
   public void onApplicationEvent(ApplicationEvent applicationEvent) {
     
-    // ContextClosedEvent
-    // Published when the ApplicationContext is closed, using the 
-    // close() method on the ConfigurableApplicationContext  
-    // interface. "Closed" here means that all singleton beans are 
-    // destroyed. A closed context has reached its end of life; it 
-    // cannot be refreshed or restarted.
+    /* 
+     * ContextClosedEvent
+     * Published when the ApplicationContext is closed, using the 
+     * close() method on the ConfigurableApplicationContext  
+     * interface. "Closed" here means that all singleton beans are 
+     * destroyed. A closed context has reached its end of life; it 
+     * cannot be refreshed or restarted.
+     */
     if ( applicationEvent instanceof ContextClosedEvent ) {
       if (okToUnloadBCProvider) {
         Provider[] providers = Security.getProviders();
@@ -188,18 +190,20 @@ public class Bootstrap implements ApplicationListener, ApplicationContextAware, 
       }
     }
     
-    // ContextRefreshedEvent  
-    // Published when the ApplicationContext is initialised or 
-    // refreshed, e.g. using the refresh() method on the 
-    // ConfigurableApplicationContext interface. "Initialised" 
-    // here means that all beans are loaded, post-processor 
-    // beans are detected and activated, singletons are 
-    // pre-instantiated, and the ApplicationContext object is 
-    // ready for use. A refresh may be triggered multiple times, 
-    // as long as the context hasn't been closed - provided that 
-    // the chosen ApplicationContext  actually supports such 
-    // "hot" refreshes (which e.g. XmlWebApplicationContext does 
-    // but GenericApplicationContext doesn't).
+    /*
+     * ContextRefreshedEvent  
+     * Published when the ApplicationContext is initialised or 
+     * refreshed, e.g. using the refresh() method on the 
+     * ConfigurableApplicationContext interface. "Initialised" 
+     * here means that all beans are loaded, post-processor 
+     * beans are detected and activated, singletons are 
+     * pre-instantiated, and the ApplicationContext object is 
+     * ready for use. A refresh may be triggered multiple times, 
+     * as long as the context hasn't been closed - provided that 
+     * the chosen ApplicationContext  actually supports such 
+     * "hot" refreshes (which e.g. XmlWebApplicationContext does 
+     * but GenericApplicationContext doesn't).
+     */
     else if ( applicationEvent instanceof ContextRefreshedEvent ) {
       // Advertise the application as available for business
       servletContext.setAttribute(Guanxi.CONTEXT_ATTR_ENGINE_CONFIG, config);
@@ -210,14 +214,16 @@ public class Bootstrap implements ApplicationListener, ApplicationContextAware, 
       log.info("init : " + config.getId());
     }
     
-    // ContextStartedEvent  
-    // Published when the ApplicationContext is started, using the 
-    // start() method on the ConfigurableApplicationContext 
-    // interface. "Started" here means that all life cycle beans will 
-    // receive an explicit start signal. This will typically be used 
-    // for restarting after an explicit stop, but may also be used 
-    // for starting components that haven't been configured for 
-    // auto start (e.g. haven't started on initialisation already).
+    /*
+     * ContextStartedEvent  
+     * Published when the ApplicationContext is started, using the 
+     * start() method on the ConfigurableApplicationContext 
+     * interface. "Started" here means that all life cycle beans will 
+     * receive an explicit start signal. This will typically be used 
+     * for restarting after an explicit stop, but may also be used 
+     * for starting components that haven't been configured for 
+     * auto start (e.g. haven't started on initialisation already).
+     */
     else if ( applicationEvent instanceof ContextStartedEvent ) {
       try {
         loadMetadata();
@@ -227,12 +233,14 @@ public class Bootstrap implements ApplicationListener, ApplicationContextAware, 
       }
     }
     
-    // ContextStoppedEvent  
-    // Published when the ApplicationContext is stopped, using the 
-    // stop() method on the ConfigurableApplicationContext interface. 
-    // "Stopped" here means that all life cycle beans will receive an 
-    // explicit stop signal. A stopped context may be restarted through 
-    // a start() call.
+    /*
+     * ContextStoppedEvent  
+     * Published when the ApplicationContext is stopped, using the 
+     * stop() method on the ConfigurableApplicationContext interface. 
+     * "Stopped" here means that all life cycle beans will receive an 
+     * explicit stop signal. A stopped context may be restarted through 
+     * a start() call.
+     */
     else if ( applicationEvent instanceof ContextStoppedEvent ) {
       try {
         saveMetadata();
