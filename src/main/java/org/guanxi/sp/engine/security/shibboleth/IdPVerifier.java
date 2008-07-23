@@ -25,7 +25,8 @@ import org.guanxi.common.definitions.Guanxi;
 import org.guanxi.common.definitions.Shibboleth;
 import org.guanxi.common.log.Log4JLoggerConfig;
 import org.guanxi.common.log.Log4JLogger;
-import org.guanxi.xal.saml_2_0.metadata.EntityDescriptorType;
+import org.guanxi.common.metadata.IdPMetadataManager;
+import org.guanxi.common.metadata.IdPMetadata;
 import org.guanxi.xal.saml_1_0.protocol.ResponseDocument;
 import org.guanxi.xal.saml_1_0.protocol.ResponseType;
 import org.guanxi.xal.saml_1_0.assertion.AssertionType;
@@ -34,8 +35,6 @@ import org.guanxi.xal.w3.xmldsig.SignatureType;
 import org.guanxi.xal.w3.xmldsig.KeyInfoType;
 import org.guanxi.sp.engine.X509Chain;
 import org.guanxi.sp.engine.Config;
-import org.guanxi.sp.engine.idp.IdPManager;
-import org.guanxi.sp.engine.idp.IdPMetadata;
 import org.apache.log4j.Logger;
 import org.apache.xmlbeans.XmlOptions;
 
@@ -137,7 +136,7 @@ public class IdPVerifier extends HandlerInterceptorAdapter implements ServletCon
     /* Find the IdP's metadata from our store. This is based on it's providerId, which is matched
      * against the entityID in the IdP's EntityDescriptor file.
      */
-    IdPMetadata idpMetadata = IdPManager.getManager(servletContext).getMetadata(idpProviderID);//(EntityDescriptorType)servletContext.getAttribute(idpProviderID);
+    IdPMetadata idpMetadata = IdPMetadataManager.getManager(servletContext).getMetadata(idpProviderID);//(EntityDescriptorType)servletContext.getAttribute(idpProviderID);
     if (idpMetadata == null) {
       log.error("Could not find IdP '" + idpProviderID + "' in the metadata repository");
       request.setAttribute("error", messages.getMessage("engine.error.no.idp.metadata", null, request.getLocale()));
@@ -188,7 +187,7 @@ public class IdPVerifier extends HandlerInterceptorAdapter implements ServletCon
    */
   private void dumpSAML(ResponseDocument samlResponseDoc) {
     // Sort out the namespaces for saving the Response
-    HashMap namespaces = new HashMap();
+    HashMap<String, String> namespaces = new HashMap<String, String>();
     namespaces.put(Shibboleth.NS_SAML_10_PROTOCOL, Shibboleth.NS_PREFIX_SAML_10_PROTOCOL);
     namespaces.put(Shibboleth.NS_SAML_10_ASSERTION, Shibboleth.NS_PREFIX_SAML_10_ASSERTION);
     XmlOptions xmlOptions = new XmlOptions();

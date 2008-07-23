@@ -26,6 +26,7 @@ import org.guanxi.common.Utils;
 import org.guanxi.common.EntityConnection;
 import org.guanxi.common.log.Log4JLoggerConfig;
 import org.guanxi.common.log.Log4JLogger;
+import org.guanxi.common.metadata.IdPMetadata;
 import org.guanxi.xal.saml_2_0.metadata.EntityDescriptorType;
 import org.guanxi.xal.saml2.metadata.GuardRoleDescriptorExtensions;
 import org.guanxi.xal.saml_1_0.protocol.*;
@@ -37,8 +38,6 @@ import org.guanxi.xal.soap.Body;
 import org.guanxi.xal.soap.Header;
 import org.guanxi.sp.Util;
 import org.guanxi.sp.engine.Config;
-import org.guanxi.sp.engine.idp.IdPManager;
-import org.guanxi.sp.engine.idp.IdPMetadata;
 import org.apache.log4j.Logger;
 import org.apache.xmlbeans.XmlException;
 import org.apache.xmlbeans.XmlOptions;
@@ -99,6 +98,7 @@ public class AuthConsumerService extends AbstractController implements ServletCo
   public void destroy() {
   } // destroy
 
+  @SuppressWarnings("unchecked")
   public ModelAndView handleRequestInternal(HttpServletRequest request, HttpServletResponse response) throws Exception {
     ModelAndView mAndV = new ModelAndView();
 
@@ -201,7 +201,7 @@ public class AuthConsumerService extends AbstractController implements ServletCo
     Node authNode = authHeader.getDomNode().appendChild(auth);
     authNode.appendChild(authNode.getOwnerDocument().importNode(((ResponseType)request.getAttribute(Config.REQUEST_ATTRIBUTE_SAML_RESPONSE)).getDomNode(), true));
 
-    HashMap namespaces = new HashMap();
+    HashMap<String, String> namespaces = new HashMap<String, String>();
     namespaces.put(Shibboleth.NS_SAML_10_PROTOCOL, Shibboleth.NS_PREFIX_SAML_10_PROTOCOL);
     namespaces.put(Shibboleth.NS_SAML_10_ASSERTION, Shibboleth.NS_PREFIX_SAML_10_ASSERTION);
     namespaces.put(Guanxi.NS_SP_NAME_IDENTIFIER, "gxsp");

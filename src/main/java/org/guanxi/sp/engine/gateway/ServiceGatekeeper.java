@@ -27,6 +27,7 @@ public class ServiceGatekeeper extends HandlerInterceptorAdapter implements Serv
   /** If set to true, attribute rules are not processed and the application is open to all */
   private boolean debug = false;
   /** The ServletContext, passed to us by Spring as we are ServletContextAware */
+  @SuppressWarnings("unused")
   private ServletContext servletContext = null;
 
   /**

@@ -157,6 +157,7 @@ public class RegisterGuardFormController extends SimpleFormController {
    * @param response Standard issue HttpServletResponse
    * @throws ServletException
    */
+  @SuppressWarnings("unchecked")
   public ModelAndView onSubmit(HttpServletRequest request, HttpServletResponse response,
                                Object command, BindException errors) throws ServletException {
 
@@ -491,7 +492,7 @@ public class RegisterGuardFormController extends SimpleFormController {
     // Add the GuanxiGuardDescriptor to the EntityDescriptor
     entityDescriptor.setRoleDescriptorArray(new RoleDescriptorType[] {role});
 
-    HashMap ns = new HashMap();
+    HashMap<String, String> ns = new HashMap<String, String>();
     ns.put("urn:guanxi:metadata", "gxmeta");
 
     XmlOptions xmlOptions = new XmlOptions();

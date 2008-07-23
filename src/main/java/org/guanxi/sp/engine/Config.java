@@ -44,6 +44,7 @@ public class Config implements ServletContextAware {
   private String trustStorePassword = null;
   private String guardsMetadataDirectory = null;
   private String idPMetadataDirectory = null;
+  private String metadataCacheFile = null;
 
   public void init() {
     keystore = servletContext.getRealPath(keystore);
@@ -138,5 +139,13 @@ public class Config implements ServletContextAware {
 
   public void setIdPMetadataDirectory(String idPMetadataDirectory) {
     this.idPMetadataDirectory = idPMetadataDirectory;
+  }
+
+  public String getMetadataCacheFile() {
+    return metadataCacheFile;
+  }
+
+  public void setMetadataCacheFile(String metadataCacheFile) {
+    this.metadataCacheFile = metadataCacheFile;
   }
 }

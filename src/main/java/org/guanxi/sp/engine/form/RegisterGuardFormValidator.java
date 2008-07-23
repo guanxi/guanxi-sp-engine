@@ -38,6 +38,7 @@ public class RegisterGuardFormValidator implements Validator, ServletContextAwar
     this.servletContext = servletContext;
   }
   
+  @SuppressWarnings("unchecked")
   public boolean supports(Class clazz) {
     return clazz.equals(RegisterGuard.class);
   }

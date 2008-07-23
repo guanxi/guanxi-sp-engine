@@ -20,14 +20,14 @@ import org.quartz.Job;
 import org.quartz.JobExecutionContext;
 import org.quartz.JobExecutionException;
 import org.apache.log4j.Logger;
-import org.guanxi.sp.engine.idp.IdPManager;
-import org.guanxi.sp.engine.idp.UKFederationIdPMetadata;
 import org.guanxi.xal.saml_2_0.metadata.EntitiesDescriptorDocument;
 import org.guanxi.xal.saml_2_0.metadata.EntityDescriptorType;
 import org.guanxi.common.Utils;
 import org.guanxi.common.GuanxiException;
 import org.guanxi.common.job.SAML2MetadataParserConfig;
 import org.guanxi.common.job.GuanxiJobConfig;
+import org.guanxi.common.metadata.IdPMetadataManager;
+import org.guanxi.common.metadata.IdPMetadataImpl;
 
 public class SAML2MetadataParser implements Job {
   public SAML2MetadataParser() {
@@ -47,18 +47,18 @@ public class SAML2MetadataParser implements Job {
     try {
       EntitiesDescriptorDocument doc;
       EntityDescriptorType[] entityDescriptors;
-      IdPManager manager;
+      IdPMetadataManager manager;
 
       doc = Utils.parseSAML2Metadata(metadataURL, config.getWho());
       entityDescriptors = doc.getEntitiesDescriptor().getEntityDescriptorArray();
 
-      manager = IdPManager.getManager(config.getServletContext());
+      manager = IdPMetadataManager.getManager(config.getServletContext());
       manager.removeMetadata(metadataURL);
 
       for (EntityDescriptorType currentMetadata : entityDescriptors) {
         if (currentMetadata.getIDPSSODescriptorArray().length > 0) {
           logger.info("Loading IdP metadata for : " + currentMetadata.getEntityID());
-          manager.addMetadata(metadataURL, new UKFederationIdPMetadata(currentMetadata));
+          manager.addMetadata(metadataURL, new IdPMetadataImpl(currentMetadata));
         }
       }
     }
