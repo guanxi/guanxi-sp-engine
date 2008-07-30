@@ -50,5 +50,7 @@
     <property name="logMaxFileSize"><value>5MB</value></property>
     <property name="logMaxBackupIndex"><value>5</value></property>
   </bean>
+  
+  <bean id="engineLogger" class="org.guanxi.common.log.Log4JLogger" />
 
 </beans>
