@@ -24,8 +24,6 @@ import org.guanxi.common.definitions.Shibboleth;
 import org.guanxi.common.GuanxiException;
 import org.guanxi.common.Utils;
 import org.guanxi.common.EntityConnection;
-import org.guanxi.common.log.Log4JLoggerConfig;
-import org.guanxi.common.log.Log4JLogger;
 import org.guanxi.common.metadata.IdPMetadata;
 import org.guanxi.xal.saml_2_0.metadata.EntityDescriptorType;
 import org.guanxi.xal.saml2.metadata.GuardRoleDescriptorExtensions;
@@ -62,14 +60,8 @@ import java.util.HashMap;
  * @author Marcin Mielnicki mielniczu@o2.pl - bug fixing
  */
 public class AuthConsumerService extends AbstractController implements ServletContextAware {
-  /** Our logger */
-  private Logger log = null;
-  /** The logger config */
-  private Log4JLoggerConfig loggerConfig = null;
-  /** The Logging setup to use */
-  private Log4JLogger logger = null;
-  /** The full/path name of our log file */
-  private String logFile = null;
+  private static final Logger logger = Logger.getLogger(AuthConsumerService.class.getName());
+  
   /** The view to redirect to if no error occur */
   private String podderView = null;
   /** The view to use to display any errors */
@@ -78,18 +70,6 @@ public class AuthConsumerService extends AbstractController implements ServletCo
   private String errorViewDisplayVar = null;
 
   public void init() {
-    try {
-      loggerConfig.setClazz(AuthConsumerService.class);
-
-      // Sort out the file paths for logging
-      loggerConfig.setLogConfigFile(getServletContext().getRealPath(loggerConfig.getLogConfigFile()));
-      loggerConfig.setLogFile(getServletContext().getRealPath(loggerConfig.getLogFile()));
-
-      // Get our logger
-      log = logger.initLogger(loggerConfig);
-    }
-    catch(GuanxiException e) {
-    }
   } //init
 
   /**
@@ -175,13 +155,13 @@ public class AuthConsumerService extends AbstractController implements ServletCo
       soapEnvelope = soapEnvelopeDoc.getEnvelope();
     }
     catch(GuanxiException ge) {
-      log.error("AA connection error", ge);
+      logger.error("AA connection error", ge);
       mAndV.setViewName(errorView);
       mAndV.getModel().put(errorViewDisplayVar, ge.getMessage());
       return mAndV;
     }
     catch(XmlException xe) {
-      log.error("AA SAML Response parse error", xe);
+      logger.error("AA SAML Response parse error", xe);
       mAndV.setViewName(errorView);
       mAndV.getModel().put(errorViewDisplayVar, xe.getMessage());
       return mAndV;
@@ -237,17 +217,17 @@ public class AuthConsumerService extends AbstractController implements ServletCo
       soapEnvelopeDoc = EnvelopeDocument.Factory.parse(soapResponseFromACS);
     }
     catch(GuanxiException ge) {
-      log.error("Guard ACS connection error", ge);
+      logger.error("Guard ACS connection error", ge);
       mAndV.setViewName(errorView);
       mAndV.getModel().put(errorViewDisplayVar, ge.getMessage());
       return mAndV;
     }
     catch(XmlException xe) {
-      log.error("Guard ACS response parse error", xe);
-      log.error("SOAP response:");
-      log.error("------------------------------------");
-      log.error(soapResponseFromACS);
-      log.error("------------------------------------");
+      logger.error("Guard ACS response parse error", xe);
+      logger.error("SOAP response:");
+      logger.error("------------------------------------");
+      logger.error(soapResponseFromACS);
+      logger.error("------------------------------------");
       mAndV.setViewName(errorView);
       mAndV.getModel().put(errorViewDisplayVar, xe.getMessage());
       return mAndV;
@@ -258,30 +238,6 @@ public class AuthConsumerService extends AbstractController implements ServletCo
     mAndV.getModel().put("podderURL", guardNativeMetadata.getPodderURL() + "?id=" + guardSession);
     return mAndV;
   } // handleRequestInternal
-
-  public Log4JLoggerConfig getLoggerConfig() {
-    return loggerConfig;
-  }
-
-  public void setLoggerConfig(Log4JLoggerConfig loggerConfig) {
-    this.loggerConfig = loggerConfig;
-  }
-
-  public Log4JLogger getLogger() {
-    return logger;
-  }
-
-  public void setLogger(Log4JLogger logger) {
-    this.logger = logger;
-  }
-
-  public String getLogFile() {
-    return logFile;
-  }
-
-  public void setLogFile(String logFile) {
-    this.logFile = logFile;
-  }
 
   public String getPodderView() {
     return podderView;

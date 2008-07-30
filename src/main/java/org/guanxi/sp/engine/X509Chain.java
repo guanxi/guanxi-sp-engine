@@ -32,7 +32,7 @@ import java.util.Vector;
 
 public class X509Chain {
   /** Our logger */
-  private static Logger log = Logger.getLogger(X509Chain.class);
+  private static final Logger logger = Logger.getLogger(X509Chain.class.getName());
 
   /** Full path of where our certificates are stored in SAML2 metadata format */
   private static String pathToCertsStore = null;
@@ -56,7 +56,7 @@ public class X509Chain {
       loadX509CertsFromMetadata();
     }
     catch(CertificateException ce) {
-      log.error(ce);
+      logger.error(ce);
     }
   }
 
@@ -145,7 +145,7 @@ public class X509Chain {
       }
     }
     catch(Exception e) {
-      log.error(e);
+      logger.error(e);
     }
 
     // Dump the harvested X509s into the certificate store
@@ -173,10 +173,10 @@ public class X509Chain {
       }
     }
     catch(CertificateException ce) {
-      log.error(ce);
+      logger.error(ce);
     }
     catch(IOException ioe) {
-      log.error(ioe);
+      logger.error(ioe);
     }
 
     X509Certificate[] x509Certificates = null;
