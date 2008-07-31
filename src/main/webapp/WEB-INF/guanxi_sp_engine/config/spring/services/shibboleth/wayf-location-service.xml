@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans
+                          http://www.springframework.org/schema/beans/spring-beans-2.0.xsd">
+
+  <!-- ********************************************************************************************* -->
+  <!-- The Engine's WAYF Location service. This is where Guards set up their sessions with
+       the Engine and obtain the WAYF location in return, once the Engine has verfied
+       them. -->
+  <bean id="wayfLocationService"
+        class="org.guanxi.sp.engine.service.shibboleth.WAYFLocationService"
+        init-method="init">
+    <!-- The list of Guard to WAYF mappings -->
+    <property name="wayfs">
+      <map>
+        <entry key="__DEFAULT__" value="https://localhost:8443/guanxi_wayf/WAYF" />
+        <entry key="protectedappguard" value="https://localhost2/guanxi_wayf/WAYF" />
+      </map>
+    </property>
+    <property name="viewJSP"><value>wayfLocationService</value></property>
+  </bean>
+</beans>

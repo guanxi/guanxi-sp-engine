@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE log4j:configuration SYSTEM "log4j.dtd">
+
+<log4j:configuration debug="false" threshold="all" xmlns:log4j='http://jakarta.apache.org/log4j/'>
+  <logger name="org.guanxi.sp.engine">
+    <level value="all" />
+  </logger>
+
+  <logger name="org.guanxi.sp.metadata">
+    <level value="all" />
+  </logger>
+
+  <logger name="org.guanxi.sp.policy">
+    <level value="all" />
+  </logger>
+</log4j:configuration>

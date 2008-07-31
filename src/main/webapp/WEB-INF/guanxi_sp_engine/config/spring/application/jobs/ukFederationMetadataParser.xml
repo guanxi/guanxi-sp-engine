@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans
+                           http://www.springframework.org/schema/beans/spring-beans-2.0.xsd">
+
+  <!--
+         cronLine format:
+           1 2 3 4 5 6 7
+            1 = seconds (0-59)
+            2 = minutes (0-59)
+            3 = hours (0-23)
+            4 = day of month (1-31)
+            5 = month (1-12 or JAN-DEC)
+            6 = day of week (1-7 or SUN-SAT)
+            7 = year (1970-2099)
+
+          cronLine wildcards:
+            * = any value
+            ? = no specific value
+
+          cronLine examples:
+            10 * * * * ? start after 10 seconds, run every minute, every hour, every day, every month
+            0/10 * 10,11,12 * * ? start immediately, repeat every 10 seconds, every minute,
+                                  for hours 10,11,12 only, every day, every month
+            0 0 12 * * ? start at 12pm (noon) every day
+
+            There's a guide to cron formats here:
+            http://www.opensymphony.com/quartz/wikidocs/CronTriggers%20Tutorial.html
+  -->
+
+  <bean id="ukFederationMetadataParser" class="org.guanxi.common.job.SAML2MetadataParserConfig" init-method="init">
+    <property name="jobClass"><value>org.guanxi.sp.engine.job.SAML2MetadataParser</value></property>
+    <property name="key"><value>ukFederationMetadataParserSP</value></property>
+    <property name="cronLine"><value>10 0/59 * * * ?</value></property>
+    <property name="startImmediately"><value>true</value></property>
+    <property name="metadataURL">
+      <value>http://metadata.ukfederation.org.uk/ukfederation-metadata.xml</value>
+    </property>
+    <property name="who"><value>Guanxi::Engine::MetadataParser</value></property>
+    <property name="logger"><ref bean="engineLogger"/></property>
+    <!-- The configuration to use with the logging engine -->
+    <property name="loggerConfig"><ref bean="ukFederationMetadataParserLoggerConfig"/></property>
+  </bean>
+
+  <bean id="ukFederationMetadataParserLoggerConfig" class="org.guanxi.common.log.Log4JLoggerConfig">
+    <property name="logFile"><value>/WEB-INF/guanxi_sp_engine/logs/uk-fed-metadata.log</value></property>
+    <property name="logConfigFile"><value>/WEB-INF/guanxi_sp_engine/config/sp-log4j.xml</value></property>
+    <property name="logLayout"><value>%d{dd MMMM yyyy HH:mm:ss} - %m%n</value></property>
+    <property name="logMaxFileSize"><value>5MB</value></property>
+    <property name="logMaxBackupIndex"><value>5</value></property>
+  </bean>
+  
+  <bean id="engineLogger" class="org.guanxi.common.log.Log4JLogger" />
+
+</beans>
