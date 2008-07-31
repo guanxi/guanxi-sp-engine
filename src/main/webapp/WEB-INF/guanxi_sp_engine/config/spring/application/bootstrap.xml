@@ -5,10 +5,6 @@
                            http://www.springframework.org/schema/beans/spring-beans-2.0.xsd">
 
   <bean id="boostrap" class="org.guanxi.sp.engine.Bootstrap" init-method="init">
-    <!-- The logging engine to use -->
-    <property name="logger"><ref bean="engineLogger"/></property>
-    <!-- The configuration to use with the logging engine -->
-    <property name="loggerConfig"><ref bean="bootstrapLoggerConfig"/></property>
     <!-- Engine config -->
     <property name="config"><ref bean="engineConfig"/></property>
     <property name="gxJobs">
@@ -17,15 +13,5 @@
       </list>
     </property>
   </bean>
-
-  <bean id="bootstrapLoggerConfig" class="org.guanxi.common.log.Log4JLoggerConfig">
-    <property name="logFile"><value>/WEB-INF/guanxi_sp_engine/logs/bootstrap.log</value></property>
-    <property name="logConfigFile"><value>/WEB-INF/guanxi_sp_engine/config/sp-log4j.xml</value></property>
-    <property name="logLayout"><value>%d{dd MMMM yyyy HH:mm:ss} - %m%n</value></property>
-    <property name="logMaxFileSize"><value>5MB</value></property>
-    <property name="logMaxBackupIndex"><value>5</value></property>
-  </bean>
-
-  <bean id="engineLogger" class="org.guanxi.common.log.Log4JLogger" />
 
 </beans>

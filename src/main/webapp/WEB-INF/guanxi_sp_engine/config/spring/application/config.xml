@@ -21,5 +21,7 @@
 
     <property name="guardsMetadataDirectory"><value>/WEB-INF/guanxi_sp_engine/config/metadata/guards</value></property>
     <property name="idPMetadataDirectory"><value>/WEB-INF/guanxi_sp_engine/config/metadata/idp</value></property>
+    <property name="metadataCacheFile">
+    	<value>/WEB-INF/guanxi_sp_engine/config/metadata/metadata-cache.xml</value></property>
   </bean>
 </beans>

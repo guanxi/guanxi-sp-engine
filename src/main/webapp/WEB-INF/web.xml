@@ -15,7 +15,7 @@
 
   <context-param>
     <param-name>log4jConfigLocation</param-name>
-    <param-value>/WEB-INF/guanxi_sp_engine/config/spring-log4j.properties</param-value>
+    <param-value>/WEB-INF/classes/log4j.properties</param-value>
   </context-param>
 
   <listener>
@@ -48,7 +48,6 @@
       <param-name>contextConfigLocation</param-name>
       <param-value>
         WEB-INF/guanxi_sp_engine/config/spring/ui.xml
-        WEB-INF/guanxi_sp_engine/config/spring/common.xml
         WEB-INF/guanxi_sp_engine/config/spring/security/*.xml
         WEB-INF/guanxi_sp_engine/config/spring/services/**/*.xml
         WEB-INF/guanxi_sp_engine/config/spring/profiles/**/*.xml

@@ -1,1 +1,0 @@
-/WEB-INF/guanxi_sp_engine/logs

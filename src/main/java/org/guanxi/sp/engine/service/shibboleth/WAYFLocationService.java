@@ -20,8 +20,6 @@ import org.springframework.web.servlet.mvc.AbstractController;
 import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.context.ServletContextAware;
 
-import org.guanxi.common.log.Log4JLogger;
-import org.guanxi.common.log.Log4JLoggerConfig;
 import org.guanxi.common.GuanxiException;
 import org.guanxi.common.Errors;
 import org.guanxi.common.EntityConnection;
@@ -41,33 +39,16 @@ import java.io.FileOutputStream;
 import java.io.FileInputStream;
 
 public class WAYFLocationService extends AbstractController implements ServletContextAware {
+  private static final Logger logger = Logger.getLogger(WAYFLocationService.class.getName());
+  
   /** The marker in our WAYF location map for the one to use as the default location */
   private static final String DEFAULT_WAYF_MARKER = "__DEFAULT__";
-
-  /** Our logger */
-  private Logger log = null;
-  /** The logger config */
-  private Log4JLoggerConfig loggerConfig = null;
-  /** The Logging setup to use */
-  private Log4JLogger logger = null;
   /** The list of Guard to WAYF location mappings */
   private HashMap<String, String> wayfs = null;
   /** The view page to use */
   private String viewJSP = null;
 
   public void init() {
-    try {
-      loggerConfig.setClazz(WAYFLocationService.class);
-      
-      // Sort out the file paths for logging
-      loggerConfig.setLogConfigFile(getServletContext().getRealPath(loggerConfig.getLogConfigFile()));
-      loggerConfig.setLogFile(getServletContext().getRealPath(loggerConfig.getLogFile()));
-
-      // Get our logger
-      log = logger.initLogger(loggerConfig);
-    }
-    catch(GuanxiException me) {
-    }
   }
 
   /**
@@ -104,14 +85,14 @@ public class WAYFLocationService extends AbstractController implements ServletCo
     mAndV.setViewName(viewJSP);
 
     if ((guardID == null) || (sessionID == null)) {
-      log.error("Missing param");
+      logger.error("Missing param");
       mAndV.getModel().put("wayfLocation", Errors.MISSING_PARAM);
       return mAndV;
     }
 
     Config config = (Config)getServletContext().getAttribute(Guanxi.CONTEXT_ATTR_ENGINE_CONFIG);
     if (config == null) {
-      log.error("Guard '" + guardID + "' wants WAYF location but Engine hasn't finished initialisation");
+      logger.error("Guard '" + guardID + "' wants WAYF location but Engine hasn't finished initialisation");
       mAndV.getModel().put("wayfLocation", Errors.ENGINE_CURRENTLY_INITIALISING);
       return mAndV;
     }
@@ -119,7 +100,7 @@ public class WAYFLocationService extends AbstractController implements ServletCo
     // Get the Guard's metadata, previously loaded by the Bootstrapper
     EntityDescriptorType guardEntityDescriptor = (EntityDescriptorType)getServletContext().getAttribute(guardID);
     if (guardEntityDescriptor == null) {
-      log.error("Guard '" + guardID + "' not found in metadata repository");
+      logger.error("Guard '" + guardID + "' not found in metadata repository");
       mAndV.getModel().put("wayfLocation", Errors.ENGINE_WAYF_LOCATION_NO_GUARD_ID);
       return mAndV;
     }
@@ -140,7 +121,7 @@ public class WAYFLocationService extends AbstractController implements ServletCo
       // ...and see if it's using HTTPS
       try {
         if (Util.isGuardSecure(guardExt)) {
-          log.info("Probing for Guard certificate for : " + guardID);
+          logger.info("Probing for Guard certificate for : " + guardID);
 
           /* If the Guard is using HTTPS then we'll need to connect to it, extract it's
            * certificate and add it to our truststore. To do that, we'll need to use our
@@ -168,7 +149,7 @@ public class WAYFLocationService extends AbstractController implements ServletCo
           // Mark Guard as having been checked for secure comms
           setAttribute(guardID + "SECURE_CHECK_DONE_SP", "SECURE");
 
-          log.info("Added : " + guardID + " to truststore");
+          logger.info("Added : " + guardID + " to truststore");
         }
         else {
           // Mark Guard as having been checked for secure comms
@@ -176,7 +157,7 @@ public class WAYFLocationService extends AbstractController implements ServletCo
         }
       }
       catch(Exception e) {
-        log.error("Failed to probe Guard : " + guardID + " for cert : ", e);
+        logger.error("Failed to probe Guard : " + guardID + " for cert : ", e);
         mAndV.getModel().put("wayfLocation", Errors.GUARD_CERT_PROBE_FAILED);
         return mAndV;
       }
@@ -197,14 +178,14 @@ public class WAYFLocationService extends AbstractController implements ServletCo
       verificationResult = verifierService.getContentAsString();
     }
     catch(GuanxiException ge) {
-      log.error("Guard '" + guardID + "' error during verification : ", ge);
+      logger.error("Guard '" + guardID + "' error during verification : ", ge);
       mAndV.getModel().put("wayfLocation", Errors.ENGINE_WAYF_LOCATION_GUARD_FAILED_VERIFICATION);
       return mAndV;
     }
 
     // Did the Guard verify the session?
     if (!verificationResult.equals(Guanxi.SESSION_VERIFIER_RETURN_VERIFIED)) {
-      log.error("Guard '" + guardID + "' error during verification : " + verificationResult);
+      logger.error("Guard '" + guardID + "' error during verification : " + verificationResult);
       mAndV.getModel().put("wayfLocation", Errors.ENGINE_WAYF_LOCATION_GUARD_FAILED_VERIFICATION);
       return mAndV;
     }
@@ -229,7 +210,7 @@ public class WAYFLocationService extends AbstractController implements ServletCo
     // Guard either gets its own WAYF or the default one for all other Guards
     mAndV.getModel().put("wayfLocation", (wayfForGuard != null) ? wayfForGuard : defaultWAYFLocation);
 
-    log.info("Guard '" + guardID + "' successfully obtained WAYF location : " + ((wayfForGuard != null) ? wayfForGuard : defaultWAYFLocation));
+    logger.info("Guard '" + guardID + "' successfully obtained WAYF location : " + ((wayfForGuard != null) ? wayfForGuard : defaultWAYFLocation));
 
     return mAndV;
   }
@@ -255,14 +236,10 @@ public class WAYFLocationService extends AbstractController implements ServletCo
   }
 
   // Setters
-  public void setLoggerConfig(Log4JLoggerConfig loggerConfig) { this.loggerConfig = loggerConfig; }
-  public void setLogger(Log4JLogger logger) { this.logger = logger; }
   public void setWayfs(HashMap<String, String> wayfs) { this.wayfs = wayfs; }
   public void setViewJSP(String viewJSP) { this.viewJSP = viewJSP; }
 
   // Getters
-  public Log4JLoggerConfig getLoggerConfig() { return loggerConfig; }
-  public Log4JLogger getLogger() { return logger; }
   public HashMap<String, String> getWayfs() { return wayfs; }
   public String getViewJSP() { return viewJSP; }
 }

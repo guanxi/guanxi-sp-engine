@@ -20,11 +20,8 @@ import org.springframework.web.servlet.handler.HandlerInterceptorAdapter;
 import org.springframework.web.context.ServletContextAware;
 import org.springframework.context.MessageSource;
 import org.guanxi.common.Utils;
-import org.guanxi.common.GuanxiException;
 import org.guanxi.common.definitions.Guanxi;
 import org.guanxi.common.definitions.Shibboleth;
-import org.guanxi.common.log.Log4JLoggerConfig;
-import org.guanxi.common.log.Log4JLogger;
 import org.guanxi.common.metadata.IdPMetadataManager;
 import org.guanxi.common.metadata.IdPMetadata;
 import org.guanxi.xal.saml_1_0.protocol.ResponseDocument;
@@ -52,14 +49,9 @@ import java.util.HashMap;
  * The interceptor will use the metadata registered with the Engine to make this decision.
  */
 public class IdPVerifier extends HandlerInterceptorAdapter implements ServletContextAware {
+  private static final Logger logger = Logger.getLogger(IdPVerifier.class.getName());
   /** The ServletContext, passed to us by Spring as we are ServletContextAware */
   private ServletContext servletContext = null;
-  /** Our logger */
-  private Logger log = null;
-  /** The logger config */
-  private Log4JLoggerConfig loggerConfig = null;
-  /** The Logging setup to use */
-  private Log4JLogger logger = null;
   /** The localised messages to use */
   private MessageSource messages = null;
   /** The error page to use */
@@ -72,18 +64,6 @@ public class IdPVerifier extends HandlerInterceptorAdapter implements ServletCon
    * Initialise the interceptor
    */
   public void init() {
-    try {
-      loggerConfig.setClazz(IdPVerifier.class);
-
-      // Sort out the file paths for logging
-      loggerConfig.setLogConfigFile(servletContext.getRealPath(loggerConfig.getLogConfigFile()));
-      loggerConfig.setLogFile(servletContext.getRealPath(loggerConfig.getLogFile()));
-
-      // Get our logger
-      log = logger.initLogger(loggerConfig);
-    }
-    catch(GuanxiException ge) {
-    }
   }
 
   /**
@@ -103,7 +83,7 @@ public class IdPVerifier extends HandlerInterceptorAdapter implements ServletCon
 
     try {
       if (request.getParameter("SAMLResponse") == null) {
-        log.error("Could not process the AuthenticatonStatement from the IdP as there isn't one!");
+        logger.error("Could not process the AuthenticatonStatement from the IdP as there isn't one!");
         request.setAttribute("error", messages.getMessage("engine.error.cannot.parse.authnstmnt", null, request.getLocale()));
         request.setAttribute("message", messages.getMessage("engine.error.no.authn.stmnt", null, request.getLocale()));
         request.getRequestDispatcher(errorPage).forward(request, response);
@@ -126,7 +106,7 @@ public class IdPVerifier extends HandlerInterceptorAdapter implements ServletCon
                            authStatement.getSubject().getNameIdentifier().getStringValue());
     }
     catch(Exception e) {
-      log.error("Could not process the AuthenticatonStatement from the IdP", e);
+      logger.error("Could not process the AuthenticatonStatement from the IdP", e);
       request.setAttribute("error", messages.getMessage("engine.error.cannot.parse.authnstmnt", null, request.getLocale()));
       request.setAttribute("message", e.getMessage());
       request.getRequestDispatcher(errorPage).forward(request, response);
@@ -138,7 +118,7 @@ public class IdPVerifier extends HandlerInterceptorAdapter implements ServletCon
      */
     IdPMetadata idpMetadata = IdPMetadataManager.getManager(servletContext).getMetadata(idpProviderID);//(EntityDescriptorType)servletContext.getAttribute(idpProviderID);
     if (idpMetadata == null) {
-      log.error("Could not find IdP '" + idpProviderID + "' in the metadata repository");
+      logger.error("Could not find IdP '" + idpProviderID + "' in the metadata repository");
       request.setAttribute("error", messages.getMessage("engine.error.no.idp.metadata", null, request.getLocale()));
       request.setAttribute("message", idpProviderID);
       request.getRequestDispatcher(errorPage).forward(request, response);
@@ -159,7 +139,7 @@ public class IdPVerifier extends HandlerInterceptorAdapter implements ServletCon
 
     // If there's no signature on the Response from the IdP, barf
     if (sigType == null) {
-      log.error("No signature from IdP");
+      logger.error("No signature from IdP");
       request.setAttribute("error", messages.getMessage("engine.error.no.idp.signtaure", null, request.getLocale()));
       request.setAttribute("message", idpProviderID);
       request.getRequestDispatcher(errorPage).forward(request, response);
@@ -170,7 +150,7 @@ public class IdPVerifier extends HandlerInterceptorAdapter implements ServletCon
     KeyInfoType keyInfoType = sigType.getKeyInfo();
     X509Chain x509Chain = (X509Chain)servletContext.getAttribute(Guanxi.CONTEXT_ATTR_X509_CHAIN);
     if (!x509Chain.verifyChain(keyInfoType)) {
-      log.error("Can't find a certificate for the IdP");
+      logger.error("Can't find a certificate for the IdP");
       request.setAttribute("error", messages.getMessage("engine.error.idp.sig.failed.verification", null, request.getLocale()));
       request.setAttribute("message", idpProviderID);
       request.getRequestDispatcher(errorPage).forward(request, response);
@@ -206,14 +186,8 @@ public class IdPVerifier extends HandlerInterceptorAdapter implements ServletCon
       // Do I care?
     }
     
-    log.debug(sw.toString());
+    logger.debug(sw.toString());
   }
-
-  public void setLoggerConfig(Log4JLoggerConfig loggerConfig) { this.loggerConfig = loggerConfig; }
-  public Log4JLoggerConfig getLoggerConfig() { return loggerConfig; }
-
-  public void setLogger(Log4JLogger logger) { this.logger = logger; }
-  public Log4JLogger getLogger() { return logger; }
 
   public void setMessages(MessageSource messages) { this.messages = messages; }
   

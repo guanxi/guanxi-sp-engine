@@ -27,8 +27,6 @@ import org.springframework.context.event.ContextStartedEvent;
 import org.springframework.context.event.ContextStoppedEvent;
 import org.apache.log4j.Logger;
 import org.apache.xmlbeans.XmlException;
-import org.guanxi.common.log.Log4JLoggerConfig;
-import org.guanxi.common.log.Log4JLogger;
 import org.guanxi.common.metadata.IdPMetadataManager;
 import org.guanxi.common.metadata.IdPMetadataImpl;
 import org.guanxi.common.GuanxiException;
@@ -54,12 +52,8 @@ import java.io.OutputStream;
 import java.text.ParseException;
 
 public class Bootstrap implements ApplicationListener, ApplicationContextAware, ServletContextAware {
-  /** Our logger */
-  private Logger log = null;
-  /** The logger config */
-  private Log4JLoggerConfig loggerConfig = null;
-  /** The Logging setup to use */
-  private Log4JLogger logger = null;
+  private static final Logger logger = Logger.getLogger(Bootstrap.class.getName());
+  
   /** Spring ApplicationContext */
   @SuppressWarnings("unused")
   private ApplicationContext applicationContext = null;
@@ -81,15 +75,6 @@ public class Bootstrap implements ApplicationListener, ApplicationContextAware, 
   public void init() {
     try {
       File keyStoreFile, trustStoreFile;
-      
-      loggerConfig.setClazz(Bootstrap.class);
-
-      // Sort out the file paths for logging
-      loggerConfig.setLogConfigFile(servletContext.getRealPath(loggerConfig.getLogConfigFile()));
-      loggerConfig.setLogFile(servletContext.getRealPath(loggerConfig.getLogFile()));
-
-      // Get our logger
-      log = logger.initLogger(loggerConfig);
 
       /* If we try to add the BouncyCastle provider but another Guanxi::SP running
        * in another webapp in the same container has already done so, then we'll get
@@ -113,7 +98,7 @@ public class Bootstrap implements ApplicationListener, ApplicationContextAware, 
                                             config.getCertificateAlias());
         }
         catch(GuanxiException ge) {
-          log.error("Can't create self signed keystore - secure Guard comms won't be available : ", ge);
+          logger.error("Can't create self signed keystore - secure Guard comms won't be available : ", ge);
         }
       }
 
@@ -126,7 +111,7 @@ public class Bootstrap implements ApplicationListener, ApplicationContextAware, 
                                     config.getTrustStorePassword());
         }
         catch(GuanxiException ge) {
-          log.error("Can't create truststore - secure comms won't be available : ", ge);
+          logger.error("Can't create truststore - secure comms won't be available : ", ge);
         }
       }
 
@@ -138,7 +123,7 @@ public class Bootstrap implements ApplicationListener, ApplicationContextAware, 
       startJobs();
     }
     catch(GuanxiException ge) {
-      log.error("Issue during the initialization of the Bootstrap : ", ge);
+      logger.error("Issue during the initialization of the Bootstrap : ", ge);
     }
   }
 
@@ -211,7 +196,7 @@ public class Bootstrap implements ApplicationListener, ApplicationContextAware, 
       // Add the X509 stuff to the context
       servletContext.setAttribute(Guanxi.CONTEXT_ATTR_X509_CHAIN, x509Chain);
       
-      log.info("init : " + config.getId());
+      logger.info("init : " + config.getId());
     }
     
     /*
@@ -229,7 +214,7 @@ public class Bootstrap implements ApplicationListener, ApplicationContextAware, 
         loadMetadata();
       }
       catch ( Exception e ) {
-        log.error("Unable to load cached metadata", e);
+        logger.error("Unable to load cached metadata", e);
       }
     }
     
@@ -246,7 +231,7 @@ public class Bootstrap implements ApplicationListener, ApplicationContextAware, 
         saveMetadata();
       }
       catch ( Exception e ) {
-        log.error("Unable to save metadata to cache", e);
+        logger.error("Unable to save metadata to cache", e);
       }
     }
   }
@@ -354,11 +339,11 @@ public class Bootstrap implements ApplicationListener, ApplicationContextAware, 
       }
       catch ( Exception e ) {
         // If we get here then the Engine won't know anything about the Guard
-        log.error("Error while loading Guard metadata : " + currentGuardFile.getAbsolutePath(), e);
+        logger.error("Error while loading Guard metadata : " + currentGuardFile.getAbsolutePath(), e);
       }
     }
 
-    log.info("Loaded " + loaded + " of " + guardDirectories.length + " Guard metadata objects");
+    logger.info("Loaded " + loaded + " of " + guardDirectories.length + " Guard metadata objects");
   } // loadGuardMetadata
 
   /**
@@ -395,11 +380,11 @@ public class Bootstrap implements ApplicationListener, ApplicationContextAware, 
         IdPMetadataManager.getManager(servletContext).setMetadata(currentIdPFile.getCanonicalPath(), new IdPMetadataImpl(idpDescriptor));
       }
       catch ( Exception e ) {
-        log.error("Error while loading IdP metadata object : " + currentIdPFile.getAbsolutePath(), e);
+        logger.error("Error while loading IdP metadata object : " + currentIdPFile.getAbsolutePath(), e);
         throw new GuanxiException(e);
       }
     }
-    log.info("Loaded " + idpFiles.length + " IdP metadata objects");
+    logger.info("Loaded " + idpFiles.length + " IdP metadata objects");
   } // loadIdPMetadata
 
   /**
@@ -416,7 +401,7 @@ public class Bootstrap implements ApplicationListener, ApplicationContextAware, 
       scheduler.start();
 
       for (GuanxiJobConfig gxJob : gxJobs) {
-        log.info("Registering job : " + gxJob.getKey() + " : " + gxJob.getJobClass());
+        logger.info("Registering job : " + gxJob.getKey() + " : " + gxJob.getJobClass());
 
         // Need a new JobDetail to hold custom data to send to the job we're controlling
         JobDetail jobDetail = new JobDetail(gxJob.getKey(), Scheduler.DEFAULT_GROUP, Class.forName(gxJob.getJobClass()));
@@ -443,13 +428,13 @@ public class Bootstrap implements ApplicationListener, ApplicationContextAware, 
       }
     }
     catch(ClassNotFoundException cnfe) {
-      log.error("Error locating job class", cnfe);
+      logger.error("Error locating job class", cnfe);
     }
     catch(SchedulerException se) {
-      log.error("Job scheduling error", se);
+      logger.error("Job scheduling error", se);
     }
     catch(ParseException pe) {
-      log.error("Error parsing job cronline", pe);
+      logger.error("Error parsing job cronline", pe);
     }
   }
   
@@ -471,36 +456,6 @@ public class Bootstrap implements ApplicationListener, ApplicationContextAware, 
    */
   public void setServletContext(ServletContext servletContext) {
     this.servletContext = servletContext;
-  }
-
-  /**
-   * Sets the logger configuration
-   * @param loggerConfig
-   */
-  public void setLoggerConfig(Log4JLoggerConfig loggerConfig) { 
-    this.loggerConfig = loggerConfig; 
-  }
-  /**
-   * Returns the logger configuration
-   * @return
-   */
-  public Log4JLoggerConfig getLoggerConfig() { 
-    return loggerConfig; 
-  }
-
-  /**
-   * Sets the logger
-   * @param logger
-   */
-  public void setLogger(Log4JLogger logger) { 
-    this.logger = logger; 
-  }
-  /**
-   * Returns the logger
-   * @return
-   */
-  public Log4JLogger getLogger() { 
-    return logger; 
   }
 
   /**

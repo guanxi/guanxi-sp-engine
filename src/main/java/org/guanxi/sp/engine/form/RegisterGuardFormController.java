@@ -23,12 +23,7 @@ import org.bouncycastle.x509.extension.AuthorityKeyIdentifierStructure;
 import org.bouncycastle.asn1.x509.*;
 import org.bouncycastle.openssl.PEMWriter;
 import org.apache.log4j.Logger;
-import org.apache.log4j.PatternLayout;
-import org.apache.log4j.RollingFileAppender;
-import org.apache.log4j.xml.DOMConfigurator;
 import org.apache.xmlbeans.XmlOptions;
-import org.guanxi.common.GuanxiException;
-import org.guanxi.common.definitions.Logging;
 import org.guanxi.common.definitions.Guanxi;
 import org.guanxi.common.filters.FileName;
 import org.guanxi.common.filters.RFC2253;
@@ -44,7 +39,6 @@ import org.springframework.context.MessageSource;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.ServletException;
-import javax.servlet.ServletContext;
 import javax.security.auth.x500.X500Principal;
 import java.io.*;
 import java.security.*;
@@ -76,7 +70,7 @@ import java.util.*;
  */
 public class RegisterGuardFormController extends SimpleFormController {
   /** Our logger */
-  private static Logger log = Logger.getLogger(RegisterGuardFormController.class);
+  private static final Logger logger = Logger.getLogger(RegisterGuardFormController.class.getName());
   /** Our config object */
   private Config config = null;
   /** Contains the full path to the keystore to be used for signing CSRs */
@@ -110,12 +104,6 @@ public class RegisterGuardFormController extends SimpleFormController {
    * @throws ServletException if an error occurs
    */
   public void init() throws ServletException {
-    try {
-      initLogger(getServletContext());
-    }
-    catch(GuanxiException ge) {
-      throw new ServletException(ge);
-    }
 
     // Get the config
     config = (Config)getServletContext().getAttribute(Guanxi.CONTEXT_ATTR_ENGINE_CONFIG);
@@ -237,7 +225,7 @@ public class RegisterGuardFormController extends SimpleFormController {
       KeyStore rootKS = loadRootKeyStore();
       X509Certificate rootCert = (X509Certificate)rootKS.getCertificate(rootCAKeystoreAlias);
       if (rootCert == null) {
-        log.error("Can't get root certificate from CA keystore");
+        logger.error("Can't get root certificate from CA keystore");
         return null;
       }
       PrivateKey rootPrivKey = (PrivateKey)rootKS.getKey(rootCAKeystoreAlias, rootCAKeystorePassword.toCharArray());
@@ -252,7 +240,7 @@ public class RegisterGuardFormController extends SimpleFormController {
       return caBean;
     }
     catch(Exception e) {
-      log.error(e);
+      logger.error(e);
       return null;
     }
   }
@@ -275,7 +263,7 @@ public class RegisterGuardFormController extends SimpleFormController {
       ks.store(new FileOutputStream(ksFileName), password.toCharArray());
     }
     catch(Exception e) {
-      log.error(e);
+      logger.error(e);
     }
   }
 
@@ -306,13 +294,13 @@ public class RegisterGuardFormController extends SimpleFormController {
                                               privkey);
       }
       else {
-        log.error("Unrecognised key type : " + keyType);
+        logger.error("Unrecognised key type : " + keyType);
         return null;
       }
 
     }
     catch(Exception e) {
-      log.error(e);
+      logger.error(e);
       return null;
     }
   }
@@ -359,7 +347,7 @@ public class RegisterGuardFormController extends SimpleFormController {
       return new X509Certificate[] { issuedCert, rootCert };
     }
     catch(Exception e) {
-      log.error(e);
+      logger.error(e);
       return null;
     }
   }
@@ -384,7 +372,7 @@ public class RegisterGuardFormController extends SimpleFormController {
       return ks;
     }
     catch(Exception e) {
-      log.error(e);
+      logger.error(e);
       return null;
     }
   }
@@ -406,14 +394,14 @@ public class RegisterGuardFormController extends SimpleFormController {
       pemWriter.close();
     }
     catch(Exception e) {
-      log.error(e);
+      logger.error(e);
       try {
         request.setAttribute("ERROR_ID", "ID_NEED_ALL_PARAMETERS");
         request.setAttribute("ERROR_MESSAGE", e.getMessage());
         request.getRequestDispatcher("/guanxi_sp/sp_error.jsp").forward(request, response);
       }
       catch(Exception ex) {
-        log.error(e);
+        logger.error(e);
       }
     }
   }
@@ -506,30 +494,8 @@ public class RegisterGuardFormController extends SimpleFormController {
       entityDoc.save(new File(guardDir + File.separator + FileName.encode(form.getGuardid().toLowerCase()) + ".xml"), xmlOptions);
     }
     catch(Exception e) {
-      log.error(e);
+      logger.error(e);
     }
-  }
-
-  private void initLogger(ServletContext context) throws GuanxiException {
-    DOMConfigurator.configure(context.getRealPath("/WEB-INF/guanxi_sp_engine/config/sp-log4j.xml"));
-
-    PatternLayout defaultLayout = new PatternLayout(Logging.DEFAULT_LAYOUT);
-
-    RollingFileAppender rollingFileAppender = new RollingFileAppender();
-    rollingFileAppender.setName("GuanxiEngine");
-    try {
-      rollingFileAppender.setFile(context.getRealPath(Logging.DEFAULT_SP_ENGINE_LOG_DIR + "guanxi-sp-engine-ca.log"), true, false, 0);
-    }
-    catch(IOException ioe) {
-      throw new GuanxiException(ioe);
-    }
-    rollingFileAppender.setMaxFileSize("1MB");
-    rollingFileAppender.setMaxBackupIndex(5);
-    rollingFileAppender.setLayout(defaultLayout);
-
-    log.removeAllAppenders();
-    log.addAppender(rollingFileAppender);
-    log.setAdditivity(false);
   }
 
   /**
@@ -547,12 +513,12 @@ public class RegisterGuardFormController extends SimpleFormController {
       // Bung the Guard's SAML2 EntityDescriptor in the session under the Guard's entityID
       getServletContext().setAttribute(entityDescriptor.getEntityID(), entityDescriptor);
 
-      log.info("CA loaded new Guard : " + entityDescriptor.getEntityID());
+      logger.info("CA loaded new Guard : " + entityDescriptor.getEntityID());
 
       return true;
     }
     catch(Exception e) {
-      log.error("CA could not load new Guard", e);
+      logger.error("CA could not load new Guard", e);
       return false;
     }
   }
