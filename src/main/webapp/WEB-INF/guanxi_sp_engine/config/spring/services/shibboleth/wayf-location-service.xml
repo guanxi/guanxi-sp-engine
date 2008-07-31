@@ -14,8 +14,8 @@
     <!-- The list of Guard to WAYF mappings -->
     <property name="wayfs">
       <map>
-        <entry key="__DEFAULT__" value="https://localhost:8443/guanxi_wayf/WAYF" />
-        <entry key="protectedappguard" value="https://localhost2/guanxi_wayf/WAYF" />
+        <entry key="__DEFAULT__" value="http://localhost/guanxi_wayf/WAYF" />
+        <entry key="protectedappguard" value="http://localhost2/guanxi_wayf/WAYF" />
       </map>
     </property>
     <property name="viewJSP"><value>wayfLocationService</value></property>
