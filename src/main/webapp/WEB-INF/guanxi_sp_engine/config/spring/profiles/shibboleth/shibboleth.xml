@@ -29,4 +29,14 @@
       </map>
     </property>
   </bean>
+  
+  <bean class="org.springframework.web.servlet.handler.SimpleUrlHandlerMapping">
+    <property name="alwaysUseFullPath"><value>true</value></property>
+
+    <property name="urlMap">
+      <map>
+        <entry key="/shibb/process"><ref bean="authConsumerService"/></entry>
+      </map>
+    </property>
+  </bean>
 </beans>
