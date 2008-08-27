@@ -29,16 +29,12 @@
             http://www.opensymphony.com/quartz/wikidocs/CronTriggers%20Tutorial.html
   -->
 
-  <bean id="ukFederationMetadataParser" class="org.guanxi.common.job.SAML2MetadataParserConfig" init-method="init">
-    <property name="jobClass"><value>org.guanxi.sp.engine.job.SAML2MetadataParser</value></property>
-    <property name="key"><value>ukFederationMetadataParserSP</value></property>
-    <property name="cronLine"><value>10 0/59 * * * ?</value></property>
+  <bean id="hibernateMetadataLoader" class="org.guanxi.sp.engine.job.hibernate.MetadataLoaderConfig" init-method="init">
+    <property name="jobClass"><value>org.guanxi.sp.engine.job.hibernate.MetadataLoader</value></property>
+    <property name="key"><value>hibernateMetadataLoader</value></property>
+    <property name="cronLine"><value>0 0 * * * ?</value></property>
     <property name="startImmediately"><value>true</value></property>
-    <property name="metadataURL">
-      <value>http://metadata.ukfederation.org.uk/ukfederation-metadata.xml</value>
-    </property>
-    <property name="who"><value>Guanxi::Engine::MetadataParser</value></property>
-    <property name="loggerConfigurationFile"><value>/WEB-INF/guanxi_sp_engine/config/spring/application/jobs/ukFederationMetadataParser.properties</value></property>
+    <property name="loggerConfigurationFile"><value>/WEB-INF/guanxi_sp_engine/config/spring/application/jobs/hibernateMetadataLoader.properties</value></property>
   </bean>
 
 </beans>

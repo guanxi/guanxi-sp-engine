@@ -28,7 +28,7 @@ import org.springframework.context.event.ContextStoppedEvent;
 import org.apache.log4j.Logger;
 import org.apache.xmlbeans.XmlException;
 import org.guanxi.common.metadata.IdPMetadataManager;
-import org.guanxi.common.metadata.IdPMetadataImpl;
+import org.guanxi.common.metadata.IdPMetadata_XML_EntityDescriptorType;
 import org.guanxi.common.GuanxiException;
 import org.guanxi.common.job.GuanxiJobConfig;
 import org.guanxi.common.security.SecUtils;
@@ -253,7 +253,7 @@ public class Bootstrap implements ApplicationListener, ApplicationContextAware, 
       
       in = new FileInputStream(metadata_file);
       try {
-        IdPMetadataManager.getManager(servletContext).read(in);
+        IdPMetadataManager.getManager().read(in);
       }
       finally {
         in.close();
@@ -278,7 +278,7 @@ public class Bootstrap implements ApplicationListener, ApplicationContextAware, 
       
       out = new FileOutputStream(metadata_file);
       try {
-        IdPMetadataManager.getManager(servletContext).write(out);
+        IdPMetadataManager.getManager().write(out);
       }
       finally {
         out.close();
@@ -377,7 +377,7 @@ public class Bootstrap implements ApplicationListener, ApplicationContextAware, 
         idpDocument = EntityDescriptorDocument.Factory.parse(currentIdPFile);
         idpDescriptor = idpDocument.getEntityDescriptor();
         
-        IdPMetadataManager.getManager(servletContext).setMetadata(currentIdPFile.getCanonicalPath(), new IdPMetadataImpl(idpDescriptor));
+        IdPMetadataManager.getManager().setMetadata(currentIdPFile.getCanonicalPath(), new IdPMetadata_XML_EntityDescriptorType(idpDescriptor));
       }
       catch ( Exception e ) {
         logger.error("Error while loading IdP metadata object : " + currentIdPFile.getAbsolutePath(), e);

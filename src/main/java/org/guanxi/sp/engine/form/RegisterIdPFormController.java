@@ -24,7 +24,7 @@ import org.guanxi.xal.saml_2_0.metadata.EntityDescriptorDocument;
 import org.guanxi.xal.w3.xmldsig.X509DataType;
 import org.guanxi.common.definitions.Guanxi;
 import org.guanxi.common.metadata.IdPMetadata;
-import org.guanxi.common.metadata.IdPMetadataImpl;
+import org.guanxi.common.metadata.IdPMetadata_XML_EntityDescriptorType;
 import org.guanxi.common.metadata.IdPMetadataManager;
 import org.guanxi.sp.engine.Config;
 import org.guanxi.sp.engine.X509Chain;
@@ -87,8 +87,8 @@ public class RegisterIdPFormController extends SimpleFormController {
         request.getParameter("x509").replaceAll("\r", ""));
 
     loadedIdPDocument = EntityDescriptorDocument.Factory.parse(newIdPFile);
-    idpMetadata = new IdPMetadataImpl(loadedIdPDocument.getEntityDescriptor());
-    IdPMetadataManager.getManager(getServletContext()).addMetadata(newIdPFile.getCanonicalPath(),
+    idpMetadata = new IdPMetadata_XML_EntityDescriptorType(loadedIdPDocument.getEntityDescriptor());
+    IdPMetadataManager.getManager().addMetadata(newIdPFile.getCanonicalPath(),
         idpMetadata);
 
     X509Chain.loadX509CertsFromMetadata();

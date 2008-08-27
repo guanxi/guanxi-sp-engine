@@ -16,7 +16,7 @@
 
 package org.guanxi.sp.engine;
 
-import org.guanxi.common.metadata.IdPMetadataImpl;
+import org.guanxi.common.metadata.IdPMetadata_XML_EntityDescriptorType;
 import org.guanxi.xal.w3.xmldsig.KeyInfoType;
 import org.guanxi.xal.w3.xmldsig.X509DataType;
 import org.guanxi.xal.saml_2_0.metadata.EntityDescriptorDocument;
@@ -138,7 +138,7 @@ public class X509Chain {
          *     <ds:X509Data>
          *       <ds:X509Certificate>
          */
-        byte[] bytes = new IdPMetadataImpl(entityDescriptor).getX509Certificate();
+        byte[] bytes = new IdPMetadata_XML_EntityDescriptorType(entityDescriptor).getX509Certificate();
 
         // Add the X509 certificate to the store. The store
         x509Certs.add(certFactory.generateCertificate(new ByteArrayInputStream(bytes)));

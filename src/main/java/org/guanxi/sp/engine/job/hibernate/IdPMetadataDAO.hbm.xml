@@ -1,0 +1,14 @@
+<?xml version="1.0"?>
+<!DOCTYPE hibernate-mapping PUBLIC
+        "-//Hibernate/Hibernate Mapping DTD 3.0//EN"
+        "http://hibernate.sourceforge.net/hibernate-mapping-3.0.dtd">
+
+<hibernate-mapping>
+
+	<class name="org.guanxi.sp.engine.job.hibernate.IdPMetadataDAO" table="account.shibboleth_service">
+		<id name="entityID" type="string" column="entity_id"/>
+		<property name="attributeAuthorityURL" type="string" column="aa_url"/>
+		<property name="pemCertificate" type="string" column="signing_cert"/>
+	</class>
+	
+</hibernate-mapping>

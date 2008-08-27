@@ -125,6 +125,55 @@
     </dependency>
     <!-- **************************************************** -->
 
+    <!-- **************************************************** -->
+        <dependency>
+            <groupId>hsqldb</groupId>
+            <artifactId>hsqldb</artifactId>
+            <version>1.8.0.7</version>
+        </dependency>
+        <dependency>
+            <groupId>postgresql</groupId>
+            <artifactId>postgresql</artifactId>
+            <version>8.3-603.jdbc4</version>
+        </dependency>
+        <dependency>
+            <groupId>commons-dbcp</groupId>
+            <artifactId>commons-dbcp</artifactId>
+            <version>1.2.2</version>
+        </dependency>
+        <dependency>
+            <groupId>org.hibernate</groupId>
+            <artifactId>hibernate</artifactId>
+            <version>3.2.6.ga</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.hibernate</groupId>
+            <artifactId>hibernate-tools</artifactId>
+            <version>3.2.0.ga</version>
+        </dependency>
+        <dependency>
+            <groupId>geronimo-spec</groupId>
+            <artifactId>geronimo-spec-jta</artifactId>
+            <version>1.0-M1</version>
+            <scope>test</scope>
+        </dependency>
+	    <dependency>
+	      <groupId>org.hibernate</groupId>
+	      <artifactId>hibernate-validator</artifactId>
+	      <version>3.0.0.ga</version>
+	    </dependency>
+	    <dependency>
+	      <groupId>org.hibernate</groupId>
+	      <artifactId>hibernate-commons-annotations</artifactId>
+	      <version>3.3.0.ga</version>
+	    </dependency>
+	    <dependency>
+	      <groupId>org.hibernate</groupId>
+	      <artifactId>hibernate-entitymanager</artifactId>
+	      <version>3.3.2.GA</version>
+	    </dependency>
+    <!-- **************************************************** -->
   </dependencies>
 
   <build>
@@ -136,6 +185,12 @@
           <include>messages/sp.properties</include>
         </includes>
       </resource>
+      <resource>
+        <directory>src/main/java</directory>
+		  <includes>
+			<include>**/*.xml</include>
+		  </includes>
+		</resource>
     </resources>
   </build>
 </project>

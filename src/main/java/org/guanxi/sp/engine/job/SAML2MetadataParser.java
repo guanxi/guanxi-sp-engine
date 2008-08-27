@@ -26,11 +26,15 @@ import org.guanxi.common.Utils;
 import org.guanxi.common.GuanxiException;
 import org.guanxi.common.job.SAML2MetadataParserConfig;
 import org.guanxi.common.job.GuanxiJobConfig;
+import org.guanxi.common.job.SimpleGuanxiJobConfig;
 import org.guanxi.common.metadata.IdPMetadataManager;
-import org.guanxi.common.metadata.IdPMetadataImpl;
+import org.guanxi.common.metadata.IdPMetadata_XML_EntityDescriptorType;
 
 public class SAML2MetadataParser implements Job {
   public SAML2MetadataParser() {
+  }
+  
+  public void init() {
   }
 
   public void execute(JobExecutionContext context) throws JobExecutionException {
@@ -40,7 +44,7 @@ public class SAML2MetadataParser implements Job {
 
     config = (SAML2MetadataParserConfig) context.getJobDetail().getJobDataMap().get(GuanxiJobConfig.JOB_KEY_JOB_CONFIG);
     metadataURL = config.getMetadataURL();
-    logger = config.getLog();
+    logger = SimpleGuanxiJobConfig.createLogger(config.getServletContext().getRealPath(config.getLoggerConfigurationFile()), SAML2MetadataParser.class.getName());
 
     logger.info("Loading SAML2 metadata from: " + metadataURL);
 
@@ -52,13 +56,13 @@ public class SAML2MetadataParser implements Job {
       doc = Utils.parseSAML2Metadata(metadataURL, config.getWho());
       entityDescriptors = doc.getEntitiesDescriptor().getEntityDescriptorArray();
 
-      manager = IdPMetadataManager.getManager(config.getServletContext());
+      manager = IdPMetadataManager.getManager();
       manager.removeMetadata(metadataURL);
 
       for (EntityDescriptorType currentMetadata : entityDescriptors) {
         if (currentMetadata.getIDPSSODescriptorArray().length > 0) {
           logger.info("Loading IdP metadata for : " + currentMetadata.getEntityID());
-          manager.addMetadata(metadataURL, new IdPMetadataImpl(currentMetadata));
+          manager.addMetadata(metadataURL, new IdPMetadata_XML_EntityDescriptorType(currentMetadata));
         }
       }
     }

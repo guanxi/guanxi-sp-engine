@@ -116,7 +116,7 @@ public class IdPVerifier extends HandlerInterceptorAdapter implements ServletCon
     /* Find the IdP's metadata from our store. This is based on it's providerId, which is matched
      * against the entityID in the IdP's EntityDescriptor file.
      */
-    IdPMetadata idpMetadata = IdPMetadataManager.getManager(servletContext).getMetadata(idpProviderID);//(EntityDescriptorType)servletContext.getAttribute(idpProviderID);
+    IdPMetadata idpMetadata = IdPMetadataManager.getManager().getMetadata(idpProviderID);//(EntityDescriptorType)servletContext.getAttribute(idpProviderID);
     if (idpMetadata == null) {
       logger.error("Could not find IdP '" + idpProviderID + "' in the metadata repository");
       request.setAttribute("error", messages.getMessage("engine.error.no.idp.metadata", null, request.getLocale()));
