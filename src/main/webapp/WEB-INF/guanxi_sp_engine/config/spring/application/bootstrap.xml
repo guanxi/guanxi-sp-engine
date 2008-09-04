@@ -9,9 +9,10 @@
     <property name="config"><ref bean="engineConfig"/></property>
     <property name="gxJobs">
       <list>
-        <ref bean="ukFederationMetadataParser" />
+        <ref bean="spUKFederationMetadataParser" />
       </list>
     </property>
+    <property name="entityFarm"><ref bean="spEntityFarm"/></property>
   </bean>
 
 </beans>
