@@ -29,7 +29,7 @@
             http://www.opensymphony.com/quartz/wikidocs/CronTriggers%20Tutorial.html
   -->
 
-  <bean id="ukFederationMetadataParser" class="org.guanxi.common.job.SAML2MetadataParserConfig" init-method="init">
+  <bean id="spUKFederationMetadataParser" class="org.guanxi.common.job.SAML2MetadataParserConfig" init-method="init">
     <property name="jobClass"><value>org.guanxi.sp.engine.job.SAML2MetadataParser</value></property>
     <property name="key"><value>ukFederationMetadataParserSP</value></property>
     <property name="cronLine"><value>10 0/59 * * * ?</value></property>
@@ -38,19 +38,9 @@
       <value>http://metadata.ukfederation.org.uk/ukfederation-metadata.xml</value>
     </property>
     <property name="who"><value>Guanxi::Engine::MetadataParser</value></property>
-    <property name="logger"><ref bean="engineLogger"/></property>
-    <!-- The configuration to use with the logging engine -->
-    <property name="loggerConfig"><ref bean="ukFederationMetadataParserLoggerConfig"/></property>
+    <!-- For caching offline versions of the metadata -->
+    <property name="cacheDir"><value>/WEB-INF/guanxi_sp_engine/metadata</value></property>
+    <property name="cacheFile"><value>uk-federation-metadata.xml</value></property>
   </bean>
-
-  <bean id="ukFederationMetadataParserLoggerConfig" class="org.guanxi.common.log.Log4JLoggerConfig">
-    <property name="logFile"><value>/WEB-INF/guanxi_sp_engine/logs/uk-fed-metadata.log</value></property>
-    <property name="logConfigFile"><value>/WEB-INF/guanxi_sp_engine/config/sp-log4j.xml</value></property>
-    <property name="logLayout"><value>%d{dd MMMM yyyy HH:mm:ss} - %m%n</value></property>
-    <property name="logMaxFileSize"><value>5MB</value></property>
-    <property name="logMaxBackupIndex"><value>5</value></property>
-  </bean>
-  
-  <bean id="engineLogger" class="org.guanxi.common.log.Log4JLogger" />
 
 </beans>
