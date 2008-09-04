@@ -15,20 +15,25 @@
     </property>
   </bean>
 
+  <!-- This entity manager looks after Guards. They have the same metadata format as entities in
+       a SAML federation but have different trust requirements. -->
   <bean id="spLocalSAML2EntityManager" class="org.guanxi.common.entity.impl.GuanxiEntityManagerImpl"
         init-method="init" scope="prototype">
     <property name="entityHandlerClass"><value>org.guanxi.common.metadata.impl.GuanxiSAML2MetadataImpl</value></property>
     <property name="trustEngine"><ref bean="spLocalTrustEngine"/></property>
   </bean>
 
+  <!-- This entity manager looks after SAML entities in a federation -->
   <bean id="spSAML2EntityManager" class="org.guanxi.common.entity.impl.GuanxiEntityManagerImpl"
         init-method="init" scope="prototype">
     <property name="entityHandlerClass"><value>org.guanxi.common.metadata.impl.GuanxiSAML2MetadataImpl</value></property>
     <property name="trustEngine"><ref bean="spShibbolethTrustEngine"/></property>
   </bean>
 
+  <!-- Trust engine for use with local Guards -->
   <bean id="spLocalTrustEngine" class="org.guanxi.sp.engine.trust.impl.GuanxiLocalTrustEngineImpl" scope="prototype" />
 
+  <!-- Trust engine for use with a Shibboleth federation -->
   <bean id="spShibbolethTrustEngine" class="org.guanxi.common.trust.impl.ShibbolethTrustEngineImpl" scope="prototype" />
 
 </beans>
