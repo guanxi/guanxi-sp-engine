@@ -10,7 +10,7 @@
 
   <context-param>
     <param-name>webAppRootKey</param-name>
-    <param-value>samlengine.root</param-value>
+    <param-value>guanxi-sp-engine.root</param-value>
   </context-param>
 
   <context-param>
