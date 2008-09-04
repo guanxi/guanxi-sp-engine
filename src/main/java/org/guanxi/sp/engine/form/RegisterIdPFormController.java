@@ -23,9 +23,9 @@ import org.springframework.context.MessageSource;
 import org.guanxi.xal.saml_2_0.metadata.EntityDescriptorDocument;
 import org.guanxi.xal.w3.xmldsig.X509DataType;
 import org.guanxi.common.definitions.Guanxi;
-import org.guanxi.common.metadata.IdPMetadata;
-import org.guanxi.common.metadata.IdPMetadataImpl;
-import org.guanxi.common.metadata.IdPMetadataManager;
+import org.guanxi.common.entity.EntityFarm;
+import org.guanxi.common.entity.EntityManager;
+import org.guanxi.common.metadata.Metadata;
 import org.guanxi.sp.engine.Config;
 import org.guanxi.sp.engine.X509Chain;
 import org.apache.xmlbeans.XmlOptions;
@@ -75,25 +75,23 @@ public class RegisterIdPFormController extends SimpleFormController {
 
   @SuppressWarnings("unchecked")
   public ModelAndView onSubmit(HttpServletRequest request, HttpServletResponse response,
-      Object command, BindException errors) throws Exception {
-    IdPMetadata idpMetadata;
-    File newIdPFile;
-    EntityDescriptorDocument loadedIdPDocument;
-    ModelAndView mAndV;
-
-    newIdPFile = new File(config.getIdPMetadataDirectory(), request.getParameter("filename")
-        + ".xml");
+                               Object command, BindException errors) throws Exception {
+    File newIdPFile = new File(config.getIdPMetadataDirectory(), request.getParameter("filename") + ".xml");
     createIdPFile(newIdPFile, request.getParameter("entityID"), request.getParameter("aa"), 
-        request.getParameter("x509").replaceAll("\r", ""));
+                  request.getParameter("x509").replaceAll("\r", ""));
 
-    loadedIdPDocument = EntityDescriptorDocument.Factory.parse(newIdPFile);
-    idpMetadata = new IdPMetadataImpl(loadedIdPDocument.getEntityDescriptor());
-    IdPMetadataManager.getManager(getServletContext()).addMetadata(newIdPFile.getCanonicalPath(),
-        idpMetadata);
+    EntityDescriptorDocument loadedIdPDocument = EntityDescriptorDocument.Factory.parse(newIdPFile);
+
+    EntityFarm farm = (EntityFarm)config.getServletContext().getAttribute(Guanxi.CONTEXT_ATTR_IDP_ENTITY_FARM);
+    // The source is defined in config/spring/application/entity.xml
+    EntityManager manager = farm.getEntityManagerForSource("local-metadata");
+    Metadata metadataHandler = manager.createNewEntityHandler();
+    metadataHandler.setPrivateData(loadedIdPDocument.getEntityDescriptor());
+    manager.addMetadata(metadataHandler);
 
     X509Chain.loadX509CertsFromMetadata();
 
-    mAndV = new ModelAndView();
+    ModelAndView mAndV = new ModelAndView();
     mAndV.setViewName(getSuccessView());
     mAndV.getModel().put("message",
         messageSource.getMessage("register.idp.success.message", null, request.getLocale()));
