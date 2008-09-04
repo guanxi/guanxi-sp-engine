@@ -34,7 +34,7 @@ public class GuanxiLocalTrustEngineImpl implements TrustEngine {
     caCerts = new Vector<X509Certificate>();
   }
 
-  /** @see org.guanxi.common.trust.TrustEngine#addCert(javax.security.cert.X509Certificate) */
+  /** @see org.guanxi.common.trust.PKIXPathValidator#addCert(javax.security.cert.X509Certificate) */
   public void addCert(X509Certificate x509Cert) {
     caCerts.add(x509Cert);
   }
@@ -45,7 +45,7 @@ public class GuanxiLocalTrustEngineImpl implements TrustEngine {
     return true;
   }
 
-  /** @see org.guanxi.common.trust.TrustEngine#reset() */
+  /** @see org.guanxi.common.trust.PKIXPathValidator#reset() */
   public void reset() {
     caCerts.clear();
   }
