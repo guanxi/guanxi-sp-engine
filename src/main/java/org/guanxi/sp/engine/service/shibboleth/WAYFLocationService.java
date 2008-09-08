@@ -24,6 +24,7 @@ import org.guanxi.common.GuanxiException;
 import org.guanxi.common.Errors;
 import org.guanxi.common.EntityConnection;
 import org.guanxi.common.definitions.Guanxi;
+import org.guanxi.common.security.ssl.SSL;
 import org.guanxi.xal.saml_2_0.metadata.EntityDescriptorType;
 import org.guanxi.xal.saml2.metadata.GuardRoleDescriptorExtensions;
 import org.guanxi.sp.Util;
@@ -129,10 +130,8 @@ public class WAYFLocationService extends AbstractController implements ServletCo
            */
           EntityConnection guardConnection = new EntityConnection(queryString,
                                                                   config.getId(), // alias of cert
-                                                                  config.getKeystore(),
-                                                                  config.getKeystorePassword(),
-                                                                  config.getTrustStore(),
-                                                                  config.getTrustStorePassword(),
+                                                                  SSL.getKeyManagers(config.getId(), config.getKeystore(), config.getKeystorePassword()),
+                                                                  SSL.getTrustManagers(config.getTrustStore(), config.getTrustStorePassword(), EntityConnection.PROBING_ON),
                                                                   EntityConnection.PROBING_ON);
           X509Certificate guardX509 = guardConnection.getServerCertificate();
 
@@ -168,10 +167,8 @@ public class WAYFLocationService extends AbstractController implements ServletCo
     try {
       EntityConnection verifierService = new EntityConnection(queryString,
                                                               config.getId(), // alias of cert
-                                                              config.getKeystore(),
-                                                              config.getKeystorePassword(),
-                                                              config.getTrustStore(),
-                                                              config.getTrustStorePassword(),
+                                                              SSL.getKeyManagers(config.getId(), config.getKeystore(), config.getKeystorePassword()),
+                                                              SSL.getTrustManagers(config.getTrustStore(), config.getTrustStorePassword(), EntityConnection.PROBING_ON),
                                                               EntityConnection.PROBING_OFF);
       verifierService.setDoOutput(true);
       verifierService.connect();
