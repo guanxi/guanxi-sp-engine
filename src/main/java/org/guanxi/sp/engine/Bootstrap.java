@@ -118,7 +118,7 @@ public class Bootstrap implements ApplicationListener, ApplicationContextAware, 
       loadGuardMetadata(config.getGuardsMetadataDirectory());
       loadIdPMetadata(config.getIdPMetadataDirectory());
 
-      x509Chain = new X509Chain(config.getIdPMetadataDirectory());
+      x509Chain = new X509Chain();
 
       startJobs();
     }
@@ -210,12 +210,7 @@ public class Bootstrap implements ApplicationListener, ApplicationContextAware, 
      * auto start (e.g. haven't started on initialisation already).
      */
     else if ( applicationEvent instanceof ContextStartedEvent ) {
-      try {
-        loadMetadata();
-      }
-      catch ( Exception e ) {
-        logger.error("Unable to load cached metadata", e);
-      }
+      
     }
     
     /*
@@ -227,62 +222,7 @@ public class Bootstrap implements ApplicationListener, ApplicationContextAware, 
      * a start() call.
      */
     else if ( applicationEvent instanceof ContextStoppedEvent ) {
-      try {
-        saveMetadata();
-      }
-      catch ( Exception e ) {
-        logger.error("Unable to save metadata to cache", e);
-      }
-    }
-  }
-  
-  /**
-   * This will load the cached metadata if it has been saved.
-   * This means that the webapp can restore the loaded metadata
-   * even if the metadata sources are not available on startup.
-   * 
-   * @throws IOException  If there is a problem reading the cache file.
-   * @throws XmlException If there is a problem parsing the XML in the cache file.
-   */
-  private void loadMetadata() throws IOException, XmlException {
-    File metadata_file;
-    
-    metadata_file = new File(config.getMetadataCacheFile());
-    if ( metadata_file.exists() ) {
-      InputStream in;
       
-      in = new FileInputStream(metadata_file);
-      try {
-        IdPMetadataManager.getManager().read(in);
-      }
-      finally {
-        in.close();
-      }
-    }
-  }
-  
-  /**
-   * This will save the metadata to a file for later loading when
-   * the application starts. This allows the loaded metadata to be
-   * restored even if the metadata sources are not available when
-   * the application starts up.
-   * 
-   * @throws IOException  If there is a problem writing to the cache file.
-   */
-  private void saveMetadata() throws IOException {
-    File metadata_file;
-    
-    metadata_file = new File(config.getMetadataCacheFile());
-    if ( metadata_file.exists() ) {
-      OutputStream out;
-      
-      out = new FileOutputStream(metadata_file);
-      try {
-        IdPMetadataManager.getManager().write(out);
-      }
-      finally {
-        out.close();
-      }
     }
   }
 

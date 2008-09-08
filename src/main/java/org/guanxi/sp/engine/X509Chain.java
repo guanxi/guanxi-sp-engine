@@ -16,26 +16,35 @@
 
 package org.guanxi.sp.engine;
 
-import org.guanxi.common.metadata.IdPMetadata_XML_EntityDescriptorType;
-import org.guanxi.xal.w3.xmldsig.KeyInfoType;
-import org.guanxi.xal.w3.xmldsig.X509DataType;
-import org.guanxi.xal.saml_2_0.metadata.EntityDescriptorDocument;
-import org.guanxi.xal.saml_2_0.metadata.EntityDescriptorType;
-import org.apache.log4j.Logger;
-
+import java.io.ByteArrayInputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.FilenameFilter;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.security.KeyStore;
+import java.security.KeyStoreException;
+import java.security.NoSuchAlgorithmException;
 import java.security.cert.Certificate;
+import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
-import java.security.cert.CertificateException;
-import java.io.*;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.Vector;
+
+import org.apache.log4j.Logger;
+import org.guanxi.common.metadata.IdPMetadata;
+import org.guanxi.common.metadata.IdPMetadataManager;
+import org.guanxi.xal.w3.xmldsig.KeyInfoType;
+import org.guanxi.xal.w3.xmldsig.X509DataType;
 
 public class X509Chain {
   /** Our logger */
   private static final Logger logger = Logger.getLogger(X509Chain.class.getName());
 
-  /** Full path of where our certificates are stored in SAML2 metadata format */
-  private static String pathToCertsStore = null;
   /** This is our cert store, built from the files in pathToCertsStore */
   private static X509Certificate[] x509CertsInStore = null;
   /** We'll use this to generate X509s on the fly from metadata */
@@ -46,14 +55,12 @@ public class X509Chain {
    *
    * @param certsStore Full path of where our certificates are stored in SAML2 metadata format
    */
-  public X509Chain(String certsStore) {
+  public X509Chain() {
     try {
-      // Store the path to the metadata
-      pathToCertsStore = certsStore;
       // Get the factory ready for X509s
       certFactory = CertificateFactory.getInstance("x.509");
       // Load up our cert store
-      loadX509CertsFromMetadata();
+      loadX509CertsFromMetadataManager();
     }
     catch(CertificateException ce) {
       logger.error(ce);
@@ -86,8 +93,9 @@ public class X509Chain {
       X509Certificate x509Signer = findSignerCert(x509CertsFromXML);
 
       // If we didn't recognise any certs continue with any more <ds:X509Data> elements
-      if (x509Signer == null)
+      if (x509Signer == null) {
         continue;
+      }
 
       /* If there's only one certificate, then by now we've recognised it so indicate
        * that the chain (of one) has been verified.
@@ -114,44 +122,125 @@ public class X509Chain {
 
     return verified;
   }
-
+  
   /**
-   * Loads all the IdP metadata files in WEB-INF/config/metadata/idp, extracts their
-   * X509 certificates and puts them in a certificate store.
+   * This will load the certificates from the metadata that exists in the manager.
+   * This is the only way to load the certificates now - the file based metadata
+   * should be loaded into the manager and then use this method to replicate the
+   * old loadX509CertsFromMetadata method.
    */
-  public static void loadX509CertsFromMetadata() {
-    Vector<Certificate> x509Certs = new Vector<Certificate>();
-
+  public static void loadX509CertsFromMetadataManager() {
+    Set<Certificate> x509Certs = new HashSet<Certificate>(); 
+    // HashSet is used because the Certificate object implements a hashCode which states:
+    //  Returns a hashcode value for this certificate from its encoded form.
+    // and thus should be suitable for determining if duplicates exist
+    
     try {
-      // Find all the XML files in the IdP metadata directory
-      File idpMetadataDir = new File(pathToCertsStore);
-      File[] idpFiles = idpMetadataDir.listFiles(new MetadataFileFilter());
-
-      // Cycle through them all, putting their X509 certificates in the certificate store
-      for (int c=0; c < idpFiles.length; c++) {
-        EntityDescriptorDocument edDoc = EntityDescriptorDocument.Factory.parse(new File(idpFiles[c].getPath()));
-        EntityDescriptorType entityDescriptor = edDoc.getEntityDescriptor();
-
-        /* Looking for:
-         * <KeyDescriptor use="signing"> --> assumes only one
-         *   <ds:KeyInfo>
-         *     <ds:X509Data>
-         *       <ds:X509Certificate>
-         */
-        byte[] bytes = new IdPMetadata_XML_EntityDescriptorType(entityDescriptor).getX509Certificate();
-
-        // Add the X509 certificate to the store. The store
-        x509Certs.add(certFactory.generateCertificate(new ByteArrayInputStream(bytes)));
+      // this ditches the existing certificates as the only certificates in the chain
+      // should be the ones that come from the loaded metadata
+      for ( IdPMetadata current : IdPMetadataManager.getManager().getMetadata() ) {
+        byte[] certificate;
+        
+        certificate = current.getSigningCertificate();
+        if ( certificate != null ) {
+          x509Certs.add(certFactory.generateCertificate(new ByteArrayInputStream(certificate)));
+        }
       }
+      
+      x509CertsInStore = x509Certs.toArray(new X509Certificate[x509Certs.size()]);
     }
-    catch(Exception e) {
-      logger.error(e);
+    catch ( Exception e ) {
+      logger.error("Unable to load certificates from loaded metadata.", e);
     }
-
-    // Dump the harvested X509s into the certificate store
-    if (x509Certs != null) {
-      x509CertsInStore = new X509Certificate[x509Certs.size()];
-      x509Certs.copyInto(x509CertsInStore);
+  }
+  
+  /**
+   * This will update the given truststore to include the provided certificate under the given alias.
+   * If an entry already exists at the given alias then it will be deleted and this new entry will
+   * be added. This will write to a temporary file before deleting the original truststore to help prevent
+   * errors, but this will overwrite any file that is named <truststoreFile>.temp.
+   * 
+   * This must not be called on keystores - only on truststores.
+   * 
+   * @param truststoreFile            This is the location of the truststore to update
+   * @param truststorePassword        This is the password for the truststore
+   * @param certificate               This is the certificate to store in the truststore. This should be the server certificate of the IdP AA URL.
+   * @param alias                     This is the alias to store the certificate under. This should be the entityID of the IdP which uses the certificate.
+   * @throws KeyStoreException        If there is a problem instantiating the truststore, deleting the original alias from the truststore, or adding the new certificate.
+   * @throws IOException              If there is a problem reading or writing the truststore.
+   * @throws CertificateException     If there is a problem loading or saving the truststore.
+   * @throws NoSuchAlgorithmException If there is a problem loading or saving the truststore.
+   */
+  public static void updateTrustStore(File truststoreFile, String truststorePassword, X509Certificate certificate, String alias) throws KeyStoreException, NoSuchAlgorithmException, CertificateException, IOException {
+    InputStream  in;
+    OutputStream out;
+    KeyStore     truststore;
+    File         temporaryFile;
+    
+    // load the truststore
+    truststore = KeyStore.getInstance("jks");
+    in         = new FileInputStream(truststoreFile);
+    try {
+      truststore.load(in, truststorePassword.toCharArray());
+    }
+    finally {
+      in.close();
+    }
+    
+    // update the truststore
+    if ( truststore.containsAlias(alias) ) {
+      truststore.deleteEntry(alias);
+    }
+    truststore.setCertificateEntry(alias, certificate);
+    
+    // save the truststore to the temporary file
+    temporaryFile = new File(truststoreFile.getAbsolutePath() + ".temp");
+    out           = new FileOutputStream(temporaryFile);
+    try {
+      truststore.store(out, truststorePassword.toCharArray());
+    }
+    finally {
+      out.close();
+    }
+    
+    // replace the original file with the newly created truststore
+    truststoreFile.delete();
+    temporaryFile.renameTo(truststoreFile);
+  }
+  
+  /**
+   * This will update the truststore to set the certificate associated with the alias provided.
+   * 
+   * @param truststore
+   * @param certificate
+   * @param alias
+   * @throws KeyStoreException
+   */
+  public static void updateTrustStore(KeyStore truststore, X509Certificate certificate, String alias) throws KeyStoreException {
+    if ( truststore.containsAlias(alias) ) {
+      truststore.deleteEntry(alias);
+    }
+    truststore.setCertificateEntry(alias, certificate);
+  }
+  
+  /**
+   * This will update the truststore to contain all Attribute Authority URL Certificates that are
+   * present in the metadata manager entries.
+   * 
+   * @param truststore
+   * @throws CertificateException 
+   * @throws KeyStoreException 
+   */
+  public static void updateTrustStoreFromMetadataManager(KeyStore truststore) throws KeyStoreException, CertificateException {
+    byte[] certificate;
+    
+    for ( IdPMetadata current : IdPMetadataManager.getManager().getMetadata() ) {
+      certificate = current.getAACertificate();
+      if ( certificate != null ) {
+        updateTrustStore(truststore, 
+                         (X509Certificate)certFactory.generateCertificate(new ByteArrayInputStream(certificate)), 
+                         current.getEntityID());
+      }
     }
   }
 

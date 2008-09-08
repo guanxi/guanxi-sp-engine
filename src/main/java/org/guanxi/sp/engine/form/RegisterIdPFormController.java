@@ -91,7 +91,7 @@ public class RegisterIdPFormController extends SimpleFormController {
     IdPMetadataManager.getManager().addMetadata(newIdPFile.getCanonicalPath(),
         idpMetadata);
 
-    X509Chain.loadX509CertsFromMetadata();
+    X509Chain.loadX509CertsFromMetadataManager();
 
     mAndV = new ModelAndView();
     mAndV.setViewName(getSuccessView());
