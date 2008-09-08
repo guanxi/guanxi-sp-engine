@@ -5,7 +5,13 @@ package org.guanxi.sp.engine.service.shibboleth;
 
 import java.io.IOException;
 import java.math.BigInteger;
+import java.security.KeyStoreException;
+import java.security.NoSuchAlgorithmException;
+import java.security.cert.CertificateException;
 import java.util.Calendar;
+
+import javax.net.ssl.KeyManager;
+import javax.net.ssl.TrustManager;
 
 import org.apache.log4j.Logger;
 import org.apache.xmlbeans.XmlException;
@@ -109,24 +115,15 @@ public class AuthConsumerServiceThread implements Runnable {
    */
   private String entityID;
   /**
-   * This is the keystore file which contains the client certificates used to
-   * communicate with the IdP and with the Guard.
+   * This is the set of KeyManagers to use to identify the client
+   * in the communication with the AA and Guard. 
    */
-  private String keystoreFile;
+  private KeyManager[] keyManagers;
   /**
-   * This is the password for the keystore.
+   * This is the set of TrustManagers to use to validate the server
+   * in the communication with the AA and Guard.
    */
-  private String keystorePassword;
-  /**
-   * This is the truststore file which contains the certificates for the IdP
-   * and the Guard. These are used to verify that the IdP and the Guard are
-   * authentic.
-   */
-  private String truststoreFile;
-  /**
-   * This is the password for the truststore.
-   */
-  private String truststorePassword;
+  private TrustManager[] trustManagers;
   /**
    * This is the IdP's provider Id.
    */
@@ -180,21 +177,19 @@ public class AuthConsumerServiceThread implements Runnable {
    * @param samlResponse        This is the initial SAML response from the IdP that confirmed that the user had logged in.
    */
   public AuthConsumerServiceThread(AuthConsumerService parent, String guardSession, String acsURL, String aaURL, 
-                                   String podderURL, String entityID, String keystoreFile, String keystorePassword, 
-                                   String truststoreFile, String truststorePassword, String idpProviderId, 
-                                   String idpNameIdentifier, ResponseType samlResponse) {
-    this.parent             = parent;
-    this.guardSession       = guardSession;
-    this.acsURL             = acsURL;
-    this.aaURL              = aaURL;
-    this.podderURL          = podderURL;
-    this.entityID           = entityID;
-    this.keystoreFile       = keystoreFile;
-    this.truststoreFile     = truststoreFile;
-    this.truststorePassword = truststorePassword;
-    this.idpProviderId      = idpProviderId;
-    this.idpNameIdentifier  = idpNameIdentifier;
-    this.samlResponse       = samlResponse;
+                                   String podderURL, String entityID, KeyManager[] keyManagers, TrustManager[] trustManagers,
+                                   String idpProviderId, String idpNameIdentifier, ResponseType samlResponse) {
+    this.parent            = parent;
+    this.guardSession      = guardSession;
+    this.acsURL            = acsURL;
+    this.aaURL             = aaURL;
+    this.podderURL         = podderURL;
+    this.entityID          = entityID;
+    this.keyManagers       = keyManagers;
+    this.trustManagers     = trustManagers;
+    this.idpProviderId     = idpProviderId;
+    this.idpNameIdentifier = idpNameIdentifier;
+    this.samlResponse      = samlResponse;
   }
   
   /**
@@ -287,23 +282,25 @@ public class AuthConsumerServiceThread implements Runnable {
   /**
    * This opens an AA connection to the indicated IdP, sends the SOAP request, and then reads the result.
    * 
-   * @param aaURL               The URL to connect to
-   * @param entityID            The entity ID of the guard to use (used to load the correct certificate from the keystore)
-   * @param keystoreFile        The location of the keystore file for the client certificates
-   * @param keystorePassword    The password for the keystore file
-   * @param truststoreFile      The location of the truststore file to use to verify the server certificates
-   * @param truststorePassword  The password for the truststore file
-   * @param soapRequest         The soap request to write to the Attribute Authority
-   * @return                    The response from the Attribute Authority
-   * @throws GuanxiException    If there is a problem creating the connection or setting the attributes for the connection
-   * @throws IOException        If there is a problem reading from or writing to the connection
+   * @param aaURL                     The URL to connect to
+   * @param entityID                  The entity ID of the guard to use (used to load the correct certificate from the keystore)
+   * @param keystoreFile              The location of the keystore file for the client certificates
+   * @param keystorePassword          The password for the keystore file
+   * @param truststoreFile            The location of the truststore file to use to verify the server certificates
+   * @param truststorePassword        The password for the truststore file
+   * @param soapRequest               The soap request to write to the Attribute Authority
+   * @return                          The response from the Attribute Authority
+   * @throws GuanxiException          If there is a problem creating the connection or setting the attributes for the connection
+   * @throws IOException              If there is a problem reading from or writing to the connection
+   * @throws CertificateException     If there is a problem creating the truststore.
+   * @throws NoSuchAlgorithmException If there is a problem creating the truststore.
+   * @throws KeyStoreException        If there is a problem creating the truststore.
    */
-  private String processAAConnection(String aaURL, String entityID, String keystoreFile, String keystorePassword, 
-                                     String truststoreFile, String truststorePassword, EnvelopeDocument soapRequest) 
-                                     throws GuanxiException, IOException {
+  private String processAAConnection(String aaURL, String entityID, KeyManager[] keyManagers, TrustManager[] trustManagers, EnvelopeDocument soapRequest) 
+                                     throws GuanxiException, IOException, KeyStoreException, NoSuchAlgorithmException, CertificateException {
     EntityConnection connection;
-
-    connection = new EntityConnection(aaURL, entityID, keystoreFile, keystorePassword, truststoreFile, truststorePassword, EntityConnection.PROBING_OFF);
+    
+    connection = new EntityConnection(aaURL, entityID, keyManagers, trustManagers, EntityConnection.PROBING_OFF);
 
     connection.setDoOutput(true);
     connection.setRequestProperty("Content-type", "text/xml");
@@ -322,7 +319,7 @@ public class AuthConsumerServiceThread implements Runnable {
        * TODO: Add new constructor for EntityConnection which does not load the client certificate
        * TODO: Stop doing this! If the client certificate is requested then it should be provided.
        */
-      connection = new EntityConnection(aaURL, truststoreFile, truststorePassword, EntityConnection.PROBING_OFF);
+      connection = new EntityConnection(aaURL, trustManagers, EntityConnection.PROBING_OFF);
       connection.setDoOutput(true);
       connection.setRequestProperty("Content-type", "text/xml");
       connection.connect();
@@ -379,11 +376,11 @@ public class AuthConsumerServiceThread implements Runnable {
    * @throws GuanxiException    If there is a problem creating the EntityConnection or setting the attributes on it
    * @throws IOException        If there is a problem using the EntityConnection to read or write data
    */
-  private String processGuardConnection(String acsURL, String entityID, String keystoreFile, String keystorePassword, String truststoreFile, String truststorePassword, EnvelopeDocument soapRequest) throws GuanxiException, IOException {
+  private String processGuardConnection(String acsURL, String entityID, KeyManager[] keyManagers, TrustManager[] trustManagers, EnvelopeDocument soapRequest) throws GuanxiException, IOException {
     EntityConnection connection;
     
     // Initialise the connection to the Guard's attribute consumer service
-    connection = new EntityConnection(acsURL, entityID, keystoreFile, keystorePassword, truststoreFile, truststorePassword, EntityConnection.PROBING_OFF);
+    connection = new EntityConnection(acsURL, entityID, keyManagers, trustManagers, EntityConnection.PROBING_OFF);
     connection.setDoOutput(true);
     connection.connect();
 
@@ -409,7 +406,7 @@ public class AuthConsumerServiceThread implements Runnable {
 
     setStatus(readingAAResponse);
     try {
-      aaResponse = processAAConnection(aaURL, entityID, keystoreFile, keystorePassword, truststoreFile, truststorePassword, aaSoapRequest); // no close, so no finally
+      aaResponse = processAAConnection(aaURL, entityID, keyManagers, trustManagers, aaSoapRequest); // no close, so no finally
     }
     catch ( Exception e ) {
       logger.error("AA connection error", e);
@@ -443,7 +440,7 @@ public class AuthConsumerServiceThread implements Runnable {
     
     setStatus(readingGuardResponse);
     try {
-      guardResponse = processGuardConnection(acsURL, entityID, keystoreFile, keystorePassword, truststoreFile, truststorePassword, guardSoapRequest);
+      guardResponse = processGuardConnection(acsURL, entityID, keyManagers, trustManagers, guardSoapRequest);
     }
     catch ( Exception e ) {
       logger.error("Guard ACS connection error", e);

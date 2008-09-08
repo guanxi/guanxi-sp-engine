@@ -17,17 +17,25 @@
 package org.guanxi.sp.engine.service.shibboleth;
 
 import java.io.IOException;
+import java.security.KeyStoreException;
+import java.security.NoSuchAlgorithmException;
+import java.security.cert.CertificateException;
 import java.util.Comparator;
 import java.util.Map;
 import java.util.TreeMap;
 
+import javax.net.ssl.KeyManager;
+import javax.net.ssl.TrustManager;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 
+import org.guanxi.common.GuanxiException;
 import org.guanxi.common.definitions.Guanxi;
 import org.guanxi.common.definitions.Shibboleth;
 import org.guanxi.common.metadata.IdPMetadata;
+import org.guanxi.common.metadata.IdPMetadataManager;
+import org.guanxi.common.security.ssl.SSL;
 import org.guanxi.sp.Util;
 import org.guanxi.sp.engine.Config;
 import org.guanxi.xal.saml2.metadata.GuardRoleDescriptorExtensions;
@@ -82,16 +90,18 @@ public class AuthConsumerService extends MultiActionController implements Servle
    * @param request
    * @param response
    * @throws IOException
+   * @throws CertificateException 
+   * @throws NoSuchAlgorithmException 
+   * @throws KeyStoreException 
    */
-  public void acs(HttpServletRequest request, HttpServletResponse response) throws IOException {
+  public void acs(HttpServletRequest request, HttpServletResponse response) throws IOException, GuanxiException, KeyStoreException, NoSuchAlgorithmException, CertificateException {
     AuthConsumerServiceThread thread;
-    HttpSession session;
-    String  guardSession, 
-            acsURL, aaURL, podderURL, 
-            entityID, keystoreFile, keystorePassword, 
-            truststoreFile, truststorePassword,
-            idpProviderId, idpNameIdentifier;
-    ResponseType samlResponse;
+    HttpSession               session;
+    String                    guardSession, acsURL, aaURL, podderURL, 
+                              entityID, idpProviderId, idpNameIdentifier;
+    ResponseType              samlResponse;
+    KeyManager[]              keyManagers;
+    TrustManager[]            trustManagers;
     
     session = request.getSession(true);
     
@@ -100,6 +110,7 @@ public class AuthConsumerService extends MultiActionController implements Servle
       GuardRoleDescriptorExtensions guardNativeMetadata;
       IdPMetadata idpMetadata;
       Config config;
+      String keystoreFile, keystorePassword, truststoreFile, truststorePassword;
       
       /* When a Guard initially set up a session with the Engine, it passed its session ID to
       * the Engine's WAYF Location web service. The Guard then passed the session ID to the
@@ -129,12 +140,14 @@ public class AuthConsumerService extends MultiActionController implements Servle
       idpProviderId      = (String)request.getAttribute(Config.REQUEST_ATTRIBUTE_IDP_PROVIDER_ID);
       idpNameIdentifier  = (String)request.getAttribute(Config.REQUEST_ATTRIBUTE_IDP_NAME_IDENTIFIER);
       samlResponse       = (ResponseType)request.getAttribute(Config.REQUEST_ATTRIBUTE_SAML_RESPONSE);
+      
+      keyManagers        = SSL.getKeyManagers(entityID, keystoreFile, keystorePassword);
+      trustManagers      = SSL.getTrustManagers(IdPMetadataManager.getManager().loadTrustStore(truststoreFile, truststorePassword), false);
     }
     
     thread = new AuthConsumerServiceThread(this, guardSession, acsURL, aaURL, 
-                                       podderURL, entityID, keystoreFile, keystorePassword, 
-                                       truststoreFile, truststorePassword, idpProviderId, idpNameIdentifier, 
-                                       samlResponse);
+                                       podderURL, entityID, keyManagers, trustManagers, 
+                                       idpProviderId, idpNameIdentifier, samlResponse);
     new Thread(thread).start();
     threads.put(session, thread);
     
@@ -152,8 +165,20 @@ public class AuthConsumerService extends MultiActionController implements Servle
    * @return
    */
   @SuppressWarnings("unchecked")
-  public ModelAndView process(HttpServletRequest request, HttpServletResponse response, HttpSession session) {
+  public ModelAndView process(HttpServletRequest request, HttpServletResponse response) {
     AuthConsumerServiceThread thread;
+    HttpSession session;
+    
+    session = request.getSession(false);
+    if ( session == null ) {
+      ModelAndView mAndV;
+      
+      mAndV = new ModelAndView();
+      mAndV.setViewName(errorView);
+      mAndV.getModel().put(errorViewDisplayVar, "Your session has expired");
+      
+      return mAndV;
+    }
     
     thread = threads.get(session);
     if ( thread == null ) {
