@@ -16,19 +16,19 @@
 
 package org.guanxi.sp.engine.job;
 
-import org.quartz.Job;
-import org.quartz.JobExecutionContext;
-import org.quartz.JobExecutionException;
 import org.apache.log4j.Logger;
-import org.guanxi.xal.saml_2_0.metadata.EntitiesDescriptorDocument;
-import org.guanxi.xal.saml_2_0.metadata.EntityDescriptorType;
-import org.guanxi.common.Utils;
 import org.guanxi.common.GuanxiException;
-import org.guanxi.common.job.SAML2MetadataParserConfig;
+import org.guanxi.common.Utils;
 import org.guanxi.common.job.GuanxiJobConfig;
+import org.guanxi.common.job.SAML2MetadataParserConfig;
 import org.guanxi.common.job.SimpleGuanxiJobConfig;
 import org.guanxi.common.metadata.IdPMetadataManager;
 import org.guanxi.common.metadata.IdPMetadata_XML_EntityDescriptorType;
+import org.guanxi.xal.saml_2_0.metadata.EntitiesDescriptorDocument;
+import org.guanxi.xal.saml_2_0.metadata.EntityDescriptorType;
+import org.quartz.Job;
+import org.quartz.JobExecutionContext;
+import org.quartz.JobExecutionException;
 
 public class SAML2MetadataParser implements Job {
   public SAML2MetadataParser() {
@@ -44,7 +44,9 @@ public class SAML2MetadataParser implements Job {
 
     config = (SAML2MetadataParserConfig) context.getJobDetail().getJobDataMap().get(GuanxiJobConfig.JOB_KEY_JOB_CONFIG);
     metadataURL = config.getMetadataURL();
-    logger = SimpleGuanxiJobConfig.createLogger(config.getServletContext().getRealPath(config.getLoggerConfigurationFile()), SAML2MetadataParser.class.getName());
+    logger = SimpleGuanxiJobConfig.createLogger(config.getServletContext().getRealPath(config.getLoggerConfigurationFile()), 
+                                                SAML2MetadataParser.class.getName(),
+                                                SAML2MetadataParser.class.getName());
 
     logger.info("Loading SAML2 metadata from: " + metadataURL);
 
