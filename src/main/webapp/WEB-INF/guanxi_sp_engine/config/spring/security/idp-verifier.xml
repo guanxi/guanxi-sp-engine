@@ -10,7 +10,10 @@
     <!-- The localised messages -->
     <property name="messages" ref="messageSource"/>
     <!-- The error page to use -->
-    <property name="errorPage"><value>message.gxEngine</value></property>
+    <property name="errorView"><value>message.gxEngine</value></property>
+    <property name="errorViewErrorVar"><value>error</value></property>
+    <property name="errorViewDisplayVar"><value>message</value></property>
+    <property name="errorViewSimpleVar"><value>nice</value></property>
   </bean>
   
 </beans>

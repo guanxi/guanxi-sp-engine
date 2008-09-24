@@ -16,32 +16,33 @@
 
 package org.guanxi.sp.engine.security.shibboleth;
 
-import org.springframework.web.servlet.handler.HandlerInterceptorAdapter;
-import org.springframework.web.context.ServletContextAware;
-import org.springframework.context.MessageSource;
+import java.io.IOException;
+import java.io.StringReader;
+import java.io.StringWriter;
+import java.util.HashMap;
+
+import javax.servlet.ServletContext;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
+import org.apache.log4j.Logger;
+import org.apache.xmlbeans.XmlOptions;
 import org.guanxi.common.Utils;
 import org.guanxi.common.definitions.Guanxi;
 import org.guanxi.common.definitions.Shibboleth;
-import org.guanxi.common.metadata.IdPMetadataManager;
 import org.guanxi.common.metadata.IdPMetadata;
-import org.guanxi.xal.saml_1_0.protocol.ResponseDocument;
-import org.guanxi.xal.saml_1_0.protocol.ResponseType;
+import org.guanxi.common.metadata.IdPMetadataManager;
+import org.guanxi.sp.engine.Config;
+import org.guanxi.sp.engine.X509Chain;
 import org.guanxi.xal.saml_1_0.assertion.AssertionType;
 import org.guanxi.xal.saml_1_0.assertion.AuthenticationStatementType;
-import org.guanxi.xal.w3.xmldsig.SignatureType;
+import org.guanxi.xal.saml_1_0.protocol.ResponseDocument;
+import org.guanxi.xal.saml_1_0.protocol.ResponseType;
 import org.guanxi.xal.w3.xmldsig.KeyInfoType;
-import org.guanxi.sp.engine.X509Chain;
-import org.guanxi.sp.engine.Config;
-import org.apache.log4j.Logger;
-import org.apache.xmlbeans.XmlOptions;
-
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import javax.servlet.ServletContext;
-import java.io.StringReader;
-import java.io.StringWriter;
-import java.io.IOException;
-import java.util.HashMap;
+import org.guanxi.xal.w3.xmldsig.SignatureType;
+import org.springframework.context.MessageSource;
+import org.springframework.web.context.ServletContextAware;
+import org.springframework.web.servlet.handler.HandlerInterceptorAdapter;
 
 /**
  * Security interceptor that verifies whether the Engine will trust the IdentityProvider
@@ -50,15 +51,31 @@ import java.util.HashMap;
  */
 public class IdPVerifier extends HandlerInterceptorAdapter implements ServletContextAware {
   private static final Logger logger = Logger.getLogger(IdPVerifier.class.getName());
-  /** The ServletContext, passed to us by Spring as we are ServletContextAware */
-  private ServletContext servletContext = null;
-  /** The localised messages to use */
-  private MessageSource messages = null;
-  /** The error page to use */
-  private String errorPage = null;
-
-  // Called by Spring as we are ServletContextAware
-  public void setServletContext(ServletContext servletContext) { this.servletContext = servletContext; }
+  /** 
+   * The ServletContext, passed to us by Spring as we are ServletContextAware 
+   */
+  private ServletContext servletContext;
+  /** 
+   * The localised messages to use 
+   */
+  private MessageSource messages;
+  /** 
+   * The error page to use 
+   */
+  private String errorView;
+  /**
+   * The variable to use in the error view to display any stack trace or technical information
+   */
+  private String errorViewErrorVar;
+  /** 
+   * The variable to use in the error view to display the error message 
+   */
+  private String errorViewDisplayVar;
+  /**
+   * The variable to use in the error view to display a simple version
+   * of the error explaining the likely cause.
+   */
+  private String errorViewSimpleVar;
   
   /**
    * Initialise the interceptor
@@ -76,6 +93,7 @@ public class IdPVerifier extends HandlerInterceptorAdapter implements ServletCon
    * @return true if the caller is authorised to use the service
    * @throws Exception if an error occurs
    */
+  @Override
   public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object object) throws Exception {
     String idpProviderID = null;
     ResponseDocument responseDocument = null;
@@ -84,9 +102,10 @@ public class IdPVerifier extends HandlerInterceptorAdapter implements ServletCon
     try {
       if (request.getParameter("SAMLResponse") == null) {
         logger.error("Could not process the AuthenticatonStatement from the IdP as there isn't one!");
-        request.setAttribute("error", messages.getMessage("engine.error.cannot.parse.authnstmnt", null, request.getLocale()));
-        request.setAttribute("message", messages.getMessage("engine.error.no.authn.stmnt", null, request.getLocale()));
-        request.getRequestDispatcher(errorPage).forward(request, response);
+        request.setAttribute(errorViewErrorVar, messages.getMessage("engine.error.cannot.parse.authnstmnt", null, request.getLocale()));
+        request.setAttribute(errorViewDisplayVar, messages.getMessage("engine.error.no.authn.stmnt", null, request.getLocale()));
+        request.setAttribute(errorViewSimpleVar, "You need to arrive at this page after authenticating with the Identity Provider.");
+        request.getRequestDispatcher(errorView).forward(request, response);
         return false;
       }
 
@@ -107,9 +126,10 @@ public class IdPVerifier extends HandlerInterceptorAdapter implements ServletCon
     }
     catch(Exception e) {
       logger.error("Could not process the AuthenticatonStatement from the IdP", e);
-      request.setAttribute("error", messages.getMessage("engine.error.cannot.parse.authnstmnt", null, request.getLocale()));
-      request.setAttribute("message", e.getMessage());
-      request.getRequestDispatcher(errorPage).forward(request, response);
+      request.setAttribute(errorViewErrorVar, messages.getMessage("engine.error.cannot.parse.authnstmnt", null, request.getLocale()));
+      request.setAttribute(errorViewDisplayVar, e.getMessage());
+      request.setAttribute(errorViewSimpleVar, "You need to arrive at this page after authenticating with the Identity Provider.");
+      request.getRequestDispatcher(errorView).forward(request, response);
       return false;
     }
 
@@ -119,9 +139,10 @@ public class IdPVerifier extends HandlerInterceptorAdapter implements ServletCon
     IdPMetadata idpMetadata = IdPMetadataManager.getManager().getMetadata(idpProviderID);//(EntityDescriptorType)servletContext.getAttribute(idpProviderID);
     if (idpMetadata == null) {
       logger.error("Could not find IdP '" + idpProviderID + "' in the metadata repository");
-      request.setAttribute("error", messages.getMessage("engine.error.no.idp.metadata", null, request.getLocale()));
-      request.setAttribute("message", idpProviderID);
-      request.getRequestDispatcher(errorPage).forward(request, response);
+      request.setAttribute(errorViewErrorVar, messages.getMessage("engine.error.no.idp.metadata", null, request.getLocale()));
+      request.setAttribute(errorViewDisplayVar, idpProviderID);
+      request.setAttribute(errorViewSimpleVar, "You need to arrive at this page after authenticating with the Identity Provider.");
+      request.getRequestDispatcher(errorView).forward(request, response);
       return false;
     }
     request.setAttribute(Config.REQUEST_ATTRIBUTE_IDP_METADATA, idpMetadata);
@@ -140,9 +161,10 @@ public class IdPVerifier extends HandlerInterceptorAdapter implements ServletCon
     // If there's no signature on the Response from the IdP, barf
     if (sigType == null) {
       logger.error("No signature from IdP");
-      request.setAttribute("error", messages.getMessage("engine.error.no.idp.signtaure", null, request.getLocale()));
-      request.setAttribute("message", idpProviderID);
-      request.getRequestDispatcher(errorPage).forward(request, response);
+      request.setAttribute(errorViewErrorVar, messages.getMessage("engine.error.no.idp.signtaure", null, request.getLocale()));
+      request.setAttribute(errorViewDisplayVar, idpProviderID);
+      request.setAttribute(errorViewSimpleVar, "You need to arrive at this page after authenticating with the Identity Provider.");
+      request.getRequestDispatcher(errorView).forward(request, response);
       return false;
     }
 
@@ -151,9 +173,10 @@ public class IdPVerifier extends HandlerInterceptorAdapter implements ServletCon
     X509Chain x509Chain = (X509Chain)servletContext.getAttribute(Guanxi.CONTEXT_ATTR_X509_CHAIN);
     if (!x509Chain.verifyChain(keyInfoType)) {
       logger.error("Can't find a certificate for the IdP");
-      request.setAttribute("error", messages.getMessage("engine.error.idp.sig.failed.verification", null, request.getLocale()));
-      request.setAttribute("message", idpProviderID);
-      request.getRequestDispatcher(errorPage).forward(request, response);
+      request.setAttribute(errorViewErrorVar, messages.getMessage("engine.error.idp.sig.failed.verification", null, request.getLocale()));
+      request.setAttribute(errorViewDisplayVar, idpProviderID);
+      request.setAttribute(errorViewSimpleVar, "You need to arrive at this page after authenticating with the Identity Provider.");
+      request.getRequestDispatcher(errorView).forward(request, response);
       return false;
     }
 
@@ -189,7 +212,87 @@ public class IdPVerifier extends HandlerInterceptorAdapter implements ServletCon
     logger.debug(sw.toString());
   }
 
-  public void setMessages(MessageSource messages) { this.messages = messages; }
-  
-  public void setErrorPage(String errorPage) { this.errorPage = errorPage; }
+  /**
+   * @return the servletContext
+   */
+  public ServletContext getServletContext() {
+    return servletContext;
+  }
+
+  /**
+   * @param servletContext the servletContext to set
+   */
+  public void setServletContext(ServletContext servletContext) {
+    this.servletContext = servletContext;
+  }
+
+  /**
+   * @return the messages
+   */
+  public MessageSource getMessages() {
+    return messages;
+  }
+
+  /**
+   * @param messages the messages to set
+   */
+  public void setMessages(MessageSource messages) {
+    this.messages = messages;
+  }
+
+  /**
+   * @return the errorView
+   */
+  public String getErrorView() {
+    return errorView;
+  }
+
+  /**
+   * @param errorView the errorView to set
+   */
+  public void setErrorView(String errorView) {
+    this.errorView = errorView;
+  }
+
+  /**
+   * @return the errorViewErrorVar
+   */
+  public String getErrorViewErrorVar() {
+    return errorViewErrorVar;
+  }
+
+  /**
+   * @param errorViewErrorVar the errorViewErrorVar to set
+   */
+  public void setErrorViewErrorVar(String errorViewErrorVar) {
+    this.errorViewErrorVar = errorViewErrorVar;
+  }
+
+  /**
+   * @return the errorViewDisplayVar
+   */
+  public String getErrorViewDisplayVar() {
+    return errorViewDisplayVar;
+  }
+
+  /**
+   * @param errorViewDisplayVar the errorViewDisplayVar to set
+   */
+  public void setErrorViewDisplayVar(String errorViewDisplayVar) {
+    this.errorViewDisplayVar = errorViewDisplayVar;
+  }
+
+  /**
+   * @return the errorViewSimpleVar
+   */
+  public String getErrorViewSimpleVar() {
+    return errorViewSimpleVar;
+  }
+
+  /**
+   * @param errorViewSimpleVar the errorViewSimpleVar to set
+   */
+  public void setErrorViewSimpleVar(String errorViewSimpleVar) {
+    this.errorViewSimpleVar = errorViewSimpleVar;
+  }
 }
