@@ -21,9 +21,8 @@ import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import org.apache.axis.encoding.Base64;
 import org.apache.log4j.Logger;
-import org.apache.xml.security.exceptions.Base64DecodingException;
-import org.apache.xml.security.utils.Base64;
 import org.guanxi.common.job.GuanxiJobConfig;
 import org.guanxi.common.job.SimpleGuanxiJobConfig;
 import org.guanxi.common.metadata.IdPMetadata;
@@ -190,7 +189,7 @@ public class MetadataLoader implements Job {
    * @throws IllegalArgumentException If the certificate does not have the PEM prefix and postfix.
    * @throws Base64DecodingException  If the content of the certificate cannot be decoded as base64.
    */
-  private static byte[] pemToX509(String pemCertificate) throws IllegalArgumentException, Base64DecodingException {
+  private static byte[] pemToX509(String pemCertificate) throws IllegalArgumentException {
     Matcher matcher;
     
     matcher = pemPattern.matcher(pemCertificate);
