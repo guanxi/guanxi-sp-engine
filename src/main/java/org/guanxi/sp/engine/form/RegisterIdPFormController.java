@@ -127,6 +127,10 @@ public class RegisterIdPFormController extends SimpleFormController {
     certificateObject.removeX509Certificate(0);
     certificateObject.addNewX509Certificate().setStringValue(signingCertificate);
 
+    certificateObject = exampleIdPDoc.getEntityDescriptor().getIDPSSODescriptorArray(0).getKeyDescriptorArray(0).getKeyInfo().getX509DataArray(0);
+    certificateObject.removeX509Certificate(0);
+    certificateObject.addNewX509Certificate().setStringValue(signingCertificate);
+
     xmlOptions = new XmlOptions();
     xmlOptions.setSavePrettyPrint();
     xmlOptions.setSavePrettyPrintIndent(2);
