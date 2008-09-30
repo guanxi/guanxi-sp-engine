@@ -125,7 +125,7 @@ public class IdPVerifier extends HandlerInterceptorAdapter implements ServletCon
     if (manager.getMetadata(idpProviderID) != null) {
       // Apply the trust rules to the entity
       if (manager.getTrustEngine() != null) {
-        if (manager.getTrustEngine().trustEntity(manager.getMetadata(idpProviderID), null)) {
+        if (manager.getTrustEngine().trustEntity(manager.getMetadata(idpProviderID), responseDocument)) {
           request.setAttribute(Config.REQUEST_ATTRIBUTE_IDP_METADATA, manager.getMetadata(idpProviderID));
         }
         else {
