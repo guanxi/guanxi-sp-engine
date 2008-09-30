@@ -25,7 +25,9 @@ import org.springframework.context.event.ContextClosedEvent;
 import org.springframework.context.event.ContextRefreshedEvent;
 import org.apache.log4j.Logger;
 import org.guanxi.common.GuanxiException;
+import org.guanxi.common.metadata.Metadata;
 import org.guanxi.common.entity.EntityFarm;
+import org.guanxi.common.entity.EntityManager;
 import org.guanxi.common.job.GuanxiJobConfig;
 import org.guanxi.common.security.SecUtils;
 import org.guanxi.common.definitions.Guanxi;
@@ -108,6 +110,9 @@ public class Bootstrap implements ApplicationListener, ApplicationContextAware, 
         }
       }
 
+      // Inject the metadata farm to handle all source of metadata
+      servletContext.setAttribute(Guanxi.CONTEXT_ATTR_IDP_ENTITY_FARM, entityFarm);
+
       loadGuardMetadata(config.getGuardsMetadataDirectory());
       loadIdPMetadata(config.getIdPMetadataDirectory());
 
@@ -183,9 +188,6 @@ public class Bootstrap implements ApplicationListener, ApplicationContextAware, 
      * but GenericApplicationContext doesn't).
      */
     else if ( applicationEvent instanceof ContextRefreshedEvent ) {
-      // Inject the metadata farm to handle all source of metadata
-      servletContext.setAttribute(Guanxi.CONTEXT_ATTR_IDP_ENTITY_FARM, entityFarm);
-      
       // Advertise the application as available for business
       servletContext.setAttribute(Guanxi.CONTEXT_ATTR_ENGINE_CONFIG, config);
 
@@ -287,8 +289,12 @@ public class Bootstrap implements ApplicationListener, ApplicationContextAware, 
         idpDocument = EntityDescriptorDocument.Factory.parse(currentIdPFile);
         idpDescriptor = idpDocument.getEntityDescriptor();
 
-        // @todo FIX!
-        //IdPMetadataManager.getManager(servletContext).setMetadata(currentIdPFile.getCanonicalPath(), new IdPMetadataImpl(idpDescriptor));
+        EntityFarm farm = (EntityFarm)config.getServletContext().getAttribute(Guanxi.CONTEXT_ATTR_IDP_ENTITY_FARM);
+        // The source is defined in config/spring/application/entity.xml
+        EntityManager manager = farm.getEntityManagerForSource("local-metadata");
+        Metadata metadataHandler = manager.createNewEntityHandler();
+        metadataHandler.setPrivateData(idpDescriptor);
+        manager.addMetadata(metadataHandler);
       }
       catch ( Exception e ) {
         logger.error("Error while loading IdP metadata object : " + currentIdPFile.getAbsolutePath(), e);
