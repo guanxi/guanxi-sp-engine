@@ -16,37 +16,27 @@
 
 package org.guanxi.sp.engine.trust.impl;
 
-import org.guanxi.common.trust.TrustEngine;
+import org.guanxi.common.trust.impl.SimpleTrustEngine;
 import org.guanxi.common.metadata.Metadata;
 
-import javax.security.cert.X509Certificate;
 import java.util.Vector;
+import java.security.cert.X509Certificate;
 
 /**
  * TrustManager implementation that the Engine uses to trust Guards via their local metadata
  *
  * @author alistair
  */
-public class GuanxiLocalTrustEngineImpl implements TrustEngine {
+public class GuanxiLocalTrustEngineImpl extends SimpleTrustEngine {
   private Vector<X509Certificate> caCerts = null;
 
   public GuanxiLocalTrustEngineImpl() {
-    caCerts = new Vector<X509Certificate>();
-  }
-
-  /** @see org.guanxi.common.trust.PKIXPathValidator#addCert(java.security.cert.X509Certificate) */
-  public void addCert(X509Certificate x509Cert) {
-    caCerts.add(x509Cert);
+    super();
   }
 
   /** @see org.guanxi.common.trust.TrustEngine#trustEntity(org.guanxi.common.metadata.Metadata, Object) */
   public boolean trustEntity(Metadata entityMetadata, Object entityData) {
     //@todo default implementation - change
     return true;
-  }
-
-  /** @see org.guanxi.common.trust.PKIXPathValidator#reset() */
-  public void reset() {
-    caCerts.clear();
   }
 }
