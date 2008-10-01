@@ -1,5 +1,134 @@
 <EntitiesDescriptor xmlns="urn:oasis:names:tc:SAML:2.0:metadata" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" Name="http://ukfederation.org.uk" xsi:schemaLocation="urn:oasis:names:tc:SAML:2.0:metadata sstc-saml-schema-metadata-2.0.xsd   urn:mace:shibboleth:metadata:1.0 shibboleth-metadata-1.0.xsd   http://www.w3.org/2001/04/xmlenc# xenc-schema.xsd   http://www.w3.org/2000/09/xmldsig# xmldsig-core-schema.xsd">
 
+  <Extensions>
+    <shibmeta:KeyAuthority xmlns:shibmeta="urn:mace:shibboleth:metadata:1.0" VerifyDepth="3">
+      <ds:KeyInfo xmlns:ds="http://www.w3.org/2000/09/xmldsig#">
+        <!--
+
+          SDSS project internal CA
+
+          * CN=SDSS CA, O=JISC Core Middleware Programme, C=GB
+
+            This is used to sign individual certificates directly with no intermediates.
+
+          No intermediates, so requires a verification depth of at least 1.
+
+          Validity
+            Not Before: Aug 24 13:34:50 2004 GMT
+            Not After : Dec 31 13:34:50 2008 GMT
+
+        -->
+        <ds:X509Data>
+          <ds:X509Certificate>MIICvDCCAiWgAwIBAgIBADANBgkqhkiG9w0BAQUFADBIMQswCQYDVQQGEwJHQjEn
+MCUGA1UEChMeSklTQyBDb3JlIE1pZGRsZXdhcmUgUHJvZ3JhbW1lMRAwDgYDVQQD
+EwdTRFNTIENBMB4XDTA0MDgyNDEzMzQ1MFoXDTA4MTIzMTEzMzQ1MFowSDELMAkG
+A1UEBhMCR0IxJzAlBgNVBAoTHkpJU0MgQ29yZSBNaWRkbGV3YXJlIFByb2dyYW1t
+ZTEQMA4GA1UEAxMHU0RTUyBDQTCBnzANBgkqhkiG9w0BAQEFAAOBjQAwgYkCgYEA
+nG0nCHnged5EI4vKLU5ate5WzjJd39Zv7PZLuJIBN8M7RM3AfOqhXfcF1xGYs5oM
+GRytf672Fo3UffTn0wjOPRv+ZpK5YMjc1i1I44lWY/zHS3smT5gl7ZinRqyjBhTZ
+1WB0rHIiVJtBU10BmC/Gu96xV4331/CIAyoVbQNIn+cCAwEAAaOBtTCBsjAdBgNV
+HQ4EFgQUvq0gh0kHZ3Eez9e6q0CKdxYdK8AwcAYDVR0jBGkwZ4AUvq0gh0kHZ3Ee
+z9e6q0CKdxYdK8ChTKRKMEgxCzAJBgNVBAYTAkdCMScwJQYDVQQKEx5KSVNDIENv
+cmUgTWlkZGxld2FyZSBQcm9ncmFtbWUxEDAOBgNVBAMTB1NEU1MgQ0GCAQAwDwYD
+VR0TBAgwBgEB/wIBADAOBgNVHQ8BAf8EBAMCAQYwDQYJKoZIhvcNAQEFBQADgYEA
+aImnqqpFtvuPayuSPSoH4gTaW0t3GOnN2stnRPrcP0FzfmQOA1BruKA4JsrRhBOs
+KyAs/351HF4hkBivFp2BXb4qQDP45l9YUJwTSfZT4oBLem5UWIZ/gzgYISz6G5eH
+0SOjzJxojpTWKe0eLkp9qUAdTgFKerXB9p+V84Uzgng=
+</ds:X509Certificate>
+        </ds:X509Data>
+      </ds:KeyInfo>
+
+      <ds:KeyInfo xmlns:ds="http://www.w3.org/2000/09/xmldsig#">
+        <!--
+
+          GTE CyberTrust Global Root
+
+          * CN=GTE CyberTrust Global Root, OU=GTE CyberTrust Solutions, Inc.,
+            O=GTE Corporation, C=US
+
+            This is used to sign:
+
+            * CN=Cybertrust Educational CA, OU=Educational CA, O=Cybertrust, C=BE
+
+              This in turn is used to sign SureServer EDU end certificates.
+
+          One intermediate CA below the root, so requires a verification depth of at least 2.
+
+          Validity
+            Not Before: Aug 13 00:29:00 1998 GMT
+            Not After : Aug 13 23:59:00 2018 GMT
+
+        -->
+        <ds:X509Data>
+          <ds:X509Certificate>MIICWjCCAcMCAgGlMA0GCSqGSIb3DQEBBAUAMHUxCzAJBgNVBAYTAlVTMRgwFgYD
+VQQKEw9HVEUgQ29ycG9yYXRpb24xJzAlBgNVBAsTHkdURSBDeWJlclRydXN0IFNv
+bHV0aW9ucywgSW5jLjEjMCEGA1UEAxMaR1RFIEN5YmVyVHJ1c3QgR2xvYmFsIFJv
+b3QwHhcNOTgwODEzMDAyOTAwWhcNMTgwODEzMjM1OTAwWjB1MQswCQYDVQQGEwJV
+UzEYMBYGA1UEChMPR1RFIENvcnBvcmF0aW9uMScwJQYDVQQLEx5HVEUgQ3liZXJU
+cnVzdCBTb2x1dGlvbnMsIEluYy4xIzAhBgNVBAMTGkdURSBDeWJlclRydXN0IEds
+b2JhbCBSb290MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQCVD6C28FCc6HrH
+iM3dFw4usJTQGz0O9pTAipTHBsiQl8i4ZBp6fmw8U+E3KHNgf7KXUwefU/ltWJTS
+r41tiGeA5u2ylc9yMcqlHHK6XALnZELn+aks1joNrI1CqiQBOeacPwGFVw1Yh0X4
+04Wqk2kmhXBIgD8SFcd5tB8FLztimQIDAQABMA0GCSqGSIb3DQEBBAUAA4GBAG3r
+GwnpXtlR22ciYaQqPEh346B8pt5zohQDhT37qw4wxYMWM4ETCJ57NE7fQMh017l9
+3PR2VX2bY1QY6fDq81yx2YtCHrnAlU66+tXifPVoYb+O7AWXX1uw16OFNMQkpw0P
+lZPvy5TYnh+dXIVtx6quTx8itc2VrbqnzPmrC3p/
+</ds:X509Certificate>
+        </ds:X509Data>        
+      </ds:KeyInfo>
+
+      <ds:KeyInfo xmlns:ds="http://www.w3.org/2000/09/xmldsig#">
+        <!--
+
+          Cybertrust Educational CA
+
+          * CN=Cybertrust Educational CA, OU=Educational CA, O=Cybertrust, C=BE
+
+            This is used to sign SureServer EDU end certificates
+
+          This is an intermediate CA, signed by:
+
+            * CN=GTE CyberTrust Global Root, OU=GTE CyberTrust Solutions, Inc.,
+              O=GTE Corporation, C=US
+
+          No intermediate certificates below this, so only requires a
+          verification depth of at least 1.
+
+          Validity
+            Not Before: Mar 14 20:30:00 2006 GMT
+            Not After : Mar 14 23:59:00 2013 GMT
+
+        -->
+        <ds:X509Data>
+          <ds:X509Certificate>MIIEQjCCA6ugAwIBAgIEBAAD+zANBgkqhkiG9w0BAQUFADB1MQswCQYDVQQGEwJV
+UzEYMBYGA1UEChMPR1RFIENvcnBvcmF0aW9uMScwJQYDVQQLEx5HVEUgQ3liZXJU
+cnVzdCBTb2x1dGlvbnMsIEluYy4xIzAhBgNVBAMTGkdURSBDeWJlclRydXN0IEds
+b2JhbCBSb290MB4XDTA2MDMxNDIwMzAwMFoXDTEzMDMxNDIzNTkwMFowXzELMAkG
+A1UEBhMCQkUxEzARBgNVBAoTCkN5YmVydHJ1c3QxFzAVBgNVBAsTDkVkdWNhdGlv
+bmFsIENBMSIwIAYDVQQDExlDeWJlcnRydXN0IEVkdWNhdGlvbmFsIENBMIIBIjAN
+BgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAlSKhEB1KRmBuBZGb34PC7RKyWnz4
+q+H4UFwoLH5+ADiTsItK8cJMPBAsPO+w7KFpL7n8zAgUa41PGPOD0vqpNwggqlyq
+gGCi1aUiAM9a5bSX37oevlyOFxlm/a+ffHuJsg4k2MerY8SVMo1I5mNZfQS4M6i9
+111kvGO1900o/fkGcjFcukWUZaPStFjsO2FYRKMvYrObgLSC/dXHzFEl5ZU/Ry8w
+e6zIeG7i4W0n6z3MAYLoNXeNq1i7VdHVpIFWjRzQFLGwBt6gkSLz8Kg0F0fG4D72
+DFqsflBLzeFpbgb8Bn5qTbSVmaBZXDVm7NlJ1BfgYLBdpdca4ipuZvKvHQIDAQAB
+o4IBbzCCAWswRQYDVR0fBD4wPDA6oDigNoY0aHR0cDovL3d3dy5wdWJsaWMtdHJ1
+c3QuY29tL2NnaS1iaW4vQ1JMLzIwMTgvY2RwLmNybDAdBgNVHQ4EFgQUZWWjPdc7
+EaMKByU3yUJKW3Z3UOEwUwYDVR0gBEwwSjBIBgkrBgEEAbE+AQAwOzA5BggrBgEF
+BQcCARYtaHR0cDovL3d3dy5wdWJsaWMtdHJ1c3QuY29tL0NQUy9PbW5pUm9vdC5o
+dG1sMIGJBgNVHSMEgYEwf6F5pHcwdTELMAkGA1UEBhMCVVMxGDAWBgNVBAoTD0dU
+RSBDb3Jwb3JhdGlvbjEnMCUGA1UECxMeR1RFIEN5YmVyVHJ1c3QgU29sdXRpb25z
+LCBJbmMuMSMwIQYDVQQDExpHVEUgQ3liZXJUcnVzdCBHbG9iYWwgUm9vdIICAaUw
+DgYDVR0PAQH/BAQDAgEGMBIGA1UdEwEB/wQIMAYBAf8CAQAwDQYJKoZIhvcNAQEF
+BQADgYEAQ7NFg1RxxB/csjxrTr8m8k7yrZpb+oY3iOgUbEEYQl/vZT7rA3egt551
+elF8uxVbuK+RoDSSU+1/KkmErLmAS7XHsiMi++vY+27JPPPS0bu+yRz/bQHbaYAO
+maXqnnuXmI+3zyKcs7hd5akzF3TGlzcPtOkmgl9hCz8ePWTpK5s=
+</ds:X509Certificate>
+        </ds:X509Data>        
+      </ds:KeyInfo>
+    </shibmeta:KeyAuthority>
+  </Extensions>
+
   <EntityDescriptor ID="007" entityID="urn:bond:hq">
       <IDPSSODescriptor protocolSupportEnumeration="urn:oasis:names:tc:SAML:1.1:protocol urn:mace:shibboleth:1.0">
           <KeyDescriptor use="signing">
