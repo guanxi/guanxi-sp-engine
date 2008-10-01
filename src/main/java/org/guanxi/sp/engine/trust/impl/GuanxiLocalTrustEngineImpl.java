@@ -19,8 +19,6 @@ package org.guanxi.sp.engine.trust.impl;
 import org.guanxi.common.trust.impl.SimpleTrustEngine;
 import org.guanxi.common.metadata.Metadata;
 
-import java.util.Vector;
-import java.security.cert.X509Certificate;
 
 /**
  * TrustManager implementation that the Engine uses to trust Guards via their local metadata
@@ -28,8 +26,6 @@ import java.security.cert.X509Certificate;
  * @author alistair
  */
 public class GuanxiLocalTrustEngineImpl extends SimpleTrustEngine {
-  private Vector<X509Certificate> caCerts = null;
-
   public GuanxiLocalTrustEngineImpl() {
     super();
   }
