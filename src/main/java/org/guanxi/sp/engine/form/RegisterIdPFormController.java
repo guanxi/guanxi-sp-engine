@@ -27,7 +27,6 @@ import org.guanxi.common.entity.EntityFarm;
 import org.guanxi.common.entity.EntityManager;
 import org.guanxi.common.metadata.Metadata;
 import org.guanxi.sp.engine.Config;
-import org.guanxi.sp.engine.X509Chain;
 import org.apache.xmlbeans.XmlOptions;
 
 import javax.servlet.ServletException;
@@ -88,8 +87,6 @@ public class RegisterIdPFormController extends SimpleFormController {
     Metadata metadataHandler = manager.createNewEntityHandler();
     metadataHandler.setPrivateData(loadedIdPDocument.getEntityDescriptor());
     manager.addMetadata(metadataHandler);
-
-    X509Chain.loadX509CertsFromMetadata();
 
     ModelAndView mAndV = new ModelAndView();
     mAndV.setViewName(getSuccessView());

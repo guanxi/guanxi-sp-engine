@@ -52,9 +52,6 @@ public class Bootstrap implements ApplicationListener, ApplicationContextAware, 
   private ApplicationContext applicationContext = null;
   /** The servlet context */
   private ServletContext servletContext = null;
-  /** Holds all the IdP X509 certificates and their chains loaded from the metadata directory. This
-   * is what's used to verify an IdP's AuthenticationStatement for example */
-  private X509Chain x509Chain = null;
   /** Our configuration */
   private Config config = null;
   /** If this instance of an Engine loads the BouncyCastle security provider then it should unload it */
@@ -115,8 +112,6 @@ public class Bootstrap implements ApplicationListener, ApplicationContextAware, 
 
       loadGuardMetadata(config.getGuardsMetadataDirectory());
       loadIdPMetadata(config.getIdPMetadataDirectory());
-
-      x509Chain = new X509Chain(config.getIdPMetadataDirectory());
 
       startJobs();
     }
@@ -191,9 +186,6 @@ public class Bootstrap implements ApplicationListener, ApplicationContextAware, 
       // Advertise the application as available for business
       servletContext.setAttribute(Guanxi.CONTEXT_ATTR_ENGINE_CONFIG, config);
 
-      // Add the X509 stuff to the context
-      servletContext.setAttribute(Guanxi.CONTEXT_ATTR_X509_CHAIN, x509Chain);
-      
       logger.info("init : " + config.getId());
     }
   }
