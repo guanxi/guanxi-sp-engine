@@ -23,13 +23,11 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationEvent;
 import org.springframework.context.event.ContextClosedEvent;
 import org.springframework.context.event.ContextRefreshedEvent;
-import org.springframework.context.event.ContextStartedEvent;
-import org.springframework.context.event.ContextStoppedEvent;
 import org.apache.log4j.Logger;
-import org.apache.xmlbeans.XmlException;
-import org.guanxi.common.metadata.IdPMetadataManager;
-import org.guanxi.common.metadata.IdPMetadataImpl;
 import org.guanxi.common.GuanxiException;
+import org.guanxi.common.metadata.Metadata;
+import org.guanxi.common.entity.EntityFarm;
+import org.guanxi.common.entity.EntityManager;
 import org.guanxi.common.job.GuanxiJobConfig;
 import org.guanxi.common.security.SecUtils;
 import org.guanxi.common.definitions.Guanxi;
@@ -43,12 +41,7 @@ import javax.servlet.ServletContext;
 import java.security.Security;
 import java.security.Provider;
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
 import java.io.FilenameFilter;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
 import java.text.ParseException;
 
 public class Bootstrap implements ApplicationListener, ApplicationContextAware, ServletContextAware {
@@ -59,15 +52,14 @@ public class Bootstrap implements ApplicationListener, ApplicationContextAware, 
   private ApplicationContext applicationContext = null;
   /** The servlet context */
   private ServletContext servletContext = null;
-  /** Holds all the IdP X509 certificates and their chains loaded from the metadata directory. This
-   * is what's used to verify an IdP's AuthenticationStatement for example */
-  private X509Chain x509Chain = null;
   /** Our configuration */
   private Config config = null;
   /** If this instance of an Engine loads the BouncyCastle security provider then it should unload it */
   private boolean okToUnloadBCProvider = false;
   /** The background jobs to start */
   private GuanxiJobConfig[] gxJobs = null;
+  /** The MetadataFarm instance to use */
+  private EntityFarm entityFarm = null;
 
   /**
    * Initialise the intercepter
@@ -115,10 +107,11 @@ public class Bootstrap implements ApplicationListener, ApplicationContextAware, 
         }
       }
 
+      // Inject the metadata farm to handle all source of metadata
+      servletContext.setAttribute(Guanxi.CONTEXT_ATTR_IDP_ENTITY_FARM, entityFarm);
+
       loadGuardMetadata(config.getGuardsMetadataDirectory());
       loadIdPMetadata(config.getIdPMetadataDirectory());
-
-      x509Chain = new X509Chain(config.getIdPMetadataDirectory());
 
       startJobs();
     }
@@ -193,96 +186,7 @@ public class Bootstrap implements ApplicationListener, ApplicationContextAware, 
       // Advertise the application as available for business
       servletContext.setAttribute(Guanxi.CONTEXT_ATTR_ENGINE_CONFIG, config);
 
-      // Add the X509 stuff to the context
-      servletContext.setAttribute(Guanxi.CONTEXT_ATTR_X509_CHAIN, x509Chain);
-      
       logger.info("init : " + config.getId());
-    }
-    
-    /*
-     * ContextStartedEvent  
-     * Published when the ApplicationContext is started, using the 
-     * start() method on the ConfigurableApplicationContext 
-     * interface. "Started" here means that all life cycle beans will 
-     * receive an explicit start signal. This will typically be used 
-     * for restarting after an explicit stop, but may also be used 
-     * for starting components that haven't been configured for 
-     * auto start (e.g. haven't started on initialisation already).
-     */
-    else if ( applicationEvent instanceof ContextStartedEvent ) {
-      try {
-        loadMetadata();
-      }
-      catch ( Exception e ) {
-        logger.error("Unable to load cached metadata", e);
-      }
-    }
-    
-    /*
-     * ContextStoppedEvent  
-     * Published when the ApplicationContext is stopped, using the 
-     * stop() method on the ConfigurableApplicationContext interface. 
-     * "Stopped" here means that all life cycle beans will receive an 
-     * explicit stop signal. A stopped context may be restarted through 
-     * a start() call.
-     */
-    else if ( applicationEvent instanceof ContextStoppedEvent ) {
-      try {
-        saveMetadata();
-      }
-      catch ( Exception e ) {
-        logger.error("Unable to save metadata to cache", e);
-      }
-    }
-  }
-  
-  /**
-   * This will load the cached metadata if it has been saved.
-   * This means that the webapp can restore the loaded metadata
-   * even if the metadata sources are not available on startup.
-   * 
-   * @throws IOException  If there is a problem reading the cache file.
-   * @throws XmlException If there is a problem parsing the XML in the cache file.
-   */
-  private void loadMetadata() throws IOException, XmlException {
-    File metadata_file;
-    
-    metadata_file = new File(config.getMetadataCacheFile());
-    if ( metadata_file.exists() ) {
-      InputStream in;
-      
-      in = new FileInputStream(metadata_file);
-      try {
-        IdPMetadataManager.getManager(servletContext).read(in);
-      }
-      finally {
-        in.close();
-      }
-    }
-  }
-  
-  /**
-   * This will save the metadata to a file for later loading when
-   * the application starts. This allows the loaded metadata to be
-   * restored even if the metadata sources are not available when
-   * the application starts up.
-   * 
-   * @throws IOException  If there is a problem writing to the cache file.
-   */
-  private void saveMetadata() throws IOException {
-    File metadata_file;
-    
-    metadata_file = new File(config.getMetadataCacheFile());
-    if ( metadata_file.exists() ) {
-      OutputStream out;
-      
-      out = new FileOutputStream(metadata_file);
-      try {
-        IdPMetadataManager.getManager(servletContext).write(out);
-      }
-      finally {
-        out.close();
-      }
     }
   }
 
@@ -376,8 +280,13 @@ public class Bootstrap implements ApplicationListener, ApplicationContextAware, 
         
         idpDocument = EntityDescriptorDocument.Factory.parse(currentIdPFile);
         idpDescriptor = idpDocument.getEntityDescriptor();
-        
-        IdPMetadataManager.getManager(servletContext).setMetadata(currentIdPFile.getCanonicalPath(), new IdPMetadataImpl(idpDescriptor));
+
+        EntityFarm farm = (EntityFarm)config.getServletContext().getAttribute(Guanxi.CONTEXT_ATTR_IDP_ENTITY_FARM);
+        // The source is defined in config/spring/application/entity.xml
+        EntityManager manager = farm.getEntityManagerForSource("local-metadata");
+        Metadata metadataHandler = manager.createNewEntityHandler();
+        metadataHandler.setPrivateData(idpDescriptor);
+        manager.addMetadata(metadataHandler);
       }
       catch ( Exception e ) {
         logger.error("Error while loading IdP metadata object : " + currentIdPFile.getAbsolutePath(), e);
@@ -480,4 +389,7 @@ public class Bootstrap implements ApplicationListener, ApplicationContextAware, 
   public void setGxJobs(GuanxiJobConfig[] gxJobs) { 
     this.gxJobs = gxJobs; 
   }
+
+  public EntityFarm getEntityFarm() { return entityFarm; }
+  public void setEntityFarm(EntityFarm entityFarm) { this.entityFarm = entityFarm; }
 }

@@ -1,6 +1,33 @@
 <EntityDescriptor xmlns="urn:oasis:names:tc:SAML:2.0:metadata"
                   xmlns:ds="http://www.w3.org/2000/09/xmldsig#"
                   entityID="GUANXI-677708451">
+  <IDPSSODescriptor protocolSupportEnumeration="urn:oasis:names:tc:SAML:1.1:protocol urn:mace:shibboleth:1.0">
+      <KeyDescriptor use="signing">
+          <ds:KeyInfo xmlns:ds="http://www.w3.org/2000/09/xmldsig#">
+              <ds:X509Data>
+                  <ds:X509Certificate>
+                      MIIDCDCCAnGgAwIBAgIBNDANBgkqhkiG9w0BAQUFADBIMQswCQYDVQQGEwJHQjEn
+                      MCUGA1UEChMeSklTQyBDb3JlIE1pZGRsZXdhcmUgUHJvZ3JhbW1lMRAwDgYDVQQD
+                      EwdTRFNTIENBMB4XDTA2MDUwMzEzMDgwNloXDTA4MTIzMTAwMDAwMFowajELMAkG
+                      A1UEBhMCR0IxJzAlBgNVBAoTHkpJU0MgQ29yZSBNaWRkbGV3YXJlIFByb2dyYW1t
+                      ZTEVMBMGA1UECxMMU0RTUyBQcm9qZWN0MRswGQYDVQQDExJ0eXBla2V5LmlheS5v
+                      cmcudWswgZ8wDQYJKoZIhvcNAQEBBQADgY0AMIGJAoGBALht9nI6ptlFxZWEl2vV
+                      43Xptz2gHrUQDClrHW5cBSnjv1enxv/SuguS+O6l99TP8gBojrEBWHYfzFEMz+z+
+                      FzsbBzdOVn9aopF/TNF3fxM/oA43UYDGa5iBdSBYASQmdoBAOITYdy0M7rODNR2R
+                      srxb7LeucEGxnLVmPGoxqHQ3AgMBAAGjgd8wgdwwCQYDVR0TBAIwADALBgNVHQ8E
+                      BAMCBLAwMQYDVR0fBCowKDAmoCSgIoYgaHR0cDovL3Nkc3MuYWMudWsvY2Evc2Rz
+                      cy1jYS5jcmwwHQYDVR0OBBYEFKVL9TFhqUcGuePLcLVqvveSZD5NMHAGA1UdIwRp
+                      MGeAFL6tIIdJB2dxHs/XuqtAincWHSvAoUykSjBIMQswCQYDVQQGEwJHQjEnMCUG
+                      A1UEChMeSklTQyBDb3JlIE1pZGRsZXdhcmUgUHJvZ3JhbW1lMRAwDgYDVQQDEwdT
+                      RFNTIENBggEAMA0GCSqGSIb3DQEBBQUAA4GBAJn9Av00NfMQVTgf7G2LIaikA3pJ
+                      XlwW0jDNP7lr8UUokq0dSVbMbs5LqrahqYOyXVe9EU13Vu64b+RIMS/40lSGOsdY
+                      q0uInD4DEDadSbqbWsww4CrH0GrrCf/MYS6YP8BwtHdLnFGqaKkMcLiBovRtBdxI
+                      PiGb0i1oYBRRNGeI
+                  </ds:X509Certificate>
+              </ds:X509Data>
+          </ds:KeyInfo>
+      </KeyDescriptor>
+  </IDPSSODescriptor>
   <AttributeAuthorityDescriptor xmlns:saml="urn:oasis:names:tc:SAML:2.0:assertion"
                                 protocolSupportEnumeration="urn:oasis:names:tc:SAML:2.0:protocol">
     <KeyDescriptor use="signing">
