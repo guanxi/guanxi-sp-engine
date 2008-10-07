@@ -126,6 +126,36 @@ maXqnnuXmI+3zyKcs7hd5akzF3TGlzcPtOkmgl9hCz8ePWTpK5s=
 </ds:X509Certificate>
         </ds:X509Data>        
       </ds:KeyInfo>
+
+      <ds:KeyInfo xmlns:ds="http://www.w3.org/2000/09/xmldsig#">
+        <!--
+
+          GUANXI 1182852605
+
+          This is the cert from WEB-INF/guanxi_idp/keystore/guanxi_idp_cert.txt
+
+          It's the cert that's embedded in the AuthenticationStatement. It's needed
+          here as the particular entity has no embedded X509 in its metadata.
+
+        -->
+        <ds:X509Data>
+          <ds:X509Certificate>MIICfDCCAjygAwIBAgIRAKGUhxQlnNDlnwfAy8WuTeIwCQYHKoZIzjgEAzAdMRsw
+GQYDVQQDDBJHVUFOWEktLTExODI4NTI2MDUwHhcNMDgxMDA3MjA0MzE4WhcNMDgx
+MDI3MjA1MzE4WjAdMRswGQYDVQQDDBJHVUFOWEktLTExODI4NTI2MDUwggG3MIIB
+LAYHKoZIzjgEATCCAR8CgYEA/X9TgR11EilS30qcLuzk5/YRt1I870QAwx4/gLZR
+JmlFXUAiUftZPY1Y+r/F9bow9subVWzXgTuAHTRv8mZgt2uZUKWkn5/oBHsQIsJP
+u6nX/rfGG/g7V+fGqKYVDwT7g/bTxR7DAjVUE1oWkTL2dfOuK2HXKu/yIgMZndFI
+AccCFQCXYFCPFSMLzLKSuYKi64QL8Fgc9QKBgQD34aCF1ps93su8q1w2uFe5eZSv
+u/o66oL5V0wLPQeCZ1FZV4661FlP5nEHEIGAtEkWcSPoTCgWE7fPCTKMyKbhPBZ6
+i1R8jSjgo64eK7OmdZFuo38L+iE1YvH7YnoBJDvMpPG+qFGQiaiD3+Fa5Z8Gkotm
+XoB7VSVkAUw7/s9JKgOBhAACgYA71mDYbXAwW3DzOGIEi+3CqhOKG0qkrkr+rVGP
+9Lo25K8UAZakZzdVnBuNTTNFlGLeuHLOafOBp90GvPNellli0mO7JSnsY1EaMeOp
+QJJswElJW3OtgKgkCXtBRrmIxq9hrkK/U6/EebZlwmszT8uNZafeVjuyMgKpDBIb
+IypZ4zAJBgcqhkjOOAQDAy8AMCwCFBOix9dREU9CVsdeyMdKOlwinwqPAhRMns9d
+Fxrb78LRvQVLn9OaYSEI/Q==
+</ds:X509Certificate>
+        </ds:X509Data>
+      </ds:KeyInfo>
     </shibmeta:KeyAuthority>
   </Extensions>
 
@@ -156,6 +186,59 @@ maXqnnuXmI+3zyKcs7hd5akzF3TGlzcPtOkmgl9hCz8ePWTpK5s=
                   </ds:X509Data>
               </ds:KeyInfo>
           </KeyDescriptor>
+          <ArtifactResolutionService Binding="urn:oasis:names:tc:SAML:1.0:bindings:SOAP-binding" Location="https://notneeded.com" index="0"></ArtifactResolutionService>
+          <NameIDFormat>urn:mace:shibboleth:1.0:nameIdentifier</NameIDFormat>
+          <SingleSignOnService Binding="urn:mace:shibboleth:1.0:profiles:AuthnRequest" Location="https://notneeded.com"></SingleSignOnService>
+      </IDPSSODescriptor>
+  </EntityDescriptor>
+
+  <!-- Metadata for direct X509 validation test
+       X509Certificate is from WEB-INF/guanxi_idp/keystore/guanxi_idp_cert.txt
+       entityID is from WEB-INF/guanxi_idp/config/idp.xml
+  -->
+  <EntityDescriptor ID="007" entityID="GUANXI-1235342852">
+      <IDPSSODescriptor protocolSupportEnumeration="urn:oasis:names:tc:SAML:1.1:protocol urn:mace:shibboleth:1.0">
+          <KeyDescriptor use="signing">
+              <ds:KeyInfo xmlns:ds="http://www.w3.org/2000/09/xmldsig#">
+                  <ds:X509Data>
+                      <!-- This is the X509 cert from the signature in samlresponse.xml -->
+                      <ds:X509Certificate>
+                        MIICeTCCAjmgAwIBAgIQdzaYLirlar1lxCGqJE0SgTAJBgcqhkjOOAQDMBwxGjAY
+                        BgNVBAMMEUdVQU5YSS0xMjM1MzQyODUyMB4XDTA4MDkzMDA5NDA0NloXDTA4MTAy
+                        MDA5NTA0NlowHDEaMBgGA1UEAwwRR1VBTlhJLTEyMzUzNDI4NTIwggG3MIIBLAYH
+                        KoZIzjgEATCCAR8CgYEA/X9TgR11EilS30qcLuzk5/YRt1I870QAwx4/gLZRJmlF
+                        XUAiUftZPY1Y+r/F9bow9subVWzXgTuAHTRv8mZgt2uZUKWkn5/oBHsQIsJPu6nX
+                        /rfGG/g7V+fGqKYVDwT7g/bTxR7DAjVUE1oWkTL2dfOuK2HXKu/yIgMZndFIAccC
+                        FQCXYFCPFSMLzLKSuYKi64QL8Fgc9QKBgQD34aCF1ps93su8q1w2uFe5eZSvu/o6
+                        6oL5V0wLPQeCZ1FZV4661FlP5nEHEIGAtEkWcSPoTCgWE7fPCTKMyKbhPBZ6i1R8
+                        jSjgo64eK7OmdZFuo38L+iE1YvH7YnoBJDvMpPG+qFGQiaiD3+Fa5Z8GkotmXoB7
+                        VSVkAUw7/s9JKgOBhAACgYBF2hp2zSNdSvBAouKx570JEVw6IY2dJTukX5fqt6cB
+                        JwSN2ekyz0xR4D1MlxGjtdnqOgxBOzBr/jtrpyeeeAzEMJYBDy3KMgZw6+5Tdpmp
+                        /Yjb5cvielTS8ljt4N5ganAVXOMm+F5l0ZwXB2upigfWywjFXzRjUzA4NTlvzTQY
+                        FjAJBgcqhkjOOAQDAy8AMCwCFCv9+MDiTYylrtXCsL1lKU8zhL9jAhQFmbg7o5H5
+                        Lrthuh6FWkRE6IT6YA==
+                      </ds:X509Certificate>
+                  </ds:X509Data>
+              </ds:KeyInfo>
+          </KeyDescriptor>
+          <ArtifactResolutionService Binding="urn:oasis:names:tc:SAML:1.0:bindings:SOAP-binding" Location="https://notneeded.com" index="0"></ArtifactResolutionService>
+          <NameIDFormat>urn:mace:shibboleth:1.0:nameIdentifier</NameIDFormat>
+          <SingleSignOnService Binding="urn:mace:shibboleth:1.0:profiles:AuthnRequest" Location="https://notneeded.com"></SingleSignOnService>
+      </IDPSSODescriptor>
+  </EntityDescriptor>
+
+  <!-- Metadata for PKIX path validation test
+       entityID is from WEB-INF/guanxi_idp/config/idp.xml
+       The signature on the AuthenticationStatement is self signed so the certificate
+       has to appear in the shibmeta:KeyAuthority section
+  -->
+  <EntityDescriptor ID="008" entityID="GUANXI--1182852605">
+      <IDPSSODescriptor protocolSupportEnumeration="urn:oasis:names:tc:SAML:1.1:protocol urn:mace:shibboleth:1.0">
+        <KeyDescriptor use="signing">
+          <ds:KeyInfo xmlns:ds="http://www.w3.org/2000/09/xmldsig#">
+            <ds:KeyName>GUANXI--1182852605</ds:KeyName>
+          </ds:KeyInfo>
+        </KeyDescriptor>
           <ArtifactResolutionService Binding="urn:oasis:names:tc:SAML:1.0:bindings:SOAP-binding" Location="https://notneeded.com" index="0"></ArtifactResolutionService>
           <NameIDFormat>urn:mace:shibboleth:1.0:nameIdentifier</NameIDFormat>
           <SingleSignOnService Binding="urn:mace:shibboleth:1.0:profiles:AuthnRequest" Location="https://notneeded.com"></SingleSignOnService>
