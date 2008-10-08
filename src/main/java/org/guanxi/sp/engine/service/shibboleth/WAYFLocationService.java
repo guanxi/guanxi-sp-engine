@@ -128,7 +128,7 @@ public class WAYFLocationService extends AbstractController implements ServletCo
            * own keystore to let the Guard authenticate us.
            */
           EntityConnection guardConnection = new EntityConnection(queryString,
-                                                                  config.getId(), // alias of cert
+                                                                  config.getCertificateAlias(), // alias of cert
                                                                   config.getKeystore(),
                                                                   config.getKeystorePassword(),
                                                                   config.getTrustStore(),
@@ -167,7 +167,7 @@ public class WAYFLocationService extends AbstractController implements ServletCo
     String verificationResult = null;
     try {
       EntityConnection verifierService = new EntityConnection(queryString,
-                                                              config.getId(), // alias of cert
+                                                              config.getCertificateAlias(), // alias of cert
                                                               config.getKeystore(),
                                                               config.getKeystorePassword(),
                                                               config.getTrustStore(),
