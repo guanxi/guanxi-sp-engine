@@ -113,7 +113,7 @@ public class IdPVerifier extends HandlerInterceptorAdapter implements ServletCon
     /* Find the IdP's metadata from our store. This is based on it's providerId, which is matched
      * against the entityID in the IdP's EntityDescriptor file.
      */
-    EntityFarm farm = (EntityFarm)servletContext.getAttribute(Guanxi.CONTEXT_ATTR_IDP_ENTITY_FARM);
+    EntityFarm farm = (EntityFarm)servletContext.getAttribute(Guanxi.CONTEXT_ATTR_ENGINE_ENTITY_FARM);
     EntityManager manager = farm.getEntityManagerForID(idpProviderID);
     if (manager == null) {
       logger.error("Could not find manager for IdP '" + idpProviderID + "' in the metadata repository");

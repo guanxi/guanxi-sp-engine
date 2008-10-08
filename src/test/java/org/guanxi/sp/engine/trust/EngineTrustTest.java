@@ -56,7 +56,7 @@ public class EngineTrustTest extends EngineTest {
       HashMap<String, EntityManager> managers = new HashMap<String, EntityManager>();
       managers.put(metadataURL, (EntityManager)ctx.getBean("spSAML2EntityManager"));
       farm.setEntityManagers(managers);
-      servletContext.setAttribute(Guanxi.CONTEXT_ATTR_IDP_ENTITY_FARM, farm);
+      servletContext.setAttribute(Guanxi.CONTEXT_ATTR_ENGINE_ENTITY_FARM, farm);
 
       // Initialise the test job settings
       JobDetail jobDetail = new JobDetail("TEST_KEY", Scheduler.DEFAULT_GROUP,
