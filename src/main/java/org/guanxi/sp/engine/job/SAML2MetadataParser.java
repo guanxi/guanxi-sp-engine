@@ -128,7 +128,7 @@ public class SAML2MetadataParser implements Job {
       }
 
       for (EntityDescriptorType entityDescriptor : entityDescriptors) {
-        // Look for Service Providers
+        // Look for Identity Providers
         if (entityDescriptor.getIDPSSODescriptorArray().length > 0) {
           logger.info("Loading IdP metadata for : " + entityDescriptor.getEntityID());
 
