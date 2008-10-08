@@ -81,7 +81,7 @@ public class RegisterIdPFormController extends SimpleFormController {
 
     EntityDescriptorDocument loadedIdPDocument = EntityDescriptorDocument.Factory.parse(newIdPFile);
 
-    EntityFarm farm = (EntityFarm)config.getServletContext().getAttribute(Guanxi.CONTEXT_ATTR_IDP_ENTITY_FARM);
+    EntityFarm farm = (EntityFarm)config.getServletContext().getAttribute(Guanxi.CONTEXT_ATTR_ENGINE_ENTITY_FARM);
     // The source is defined in config/spring/application/entity.xml
     EntityManager manager = farm.getEntityManagerForSource("local-metadata");
     Metadata metadataHandler = manager.createNewEntityHandler();
