@@ -86,7 +86,7 @@ public class SAML2MetadataParser implements Job {
       logger.error("Could not cache metadata to : " + config.getMetadataCacheFile(), ge);
     }
 
-    EntityFarm farm = (EntityFarm)config.getServletContext().getAttribute(Guanxi.CONTEXT_ATTR_IDP_ENTITY_FARM);
+    EntityFarm farm = (EntityFarm)config.getServletContext().getAttribute(Guanxi.CONTEXT_ATTR_ENGINE_ENTITY_FARM);
     EntityManager manager = farm.getEntityManagerForSource(config.getMetadataURL());
     manager.removeMetadata();
 
@@ -128,7 +128,7 @@ public class SAML2MetadataParser implements Job {
       }
 
       for (EntityDescriptorType entityDescriptor : entityDescriptors) {
-        // Look for Service Providers
+        // Look for Identity Providers
         if (entityDescriptor.getIDPSSODescriptorArray().length > 0) {
           logger.info("Loading IdP metadata for : " + entityDescriptor.getEntityID());
 

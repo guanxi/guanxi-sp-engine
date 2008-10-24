@@ -18,6 +18,7 @@ import org.guanxi.common.entity.EntityFarm;
 import org.guanxi.common.entity.EntityManager;
 import org.guanxi.common.definitions.Guanxi;
 import org.guanxi.common.metadata.IdPMetadata;
+import org.guanxi.common.Utils;
 import org.guanxi.xal.saml_1_0.protocol.ResponseDocument;
 import org.quartz.*;
 import org.quartz.spi.TriggerFiredBundle;
@@ -25,6 +26,9 @@ import org.quartz.impl.StdSchedulerFactory;
 import org.quartz.impl.calendar.BaseCalendar;
 
 import java.io.File;
+import java.io.BufferedInputStream;
+import java.io.FileInputStream;
+import java.io.StringReader;
 import java.util.HashMap;
 
 public class EngineTrustTest extends EngineTest {
@@ -52,7 +56,7 @@ public class EngineTrustTest extends EngineTest {
       HashMap<String, EntityManager> managers = new HashMap<String, EntityManager>();
       managers.put(metadataURL, (EntityManager)ctx.getBean("spSAML2EntityManager"));
       farm.setEntityManagers(managers);
-      servletContext.setAttribute(Guanxi.CONTEXT_ATTR_IDP_ENTITY_FARM, farm);
+      servletContext.setAttribute(Guanxi.CONTEXT_ATTR_ENGINE_ENTITY_FARM, farm);
 
       // Initialise the test job settings
       JobDetail jobDetail = new JobDetail("TEST_KEY", Scheduler.DEFAULT_GROUP,
@@ -81,21 +85,47 @@ public class EngineTrustTest extends EngineTest {
       EntityManager manager = farm.getEntityManagerForSource(metadataURL);
       Assert.assertNotNull(manager);
 
-      manager = farm.getEntityManagerForID("urn:bond:hq");
+      manager = farm.getEntityManagerForID("GUANXI-1235342852");
       Assert.assertNotNull(manager);
 
-      IdPMetadata idpMetadata = (IdPMetadata)manager.getMetadata("urn:bond:hq");
+      IdPMetadata idpMetadata = (IdPMetadata)manager.getMetadata("GUANXI-1235342852");
       Assert.assertNotNull(idpMetadata);
-      Assert.assertEquals("urn:bond:hq", idpMetadata.getEntityID());
+      Assert.assertEquals("GUANXI-1235342852", idpMetadata.getEntityID());
 
-      /*
-      String mockSamlResponseFile = "file:///" + new File(EngineTrustTest.class.getResource("/samlresponse.xml").getPath()).getCanonicalPath();
-      ResponseDocument mockSamlResponseDoc = ResponseDocument.Factory.parse(mockSamlResponseFile);
+      // Simulate an incoming AuthenticationStatement for direct X509 validation
+      String b64SAMLAuthFromIdP = new File(EngineTrustTest.class.getResource("/b64fromidp.txt").getPath()).getCanonicalPath();
+      BufferedInputStream stream = new BufferedInputStream(new FileInputStream(b64SAMLAuthFromIdP));
+      byte[] bytes = new byte[stream.available()];
+      stream.read(bytes);
+      String samlb64 = new String(bytes);
+      ResponseDocument mockSamlResponseDoc = ResponseDocument.Factory.parse(new StringReader(Utils.decodeBase64(samlb64)));
+      Assert.assertNotNull(mockSamlResponseDoc);
+      Assert.assertEquals("GUANXI-1235342852", mockSamlResponseDoc.getResponse().getAssertionArray(0).getIssuer());
 
+      // Trust the mock SAML object
       TrustEngine trustEngine = manager.getTrustEngine();
       Assert.assertNotNull(trustEngine);
       Assert.assertEquals(true, trustEngine.trustEntity(idpMetadata, mockSamlResponseDoc));
-      */
+
+      // Simulate an incoming AuthenticationStatement for PKIX path validation
+      b64SAMLAuthFromIdP = new File(EngineTrustTest.class.getResource("/b64fromidp-pkix.txt").getPath()).getCanonicalPath();
+      stream = new BufferedInputStream(new FileInputStream(b64SAMLAuthFromIdP));
+      bytes = new byte[stream.available()];
+      stream.read(bytes);
+      samlb64 = new String(bytes);
+      mockSamlResponseDoc = ResponseDocument.Factory.parse(new StringReader(Utils.decodeBase64(samlb64)));
+      Assert.assertNotNull(mockSamlResponseDoc);
+      Assert.assertEquals("GUANXI--1182852605", mockSamlResponseDoc.getResponse().getAssertionArray(0).getIssuer());
+
+      // Test PKIX path validation for this entity
+      manager = farm.getEntityManagerForID("GUANXI--1182852605");
+      Assert.assertNotNull(manager);
+      idpMetadata = (IdPMetadata)manager.getMetadata("GUANXI--1182852605");
+      Assert.assertNotNull(idpMetadata);
+      Assert.assertEquals("GUANXI--1182852605", idpMetadata.getEntityID());
+      trustEngine = manager.getTrustEngine();
+      Assert.assertNotNull(trustEngine);
+      Assert.assertEquals(true, trustEngine.trustEntity(idpMetadata, mockSamlResponseDoc));
     }
     catch(Exception e) {
       fail(e.getMessage());
