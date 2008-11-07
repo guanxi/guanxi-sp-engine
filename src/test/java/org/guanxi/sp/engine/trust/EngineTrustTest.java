@@ -49,6 +49,7 @@ public class EngineTrustTest extends EngineTest {
       config.setKey("TEST_KEY");
       config.setCronLine("10 0/59 * * * ?");
       config.setServletContext(servletContext);
+      config.setSigned(false);
       config.init();
 
       // Get the metdata farm from Spring and reconfigure it with the test settings
