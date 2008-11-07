@@ -43,14 +43,16 @@ public class SAML2MetadataParser extends ShibbolethSAML2MetadataParser implement
       return;
     }
 
-    if (!verifyMetadataFingerprint()) {
-      logger.error("Metadata fingerprint failed verification");
-      return;
-    }
+    if (config.getSigned()) {
+      if (!verifyMetadataFingerprint()) {
+        logger.error("Metadata fingerprint failed verification");
+        return;
+      }
 
-    if (!verifyMetadataSignature()) {
-      logger.error("Metadata signature failed verification");
-      return;
+      if (!verifyMetadataSignature()) {
+        logger.error("Metadata signature failed verification");
+        return;
+      }
     }
 
     loadAndCacheEntities();
