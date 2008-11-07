@@ -1,0 +1,92 @@
+<EntityDescriptor xmlns="urn:oasis:names:tc:SAML:2.0:metadata"
+                  xmlns:ds="http://www.w3.org/2000/09/xmldsig#"
+                  entityID="GUANXI-677708451">
+  <IDPSSODescriptor protocolSupportEnumeration="urn:oasis:names:tc:SAML:1.1:protocol urn:mace:shibboleth:1.0">
+      <KeyDescriptor use="signing">
+          <ds:KeyInfo xmlns:ds="http://www.w3.org/2000/09/xmldsig#">
+              <ds:X509Data>
+                  <ds:X509Certificate>
+                      MIIDCDCCAnGgAwIBAgIBNDANBgkqhkiG9w0BAQUFADBIMQswCQYDVQQGEwJHQjEn
+                      MCUGA1UEChMeSklTQyBDb3JlIE1pZGRsZXdhcmUgUHJvZ3JhbW1lMRAwDgYDVQQD
+                      EwdTRFNTIENBMB4XDTA2MDUwMzEzMDgwNloXDTA4MTIzMTAwMDAwMFowajELMAkG
+                      A1UEBhMCR0IxJzAlBgNVBAoTHkpJU0MgQ29yZSBNaWRkbGV3YXJlIFByb2dyYW1t
+                      ZTEVMBMGA1UECxMMU0RTUyBQcm9qZWN0MRswGQYDVQQDExJ0eXBla2V5LmlheS5v
+                      cmcudWswgZ8wDQYJKoZIhvcNAQEBBQADgY0AMIGJAoGBALht9nI6ptlFxZWEl2vV
+                      43Xptz2gHrUQDClrHW5cBSnjv1enxv/SuguS+O6l99TP8gBojrEBWHYfzFEMz+z+
+                      FzsbBzdOVn9aopF/TNF3fxM/oA43UYDGa5iBdSBYASQmdoBAOITYdy0M7rODNR2R
+                      srxb7LeucEGxnLVmPGoxqHQ3AgMBAAGjgd8wgdwwCQYDVR0TBAIwADALBgNVHQ8E
+                      BAMCBLAwMQYDVR0fBCowKDAmoCSgIoYgaHR0cDovL3Nkc3MuYWMudWsvY2Evc2Rz
+                      cy1jYS5jcmwwHQYDVR0OBBYEFKVL9TFhqUcGuePLcLVqvveSZD5NMHAGA1UdIwRp
+                      MGeAFL6tIIdJB2dxHs/XuqtAincWHSvAoUykSjBIMQswCQYDVQQGEwJHQjEnMCUG
+                      A1UEChMeSklTQyBDb3JlIE1pZGRsZXdhcmUgUHJvZ3JhbW1lMRAwDgYDVQQDEwdT
+                      RFNTIENBggEAMA0GCSqGSIb3DQEBBQUAA4GBAJn9Av00NfMQVTgf7G2LIaikA3pJ
+                      XlwW0jDNP7lr8UUokq0dSVbMbs5LqrahqYOyXVe9EU13Vu64b+RIMS/40lSGOsdY
+                      q0uInD4DEDadSbqbWsww4CrH0GrrCf/MYS6YP8BwtHdLnFGqaKkMcLiBovRtBdxI
+                      PiGb0i1oYBRRNGeI
+                  </ds:X509Certificate>
+              </ds:X509Data>
+          </ds:KeyInfo>
+      </KeyDescriptor>
+  </IDPSSODescriptor>
+  <AttributeAuthorityDescriptor xmlns:saml="urn:oasis:names:tc:SAML:2.0:assertion"
+                                protocolSupportEnumeration="urn:oasis:names:tc:SAML:2.0:protocol">
+    <KeyDescriptor use="signing">
+      <ds:KeyInfo>
+        <ds:X509Data>
+          <ds:X509Certificate>
+MIICfTCCAjqgAwIBAgIRANBDhBLP1+9xcgT4+eALZvkwCwYHKoZIzjgEAwUAMBsx
+GTAXBgNVBAMTEEdVQU5YSS02Nzc3MDg0NTEwHhcNMDYwNTA1MTI0MjE0WhcNMDYw
+NTI1MTI1MjE0WjAbMRkwFwYDVQQDExBHVUFOWEktNjc3NzA4NDUxMIIBtzCCASwG
+ByqGSM44BAEwggEfAoGBAP1/U4EddRIpUt9KnC7s5Of2EbdSPO9EAMMeP4C2USZp
+RV1AIlH7WT2NWPq/xfW6MPbLm1Vs14E7gB00b/JmYLdrmVClpJ+f6AR7ECLCT7up
+1/63xhv4O1fnxqimFQ8E+4P208UewwI1VBNaFpEy9nXzrith1yrv8iIDGZ3RSAHH
+AhUAl2BQjxUjC8yykrmCouuEC/BYHPUCgYEA9+GghdabPd7LvKtcNrhXuXmUr7v6
+OuqC+VdMCz0HgmdRWVeOutRZT+ZxBxCBgLRJFnEj6EwoFhO3zwkyjMim4TwWeotU
+fI0o4KOuHiuzpnWRbqN/C/ohNWLx+2J6ASQ7zKTxvqhRkImog9/hWuWfBpKLZl6A
+e1UlZAFMO/7PSSoDgYQAAoGAMtEVUw7ypVEAYY7w48X3zOARVhHlSdK8EKOST8Uz
+BzlionneSoz5hJK1BldujzNdcaf2Fh/3QuOhjKD5hIogekfnNOFxvZhD+hsaGAbs
+JaO3v8ic2TD4APNtOEhadz8rl8KddlIojIixk5Ta5tDFbeqDK8jI+MyfWKACPrtS
+TDEwCwYHKoZIzjgEAwUAAzAAMC0CFQCPOGQeTHdnUN0pwFrwTrWwHgPltAIUJ1xd
+tT4gpgQl2/Nbr6sNcqgsgrc=
+          </ds:X509Certificate>
+        </ds:X509Data>
+      </ds:KeyInfo>
+    </KeyDescriptor>
+
+    <Organization>
+      <OrganizationName xml:lang="en">AttrAuthOrgName</OrganizationName>
+      <OrganizationDisplayName xml:lang="en">AttrAuthOrgDisplayName</OrganizationDisplayName>
+      <OrganizationURL xml:lang="en">AttrAuthOrgURL</OrganizationURL>
+    </Organization>
+
+    <ContactPerson contactType="technical">
+      <Company>AttrAuthContactCompany1</Company>
+      <GivenName>AttrAuthContactGivenName1</GivenName>
+      <SurName>AttrAuthContactSurname1</SurName>
+      <EmailAddress>AttrAuthContactEmailAddress1</EmailAddress>
+      <TelephoneNumber>AttrAuthContactTelephoneNumber1</TelephoneNumber>
+    </ContactPerson>
+
+    <AttributeService Binding="" Location="http://localhost/guanxi_idp/AA" />
+
+    <AssertionIDRequestService Binding="" Location="" />
+
+    <NameIDFormat>some.uri</NameIDFormat>
+
+    <AttributeProfile>some.uri</AttributeProfile>
+
+    <saml:Attribute NameFormat="urn:oasis:names:tc:SAML:2.0:attrname-format:uri"
+                    Name="urn:oid:1.3.6.1.4.1.5923.1.1.1.6"
+                    FriendlyName="eduPersonPrincipalName" />
+
+    <saml:Attribute NameFormat="urn:oasis:names:tc:SAML:2.0:attrname-format:uri"
+                    Name="urn:oid:1.3.6.1.4.1.5923.1.1.1.6"
+                    FriendlyName="eduPersonAffiliation">
+      <saml:AttributeValue>member</saml:AttributeValue>
+      <saml:AttributeValue>student</saml:AttributeValue>
+      <saml:AttributeValue>faculty</saml:AttributeValue>
+      <saml:AttributeValue>employee</saml:AttributeValue>
+      <saml:AttributeValue>staff</saml:AttributeValue>
+    </saml:Attribute>
+  </AttributeAuthorityDescriptor>
+</EntityDescriptor>
