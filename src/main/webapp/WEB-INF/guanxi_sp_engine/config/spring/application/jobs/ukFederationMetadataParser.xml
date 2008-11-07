@@ -38,6 +38,7 @@
       <value>http://metadata.ukfederation.org.uk/ukfederation-metadata.xml</value>
     </property>
     <property name="pemLocation"><value>http://metadata.ukfederation.org.uk/ukfederation.pem</value></property>
+    <property name="signed"><value>true</value></property>
     <property name="who"><value>Guanxi::Engine::MetadataParser</value></property>
     <!-- For caching offline versions of the metadata -->
     <property name="cacheDir"><value>/WEB-INF/guanxi_sp_engine/metadata</value></property>
