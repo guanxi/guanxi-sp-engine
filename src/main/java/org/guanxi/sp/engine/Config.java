@@ -47,10 +47,10 @@ public class Config implements ServletContextAware {
   private String metadataCacheFile = null;
 
   public void init() {
-    keystore = servletContext.getRealPath(keystore);
-    trustStore = servletContext.getRealPath(trustStore);
-    guardsMetadataDirectory = servletContext.getRealPath(guardsMetadataDirectory);
-    idPMetadataDirectory = servletContext.getRealPath(idPMetadataDirectory);
+    keystore = resolvePath(keystore);
+    trustStore = resolvePath(trustStore);
+    guardsMetadataDirectory = resolvePath(guardsMetadataDirectory);
+    idPMetadataDirectory = resolvePath(idPMetadataDirectory);
   }
 
   public ServletContext getServletContext() {
@@ -147,5 +147,21 @@ public class Config implements ServletContextAware {
 
   public void setMetadataCacheFile(String metadataCacheFile) {
     this.metadataCacheFile = metadataCacheFile;
+  }
+
+  /**
+   * Works out whether the specified path is relative to the webapp
+   * or absolute
+   * @param path the path to analyse
+   * @return if the path starts with WEB-INF or /WEB-INF returns a relative
+   * path within the webapp, otherwise returns the path as specified
+   */
+  private String resolvePath(String path) {
+    if ((path.startsWith("WEB-INF")) ||
+        (path.startsWith("/WEB-INF"))) {
+      return servletContext.getRealPath(path);
+    }
+    else
+      return path;
   }
 }
