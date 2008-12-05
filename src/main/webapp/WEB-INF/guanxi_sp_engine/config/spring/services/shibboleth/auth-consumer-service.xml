@@ -8,6 +8,7 @@
         class="org.guanxi.sp.engine.service.shibboleth.AuthConsumerService"
         init-method="init"
         destroy-method="destroy">
+    <property name="messages" ref="messageSource"/>
     <property name="podderView"><value>podderRedirector</value></property>
     <property name="errorView"><value>message</value></property>
     <property name="errorViewDisplayVar"><value>message</value></property>
