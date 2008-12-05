@@ -16,38 +16,32 @@
 
 package org.guanxi.sp.engine.service.shibboleth;
 
-import org.springframework.web.context.ServletContextAware;
-import org.springframework.web.servlet.ModelAndView;
-import org.springframework.web.servlet.mvc.AbstractController;
-import org.guanxi.common.definitions.Guanxi;
-import org.guanxi.common.definitions.Shibboleth;
-import org.guanxi.common.GuanxiException;
-import org.guanxi.common.Utils;
-import org.guanxi.common.EntityConnection;
-import org.guanxi.common.metadata.IdPMetadata;
-import org.guanxi.xal.saml_2_0.metadata.EntityDescriptorType;
-import org.guanxi.xal.saml2.metadata.GuardRoleDescriptorExtensions;
-import org.guanxi.xal.saml_1_0.protocol.*;
-import org.guanxi.xal.saml_1_0.assertion.SubjectType;
-import org.guanxi.xal.saml_1_0.assertion.NameIdentifierType;
-import org.guanxi.xal.soap.EnvelopeDocument;
-import org.guanxi.xal.soap.Envelope;
-import org.guanxi.xal.soap.Body;
-import org.guanxi.xal.soap.Header;
-import org.guanxi.sp.Util;
-import org.guanxi.sp.engine.Config;
-import org.apache.log4j.Logger;
-import org.apache.xmlbeans.XmlException;
-import org.apache.xmlbeans.XmlOptions;
-import org.w3c.dom.Element;
-import org.w3c.dom.Node;
+import java.io.IOException;
+import java.security.KeyStoreException;
+import java.security.NoSuchAlgorithmException;
+import java.security.cert.CertificateException;
+import java.util.Comparator;
+import java.util.Map;
+import java.util.TreeMap;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import java.io.*;
-import java.math.BigInteger;
-import java.util.Calendar;
-import java.util.HashMap;
+import javax.servlet.http.HttpSession;
+
+import org.apache.log4j.Logger;
+import org.guanxi.common.GuanxiException;
+import org.guanxi.common.definitions.Guanxi;
+import org.guanxi.common.definitions.Shibboleth;
+import org.guanxi.common.metadata.IdPMetadata;
+import org.guanxi.sp.Util;
+import org.guanxi.sp.engine.Config;
+import org.guanxi.xal.saml2.metadata.GuardRoleDescriptorExtensions;
+import org.guanxi.xal.saml_1_0.protocol.ResponseType;
+import org.guanxi.xal.saml_2_0.metadata.EntityDescriptorType;
+import org.springframework.web.context.ServletContextAware;
+import org.springframework.web.servlet.ModelAndView;
+import org.springframework.web.servlet.mvc.multiaction.MultiActionController;
+import org.springframework.context.MessageSource;
 
 /**
  * Shibboleth AuthenticationStatement consumer service. This service accepts an AuthenticationStatement
@@ -59,7 +53,7 @@ import java.util.HashMap;
  * @author Alistair Young alistair@codebrane.com
  * @author Marcin Mielnicki mielniczu@o2.pl - bug fixing
  */
-public class AuthConsumerService extends AbstractController implements ServletContextAware {
+public class AuthConsumerService extends MultiActionController implements ServletContextAware {
   private static final Logger logger = Logger.getLogger(AuthConsumerService.class.getName());
   
   /** The view to redirect to if no error occur */
@@ -68,8 +62,28 @@ public class AuthConsumerService extends AbstractController implements ServletCo
   private String errorView = null;
   /** The variable to use in the error view to display the error */
   private String errorViewDisplayVar = null;
+  /**
+   * The variable to use in the error view to display a simple version
+   * of the error explaining the likely cause.
+   */
+  private String errorViewSimpleVar;
+  /**
+   * This is the map of the processing thread associated with each session.
+   */
+  private static Map<HttpSession, AuthConsumerServiceThread> threads;
+  /** The localised messages to use */
+  private MessageSource messages = null;
 
+  /**
+   * This initialises the threads map which will be used to hold the AA conversation
+   * threads by session.
+   */
   public void init() {
+	  threads = new TreeMap<HttpSession, AuthConsumerServiceThread>(new Comparator<HttpSession>(){
+	    public int compare(HttpSession one, HttpSession two) {
+	      return one.getId().compareTo(two.getId());
+	    }
+	  });
   } //init
 
   /**
@@ -77,185 +91,191 @@ public class AuthConsumerService extends AbstractController implements ServletCo
    */
   public void destroy() {
   } // destroy
-
+  
+  /**
+   * This is the handler for the initial /shibb/acs page. This receives the 
+   * browser after it has visited the IdP and it spawns a thread associated
+   * with the collection of attributes. It then redirects the user to the
+   * process page which checks the status of the thread and displays a please
+   * wait message, or forwards the user, as appropriate.
+   * 
+   * @param request
+   * @param response
+   * @throws IOException
+   * @throws GuanxiException
+   * @throws KeyStoreException 
+   * @throws NoSuchAlgorithmException 
+   * @throws CertificateException 
+   */
+  public void acs(HttpServletRequest request, HttpServletResponse response) throws IOException, GuanxiException, KeyStoreException, NoSuchAlgorithmException, CertificateException {
+    AuthConsumerServiceThread thread;
+    HttpSession               session;
+    String                    guardSession, acsURL, aaURL, podderURL, 
+                              entityID, idpProviderId, idpNameIdentifier;
+    ResponseType              samlResponse;
+    String                    keystoreFile, keystorePassword, truststoreFile, truststorePassword;
+    
+    session = request.getSession(true);
+    
+    { // code block to allow temporary variables to fall out of scope once their usefulness has come to an end
+      EntityDescriptorType guardEntityDescriptor;
+      GuardRoleDescriptorExtensions guardNativeMetadata;
+      IdPMetadata idpMetadata;
+      Config config;
+      
+      /* When a Guard initially set up a session with the Engine, it passed its session ID to
+      * the Engine's WAYF Location web service. The Guard then passed the session ID to the
+      * WAYF/IdP via the target parameter. So now it should come back here and we can
+      * identify the Guard that we're working on behalf of.
+      */
+      guardSession = request.getParameter(Shibboleth.TARGET_FORM_PARAM);
+      
+      /* When the Engine received the Guard's session, it munged it to an Engine session and
+      * associated the Guard session ID with the Guard's ID. So now dereference the Guard's
+      * session ID to get its ID and load it's metadata
+      */
+      guardEntityDescriptor = (EntityDescriptorType)getServletContext().getAttribute(guardSession.replaceAll("GUARD", "ENGINE"));
+      guardNativeMetadata   = Util.getGuardNativeMetadata(guardEntityDescriptor);
+      
+      idpMetadata = (IdPMetadata)request.getAttribute(Config.REQUEST_ATTRIBUTE_IDP_METADATA);
+      config      = (Config)getServletContext().getAttribute(Guanxi.CONTEXT_ATTR_ENGINE_CONFIG);
+      
+      aaURL              = idpMetadata.getAttributeAuthorityURL();
+      acsURL             = guardNativeMetadata.getAttributeConsumerServiceURL();
+      podderURL          = guardNativeMetadata.getPodderURL();
+      entityID           = guardEntityDescriptor.getEntityID();
+      keystoreFile       = guardNativeMetadata.getKeystore();
+      keystorePassword   = guardNativeMetadata.getKeystorePassword();
+      truststoreFile     = config.getTrustStore();
+      truststorePassword = config.getTrustStorePassword();
+      idpProviderId      = (String)request.getAttribute(Config.REQUEST_ATTRIBUTE_IDP_PROVIDER_ID);
+      idpNameIdentifier  = (String)request.getAttribute(Config.REQUEST_ATTRIBUTE_IDP_NAME_IDENTIFIER);
+      samlResponse       = (ResponseType)request.getAttribute(Config.REQUEST_ATTRIBUTE_SAML_RESPONSE);
+    }
+    
+    thread = new AuthConsumerServiceThread(this, guardSession, acsURL, aaURL, 
+                                       podderURL, entityID, keystoreFile, keystorePassword, 
+                                       truststoreFile, truststorePassword,  idpProviderId, 
+                                       idpNameIdentifier, samlResponse, messages, request);
+    new Thread(thread).start();
+    threads.put(session, thread);
+    
+    response.sendRedirect("process");
+  }
+  
+  /**
+   * This checks the status of the thread associated with this request. This will display
+   * either a please wait message (with progress bar) or will forward the user to the
+   * Podder.
+   * 
+   * @param request  the HttpServletRequest
+   * @param response the HttpServletResponse
+   * @return the ModelAndView
+   */
   @SuppressWarnings("unchecked")
-  public ModelAndView handleRequestInternal(HttpServletRequest request, HttpServletResponse response) throws Exception {
-    ModelAndView mAndV = new ModelAndView();
-
-    /* When a Guard initially set up a session with the Engine, it passed its session ID to
-     * the Engine's WAYF Location web service. The Guard then passed the session ID to the
-     * WAYF/IdP via the target parameter. So now it should come back here and we can
-     * identify the Guard that we're working on behalf of.
-     */
-    String guardSession = request.getParameter(Shibboleth.TARGET_FORM_PARAM);
-
-    /* When the Engine received the Guard's session, it munged it to an Engine session and
-     * associated the Guard session ID with the Guard's ID. So now dereference the Guard's
-     * session ID to get its ID and load it's metadata
-     */
-    EntityDescriptorType guardEntityDescriptor = (EntityDescriptorType)getServletContext().getAttribute(guardSession.replaceAll("GUARD", "ENGINE"));
-    GuardRoleDescriptorExtensions guardNativeMetadata = Util.getGuardNativeMetadata(guardEntityDescriptor);
-
-    // Build a SAML Request to get attributes from the IdP
-    RequestDocument samlRequestDoc = RequestDocument.Factory.newInstance();
-    RequestType samlRequest = samlRequestDoc.addNewRequest();
-    samlRequest.setRequestID(Utils.createNCNameID());
-    samlRequest.setMajorVersion(new BigInteger("1"));
-    samlRequest.setMinorVersion(new BigInteger("1"));
-    samlRequest.setIssueInstant(Calendar.getInstance());
-    Utils.zuluXmlObject(samlRequest, 0);
-
-    // Add an attribute query to the SAML request
-    AttributeQueryType attrQuery = samlRequest.addNewAttributeQuery();
-    attrQuery.setResource(guardEntityDescriptor.getEntityID());
-    SubjectType subject = attrQuery.addNewSubject();
-    NameIdentifierType nameID = subject.addNewNameIdentifier();
-    nameID.setFormat(Shibboleth.NS_NAME_IDENTIFIER);
-    nameID.setNameQualifier((String)request.getAttribute(Config.REQUEST_ATTRIBUTE_IDP_PROVIDER_ID));
-    nameID.setStringValue((String)request.getAttribute(Config.REQUEST_ATTRIBUTE_IDP_NAME_IDENTIFIER));
-
-    // Put the SAML request and attribute query in a SOAP message
-    EnvelopeDocument soapEnvelopeDoc = EnvelopeDocument.Factory.newInstance();
-    Envelope soapEnvelope = soapEnvelopeDoc.addNewEnvelope();
-    Body soapBody = soapEnvelope.addNewBody();
-
-    soapBody.getDomNode().appendChild(soapBody.getDomNode().getOwnerDocument().importNode(samlRequest.getDomNode(), true));
-
-    // Initialise the SAML request to the IdP's AA
-    IdPMetadata idpMetadata = (IdPMetadata)request.getAttribute(Config.REQUEST_ATTRIBUTE_IDP_METADATA);
-    EntityConnection aaConnection = null;
-    Config config = (Config)getServletContext().getAttribute(Guanxi.CONTEXT_ATTR_ENGINE_CONFIG);
-    try {
-      aaConnection = new EntityConnection(idpMetadata.getAttributeAuthorityURL(),
-                                          guardEntityDescriptor.getEntityID(),
-                                          guardNativeMetadata.getKeystore(),
-                                          guardNativeMetadata.getKeystorePassword(),
-                                          config.getTrustStore(),
-                                          config.getTrustStorePassword(),
-                                          EntityConnection.PROBING_OFF);
-      aaConnection.setDoOutput(true);
-      aaConnection.setRequestProperty("Content-type", "text/xml");
-      aaConnection.connect();
-
-      // Send the SOAP message to the IdP's AA...
-      soapEnvelopeDoc.save(aaConnection.getOutputStream());
-      // ...and read the SAML Response. XMLBeans 2.2.0 has problems parsing from an InputStream though
-      InputStream in = aaConnection.getInputStream();
-      //BufferedReader buffer = new BufferedReader(new InputStreamReader(in));
-      BufferedReader buffer = new BufferedReader(new InputStreamReader(in, "UTF-8"));
-      StringBuffer stringBuffer = new StringBuffer();
-      String line = null;
-      while ((line = buffer.readLine()) != null) {
-        stringBuffer.append(line);
-      }
-      in.close();
-
-      soapEnvelopeDoc = EnvelopeDocument.Factory.parse(stringBuffer.toString());
-
-      soapEnvelope = soapEnvelopeDoc.getEnvelope();
-    }
-    catch(GuanxiException ge) {
-      logger.error("AA connection error", ge);
+  public ModelAndView process(HttpServletRequest request, HttpServletResponse response) {
+    AuthConsumerServiceThread thread;
+    HttpSession session;
+    
+    session = request.getSession(false);
+    if ( session == null ) {
+      ModelAndView mAndV;
+      
+      mAndV = new ModelAndView();
       mAndV.setViewName(errorView);
-      mAndV.getModel().put(errorViewDisplayVar, ge.getMessage());
+      mAndV.getModel().put(errorViewDisplayVar, "Your session has expired");
+      
       return mAndV;
     }
-    catch(XmlException xe) {
-      logger.error("AA SAML Response parse error", xe);
+    
+    thread = threads.get(session);
+    if ( thread == null ) {
+      ModelAndView mAndV;
+      
+      mAndV = new ModelAndView();
       mAndV.setViewName(errorView);
-      mAndV.getModel().put(errorViewDisplayVar, xe.getMessage());
+      mAndV.getModel().put(errorViewDisplayVar, "Processing thread cannot be found");
+      
       return mAndV;
     }
-
-    // Before we send the SAML Response from the AA to the Guard, add the Guanxi SOAP header
-    Header soapHeader = soapEnvelope.addNewHeader();
-    Element gx = soapHeader.getDomNode().getOwnerDocument().createElementNS("urn:guanxi:sp", "GuanxiGuardSessionID");
-    Node gxNode = soapHeader.getDomNode().appendChild(gx);
-    org.w3c.dom.Text gxTextNode = soapHeader.getDomNode().getOwnerDocument().createTextNode(guardSession);
-    gxNode.appendChild(gxTextNode);
-
-    // Add the SAML Response from the IdP to the SOAP headers
-    Header authHeader = soapEnvelope.addNewHeader();
-    Element auth = authHeader.getDomNode().getOwnerDocument().createElementNS("urn:guanxi:sp", "AuthnFromIdP");
-    auth.setAttribute("aa", idpMetadata.getAttributeAuthorityURL());
-    Node authNode = authHeader.getDomNode().appendChild(auth);
-    authNode.appendChild(authNode.getOwnerDocument().importNode(((ResponseType)request.getAttribute(Config.REQUEST_ATTRIBUTE_SAML_RESPONSE)).getDomNode(), true));
-
-    HashMap<String, String> namespaces = new HashMap<String, String>();
-    namespaces.put(Shibboleth.NS_SAML_10_PROTOCOL, Shibboleth.NS_PREFIX_SAML_10_PROTOCOL);
-    namespaces.put(Shibboleth.NS_SAML_10_ASSERTION, Shibboleth.NS_PREFIX_SAML_10_ASSERTION);
-    namespaces.put(Guanxi.NS_SP_NAME_IDENTIFIER, "gxsp");
-    XmlOptions xmlOptions = new XmlOptions();
-    xmlOptions.setSavePrettyPrint();
-    xmlOptions.setSavePrettyPrintIndent(2);
-    xmlOptions.setUseDefaultNamespace();
-    xmlOptions.setSaveAggressiveNamespaces();
-    xmlOptions.setSaveSuggestedPrefixes(namespaces);
-    xmlOptions.setSaveNamespacesFirst();
-
-    String soapResponseFromACS = null;
-    try {
-      // Initialise the connection to the Guard's attribute consumer service
-      EntityConnection guardConnection = new EntityConnection(guardNativeMetadata.getAttributeConsumerServiceURL(),
-                                                              guardEntityDescriptor.getEntityID(),
-                                                              guardNativeMetadata.getKeystore(),
-                                                              guardNativeMetadata.getKeystorePassword(),
-                                                              config.getTrustStore(),
-                                                              config.getTrustStorePassword(),
-                                                              EntityConnection.PROBING_OFF);
-      guardConnection.setDoOutput(true);
-      guardConnection.connect();
-
-      // Send the AA's SAML Response as-is to the Guard's attribute consumer service...
-      soapEnvelopeDoc.save(guardConnection.getOutputStream());
-      // ...and read the response from the Guard
-      BufferedInputStream bin = new BufferedInputStream(guardConnection.getInputStream());
-      byte[] bytes = new byte[bin.available()];
-      bin.read(bytes);
-      bin.close();
-      soapResponseFromACS = new String(bytes);
-      soapEnvelopeDoc = EnvelopeDocument.Factory.parse(soapResponseFromACS);
+    if ( thread.isCompleted() ) {
+      threads.remove(session); // TODO: Periodic unloading of expired threads?
     }
-    catch(GuanxiException ge) {
-      logger.error("Guard ACS connection error", ge);
-      mAndV.setViewName(errorView);
-      mAndV.getModel().put(errorViewDisplayVar, ge.getMessage());
-      return mAndV;
-    }
-    catch(XmlException xe) {
-      logger.error("Guard ACS response parse error", xe);
-      logger.error("SOAP response:");
-      logger.error("------------------------------------");
-      logger.error(soapResponseFromACS);
-      logger.error("------------------------------------");
-      mAndV.setViewName(errorView);
-      mAndV.getModel().put(errorViewDisplayVar, xe.getMessage());
-      return mAndV;
-    }
+    return thread.getStatus();
+  }
 
-    // Engine is now finished so redirect to the Guard's Podder for browser control
-    mAndV.setViewName(podderView);
-    mAndV.getModel().put("podderURL", guardNativeMetadata.getPodderURL() + "?id=" + guardSession);
-    return mAndV;
-  } // handleRequestInternal
-
+  /**
+   * This is the name of the podder jsp page. This will be used
+   * to set the Guard cookie.
+   * 
+   * @return the podderView
+   */
   public String getPodderView() {
     return podderView;
   }
-
+  /**
+   * This is the name of the podder jsp page. This will be used
+   * to set the Guard cookie.
+   * 
+   * @param podderView the podderView to set
+   */
   public void setPodderView(String podderView) {
     this.podderView = podderView;
   }
-
+  /**
+   * This is the name of the error jsp page. This will be used
+   * to display any issues that arise during the AA process.
+   * 
+   * @return the errorView
+   */
   public String getErrorView() {
     return errorView;
   }
-
+  /**
+   * This is the name of the error jsp page. This will be used
+   * to display any issues that arise during the AA process.
+   * 
+   * @param errorView the errorView to set
+   */
   public void setErrorView(String errorView) {
     this.errorView = errorView;
   }
-
+  /**
+   * This is the key that is used to store the exception stack
+   * trace and display it on the error page.
+   * 
+   * @return the errorViewDisplayVar
+   */
+  public String getErrorViewDisplayVar() {
+	  return errorViewDisplayVar;
+  }
+  /**
+   * This is the key that is used to store the exception stack
+   * trace and display it on the error page.
+   * 
+   * @param errorViewDisplayVar the errorViewDisplayVar to set
+   */
   public void setErrorViewDisplayVar(String errorViewDisplayVar) {
     this.errorViewDisplayVar = errorViewDisplayVar;
   }
+  /**
+   * This is the key that is used to store the more understandable
+   * error message intended to reduce the amount of support required.
+   * 
+   * @return the errorViewSimpleVar
+   */
+  public String getErrorViewSimpleVar() {
+	  return errorViewSimpleVar;
+  }
+  /**
+   * This is the key that is used to store the brief description
+   * of the error and display it on the error page.
+   * 
+   * @param errorViewSimpleVar the errorViewSimpleVar to set
+   */
+  public void setErrorViewSimpleVar(String errorViewSimpleVar) {
+	  this.errorViewSimpleVar = errorViewSimpleVar;
+  }
+
+  public void setMessages(MessageSource messages) { this.messages = messages; }
 }
