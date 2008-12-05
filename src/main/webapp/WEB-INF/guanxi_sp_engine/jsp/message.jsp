@@ -22,6 +22,7 @@
     <div style="padding:20px; margin: 0 auto;">
       <c:out value="${error}" /><br /><br />
       <c:out value="${message}" />
+      <c:out value="${nice}" />
     </div>
    </div>
 
