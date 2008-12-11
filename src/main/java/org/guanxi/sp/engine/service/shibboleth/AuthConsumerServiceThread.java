@@ -21,6 +21,7 @@ import java.math.BigInteger;
 import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
 import java.security.cert.CertificateException;
+import java.security.cert.X509Certificate;
 import java.util.Calendar;
 
 import org.apache.log4j.Logger;
@@ -28,6 +29,7 @@ import org.apache.xmlbeans.XmlException;
 import org.guanxi.common.EntityConnection;
 import org.guanxi.common.GuanxiException;
 import org.guanxi.common.Utils;
+import org.guanxi.common.entity.EntityManager;
 import org.guanxi.common.definitions.Shibboleth;
 import org.guanxi.xal.saml_1_0.assertion.NameIdentifierType;
 import org.guanxi.xal.saml_1_0.assertion.SubjectType;
@@ -176,6 +178,10 @@ public class AuthConsumerServiceThread implements Runnable {
    * used to replace this as the structure of them may change.
    */
   private volatile boolean completed;
+  /**
+   * The entity manager for the IdP
+   */
+  private EntityManager manager = null;
   
   /**
    * This creates an AuthConsumerServiceThread that can be used
@@ -197,12 +203,14 @@ public class AuthConsumerServiceThread implements Runnable {
    * @param samlResponse        This is the initial SAML response from the IdP that confirmed that the user had logged in.
    * @param messages            This is the source of localised messages the thread must display
    * @param request             This is the request this thread is associated with
+   * @param manager             This is the entity manager for the AA
    */
   public AuthConsumerServiceThread(AuthConsumerService parent, String guardSession, String acsURL, String aaURL, 
                                    String podderURL, String entityID, String keystoreFile, String keystorePassword,
                                    String truststoreFile, String truststorePassword, String idpProviderId, 
                                    String idpNameIdentifier, ResponseType samlResponse,
-                                   MessageSource messages, HttpServletRequest request) {
+                                   MessageSource messages, HttpServletRequest request,
+                                   EntityManager manager) {
     this.parent             = parent;
     this.guardSession       = guardSession;
     this.acsURL             = acsURL;
@@ -217,6 +225,7 @@ public class AuthConsumerServiceThread implements Runnable {
     this.idpNameIdentifier  = idpNameIdentifier;
     this.samlResponse       = samlResponse;
     this.messages           = messages;
+    this.manager            = manager;
 
     preparingAARequest.addObject(progressTextKey, messages.getMessage("engine.acs.preparing.aa.request", null, request.getLocale()));
     readingAAResponse.addObject(progressTextKey, messages.getMessage("engine.acs.comm.with.aa", null, request.getLocale()));
@@ -330,15 +339,27 @@ public class AuthConsumerServiceThread implements Runnable {
    * @throws KeyStoreException        If there is a problem creating the truststore.
    */
   private String processAAConnection(String aaURL, String entityID, String keystoreFile, String keystorePassword, String truststoreFile, 
-		  							 String truststorePassword, EnvelopeDocument soapRequest) 
-                                     throws GuanxiException, IOException, KeyStoreException, NoSuchAlgorithmException, CertificateException {
-    EntityConnection connection;
-    
-    connection = new EntityConnection(aaURL, entityID, keystoreFile, keystorePassword, truststoreFile, truststorePassword, EntityConnection.PROBING_OFF);
+		  							                 String truststorePassword, EnvelopeDocument soapRequest) throws GuanxiException, IOException, KeyStoreException, NoSuchAlgorithmException, CertificateException {
+    EntityConnection connection = new EntityConnection(aaURL, entityID,
+                                                       keystoreFile, keystorePassword,
+                                                       truststoreFile, truststorePassword,
+                                                       EntityConnection.PROBING_ON);
 
     connection.setDoOutput(true);
     connection.setRequestProperty("Content-type", "text/xml");
     connection.connect();
+
+    // Do the trust
+    X509Certificate x509 = connection.getServerCertificate();
+    if (x509 != null) {
+      if (!manager.getTrustEngine().trustEntity(manager.getMetadata(idpProviderId), x509)) {
+        throw new GuanxiException("Trust failed");
+      }
+    }
+    else {
+      throw new GuanxiException("No X509 from connection");
+    }
+
     soapRequest.save(connection.getOutputStream());
     return new String(Utils.read(connection.getInputStream()));
   }
@@ -440,7 +461,7 @@ public class AuthConsumerServiceThread implements Runnable {
       aaResponse = processAAConnection(aaURL, entityID, keystoreFile, keystorePassword, truststoreFile, truststorePassword, aaSoapRequest); // no close, so no finally
       logger.debug("Response from AA:\n" + aaResponse);
     }
-    catch ( Exception e ) {
+    catch (Exception e) {
       logger.error("AA connection error", e);
       mAndV.setViewName(parent.getErrorView());
       mAndV.getModel().put(parent.getErrorViewDisplayVar(), e.getMessage());
@@ -461,7 +482,7 @@ public class AuthConsumerServiceThread implements Runnable {
     try {
       guardSoapRequest = prepareGuardRequest(samlResponse, guardSession, aaURL, aaResponse);
     }
-    catch ( XmlException e ) { // this is caused by parsing the AA response, and so is a problem with the attribute authority not the guard
+    catch (XmlException e) { // this is caused by parsing the AA response, and so is a problem with the attribute authority not the guard
       logger.error("AA SAML Response parse error", e);
       logger.error("SOAP response:");
       logger.error("------------------------------------");
@@ -482,7 +503,7 @@ public class AuthConsumerServiceThread implements Runnable {
     try {
       guardResponse = processGuardConnection(acsURL, entityID, keystoreFile, keystorePassword, truststoreFile, truststorePassword, guardSoapRequest);
     }
-    catch ( Exception e ) {
+    catch (Exception e) {
       logger.error("Guard ACS connection error", e);
       mAndV.setViewName(parent.getErrorView());
       mAndV.getModel().put(parent.getErrorViewDisplayVar(), e.getMessage());
