@@ -30,6 +30,8 @@ import javax.servlet.http.HttpSession;
 
 import org.apache.log4j.Logger;
 import org.guanxi.common.GuanxiException;
+import org.guanxi.common.entity.EntityFarm;
+import org.guanxi.common.entity.EntityManager;
 import org.guanxi.common.definitions.Guanxi;
 import org.guanxi.common.definitions.Shibboleth;
 import org.guanxi.common.metadata.IdPMetadata;
@@ -108,57 +110,40 @@ public class AuthConsumerService extends MultiActionController implements Servle
    * @throws CertificateException 
    */
   public void acs(HttpServletRequest request, HttpServletResponse response) throws IOException, GuanxiException, KeyStoreException, NoSuchAlgorithmException, CertificateException {
-    AuthConsumerServiceThread thread;
-    HttpSession               session;
-    String                    guardSession, acsURL, aaURL, podderURL, 
-                              entityID, idpProviderId, idpNameIdentifier;
-    ResponseType              samlResponse;
-    String                    keystoreFile, keystorePassword, truststoreFile, truststorePassword;
-    
-    session = request.getSession(true);
-    
-    { // code block to allow temporary variables to fall out of scope once their usefulness has come to an end
-      EntityDescriptorType guardEntityDescriptor;
-      GuardRoleDescriptorExtensions guardNativeMetadata;
-      IdPMetadata idpMetadata;
-      Config config;
-      
-      /* When a Guard initially set up a session with the Engine, it passed its session ID to
-      * the Engine's WAYF Location web service. The Guard then passed the session ID to the
-      * WAYF/IdP via the target parameter. So now it should come back here and we can
-      * identify the Guard that we're working on behalf of.
-      */
-      guardSession = request.getParameter(Shibboleth.TARGET_FORM_PARAM);
-      
-      /* When the Engine received the Guard's session, it munged it to an Engine session and
-      * associated the Guard session ID with the Guard's ID. So now dereference the Guard's
-      * session ID to get its ID and load it's metadata
-      */
-      guardEntityDescriptor = (EntityDescriptorType)getServletContext().getAttribute(guardSession.replaceAll("GUARD", "ENGINE"));
-      guardNativeMetadata   = Util.getGuardNativeMetadata(guardEntityDescriptor);
-      
-      idpMetadata = (IdPMetadata)request.getAttribute(Config.REQUEST_ATTRIBUTE_IDP_METADATA);
-      config      = (Config)getServletContext().getAttribute(Guanxi.CONTEXT_ATTR_ENGINE_CONFIG);
-      
-      aaURL              = idpMetadata.getAttributeAuthorityURL();
-      acsURL             = guardNativeMetadata.getAttributeConsumerServiceURL();
-      podderURL          = guardNativeMetadata.getPodderURL();
-      entityID           = guardEntityDescriptor.getEntityID();
-      keystoreFile       = guardNativeMetadata.getKeystore();
-      keystorePassword   = guardNativeMetadata.getKeystorePassword();
-      truststoreFile     = config.getTrustStore();
-      truststorePassword = config.getTrustStorePassword();
-      idpProviderId      = (String)request.getAttribute(Config.REQUEST_ATTRIBUTE_IDP_PROVIDER_ID);
-      idpNameIdentifier  = (String)request.getAttribute(Config.REQUEST_ATTRIBUTE_IDP_NAME_IDENTIFIER);
-      samlResponse       = (ResponseType)request.getAttribute(Config.REQUEST_ATTRIBUTE_SAML_RESPONSE);
-    }
-    
-    thread = new AuthConsumerServiceThread(this, guardSession, acsURL, aaURL, 
-                                       podderURL, entityID, keystoreFile, keystorePassword, 
-                                       truststoreFile, truststorePassword,  idpProviderId, 
-                                       idpNameIdentifier, samlResponse, messages, request);
+    /* When a Guard initially set up a session with the Engine, it passed its session ID to
+    * the Engine's WAYF Location web service. The Guard then passed the session ID to the
+    * WAYF/IdP via the target parameter. So now it should come back here and we can
+    * identify the Guard that we're working on behalf of.
+    */
+    String guardSession = request.getParameter(Shibboleth.TARGET_FORM_PARAM);
+
+    Config config = (Config)getServletContext().getAttribute(Guanxi.CONTEXT_ATTR_ENGINE_CONFIG);
+
+    /* When the Engine received the Guard's session, it munged it to an Engine session and
+     * associated the Guard session ID with the Guard's ID. So now dereference the Guard's
+     * session ID to get its ID and load it's metadata
+     */
+    EntityDescriptorType guardEntityDescriptor = (EntityDescriptorType)getServletContext().getAttribute(guardSession.replaceAll("GUARD", "ENGINE"));
+    GuardRoleDescriptorExtensions guardNativeMetadata = Util.getGuardNativeMetadata(guardEntityDescriptor);
+
+    IdPMetadata idpMetadata = (IdPMetadata)request.getAttribute(Config.REQUEST_ATTRIBUTE_IDP_METADATA);
+    EntityFarm farm = (EntityFarm)getServletContext().getAttribute(Guanxi.CONTEXT_ATTR_ENGINE_ENTITY_FARM);
+    EntityManager manager = farm.getEntityManagerForID(idpMetadata.getEntityID());
+
+    AuthConsumerServiceThread thread = null;
+    thread = new AuthConsumerServiceThread(this, guardSession,
+                                           guardNativeMetadata.getAttributeConsumerServiceURL(),
+                                           idpMetadata.getAttributeAuthorityURL(),
+                                           guardNativeMetadata.getPodderURL(),
+                                           guardEntityDescriptor.getEntityID(),
+                                           guardNativeMetadata.getKeystore(), guardNativeMetadata.getKeystorePassword(),
+                                           config.getTrustStore(), config.getTrustStorePassword(),
+                                           (String)request.getAttribute(Config.REQUEST_ATTRIBUTE_IDP_PROVIDER_ID),
+                                           (String)request.getAttribute(Config.REQUEST_ATTRIBUTE_IDP_NAME_IDENTIFIER),
+                                           (ResponseType)request.getAttribute(Config.REQUEST_ATTRIBUTE_SAML_RESPONSE),
+                                           messages, request, manager);
     new Thread(thread).start();
-    threads.put(session, thread);
+    threads.put(request.getSession(true), thread);
     
     response.sendRedirect("process");
   }
