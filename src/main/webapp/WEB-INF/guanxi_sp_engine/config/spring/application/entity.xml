@@ -8,7 +8,7 @@
     <property name="entityManagers">
       <map>
         <!-- This is for locally registered entity metadata -->
-        <entry key="local-metadata" value-ref="spSAML2EntityManager"/>
+        <entry key="local-metadata" value-ref="spLocalSAML2EntityManager"/>
         <!-- This is for the UK Access Management Federation metadata -->
         <entry key="http://metadata.ukfederation.org.uk/ukfederation-metadata.xml" value-ref="spSAML2EntityManager"/>
       </map>
