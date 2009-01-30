@@ -28,6 +28,8 @@ import org.guanxi.common.job.SAML2MetadataParserConfig;
 import org.guanxi.common.job.GuanxiJobConfig;
 import org.guanxi.common.job.ShibbolethSAML2MetadataParser;
 
+import java.util.ArrayList;
+
 public class SAML2MetadataParser extends ShibbolethSAML2MetadataParser implements Job {
   public SAML2MetadataParser() {}
 
@@ -57,9 +59,12 @@ public class SAML2MetadataParser extends ShibbolethSAML2MetadataParser implement
 
     loadAndCacheEntities();
 
-    EntityManager manager = loadEmptyEntityManager(Guanxi.CONTEXT_ATTR_ENGINE_ENTITY_FARM);
+    EntityManager manager = loadEntityManager(Guanxi.CONTEXT_ATTR_ENGINE_ENTITY_FARM);
 
     try {
+      // Store the new entity IDs for cleaning out old ones later
+      ArrayList<String> newEntityIDs = new ArrayList<String>();
+
       if (!loadCAListFromMetadata(manager)) {
         logger.error("Failed to load root CA list from metadata");
         return;
@@ -75,6 +80,16 @@ public class SAML2MetadataParser extends ShibbolethSAML2MetadataParser implement
           metadataHandler.setPrivateData(entityDescriptor);
 
           manager.addMetadata(metadataHandler);
+
+          newEntityIDs.add(entityDescriptor.getEntityID());
+        }
+      }
+
+      // Remove expired entities from the manager
+      String[] oldEntityIDs = manager.getEntityIDs();
+      for (String oldEntityID : oldEntityIDs) {
+        if (!newEntityIDs.contains(oldEntityID)) {
+          manager.removeMetadata(oldEntityID);
         }
       }
     }
