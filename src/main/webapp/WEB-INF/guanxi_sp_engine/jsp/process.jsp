@@ -5,13 +5,9 @@
 <%@ taglib prefix='c' uri='http://java.sun.com/jstl/core_rt' %>
 <%@ taglib prefix="fmt" uri="http://java.sun.com/jstl/fmt" %>
 <%@ taglib prefix="form" uri="http://www.springframework.org/tags/form" %>
-<%
-  ResourceBundle common = ResourceBundle.getBundle("messages.common", new Locale(request.getHeader("Accept-Language")));
-  ResourceBundle msg = ResourceBundle.getBundle("messages.sp", new Locale(request.getHeader("Accept-Language")));
-%>
 <html>
   <head>
-    <title><%= msg.getString("processing.page.title") %></title>
+    <title><fmt:message key="processing.page.title"/></title>
     <link rel="stylesheet" type="text/css" href="../css/default.css"/>
     <meta http-equiv="refresh" content="1"/>
     <style type="text/css">
