@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans
+                          http://www.springframework.org/schema/beans/spring-beans-2.0.xsd">
+
+  <bean id="engineConfig"
+        class="org.guanxi.sp.engine.Config"
+        init-method="init">
+    <property name="id"><value>Guanxi.Engine.localhost</value></property>
+
+    <property name="nameQualifier"><value>guanxi</value></property>
+
+    <property name="keystore"><value>/WEB-INF/guanxi_sp_engine/keystore/samlengine.jks</value></property>
+    <property name="keystorePassword"><value>changeme</value></property>
+    <property name="certificateAlias"><value>webservices</value></property>
+    <property name="keyType"><value>DSA</value></property>
+
+    <property name="trustStore"><value>/WEB-INF/guanxi_sp_engine/truststore/samlengine.jks</value></property>
+    <property name="trustStorePassword"><value>changeme</value></property>
+
+    <property name="guardsMetadataDirectory"><value>/WEB-INF/guanxi_sp_engine/config/metadata/guards</value></property>
+    <property name="idPMetadataDirectory"><value>/WEB-INF/guanxi_sp_engine/config/metadata/idp</value></property>
+    <property name="metadataCacheFile">
+    	<value>/WEB-INF/guanxi_sp_engine/config/metadata/metadata-cache.xml</value></property>
+  </bean>
+</beans>
