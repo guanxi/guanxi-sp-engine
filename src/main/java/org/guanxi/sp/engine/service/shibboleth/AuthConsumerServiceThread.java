@@ -17,12 +17,15 @@
 package org.guanxi.sp.engine.service.shibboleth;
 
 import java.io.IOException;
+import java.io.ByteArrayOutputStream;
+import java.io.OutputStreamWriter;
 import java.math.BigInteger;
 import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.util.Calendar;
+import java.net.URLEncoder;
 
 import org.apache.log4j.Logger;
 import org.apache.xmlbeans.XmlException;
@@ -31,6 +34,7 @@ import org.guanxi.common.GuanxiException;
 import org.guanxi.common.Utils;
 import org.guanxi.common.entity.EntityManager;
 import org.guanxi.common.definitions.Shibboleth;
+import org.guanxi.common.definitions.Guanxi;
 import org.guanxi.xal.saml_1_0.assertion.NameIdentifierType;
 import org.guanxi.xal.saml_1_0.assertion.SubjectType;
 import org.guanxi.xal.saml_1_0.protocol.AttributeQueryType;
@@ -422,9 +426,19 @@ public class AuthConsumerServiceThread implements Runnable {
     connection.setDoOutput(true);
     connection.connect();
 
-    // Send the AA's SAML Response as-is to the Guard's attribute consumer service...
-    soapRequest.save(connection.getOutputStream());
-    
+    ByteArrayOutputStream os = new ByteArrayOutputStream();
+    soapRequest.save(os);
+
+    // Send the data to the Guard in an explicit POST variable
+    String soap = URLEncoder.encode(Guanxi.REQUEST_PARAMETER_SAML_ATTRIBUTES, "UTF-8") + "=" + URLEncoder.encode(os.toString(), "UTF-8");
+
+    OutputStreamWriter wr = new OutputStreamWriter(connection.getOutputStream());
+    wr.write(soap);
+    wr.flush();
+    wr.close();
+
+    os.close();
+
     // ...and read the response from the Guard
     return new String(Utils.read(connection.getInputStream()));
   }
