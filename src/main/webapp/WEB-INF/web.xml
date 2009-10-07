@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<web-app version="2.4"
+         xmlns="http://java.sun.com/xml/ns/j2ee"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://java.sun.com/xml/ns/j2ee http://java.sun.com/xml/ns/j2ee/web-app_2_4.xsd">
+
+  <!-- Required by the ContextLoaderListener or the ApplicationListener and ApplicationContextAware
+       beans won't be loaded -->
+
+  <context-param>
+    <param-name>webAppRootKey</param-name>
+    <param-value>guanxi-sp-engine.root</param-value>
+  </context-param>
+
+  <context-param>
+    <param-name>log4jConfigLocation</param-name>
+    <param-value>/WEB-INF/classes/log4j.properties</param-value>
+  </context-param>
+
+  <listener>
+    <listener-class>org.springframework.web.util.Log4jConfigListener</listener-class>
+  </listener>
+
+  <!-- Default is /WEB-INF/applicationContext.xml -->
+  <context-param>
+    <param-name>contextConfigLocation</param-name>
+    <param-value>
+      WEB-INF/guanxi_sp_engine/config/spring/application/**/*.xml
+    </param-value>
+  </context-param>
+
+
+  <!-- Loads up beans found in context-param::contextConfigLocation -->
+  <listener>
+    <listener-class>
+      org.springframework.web.context.ContextLoaderListener
+    </listener-class>
+  </listener>
+
+  <!-- The main Spring DispatcherServlet. Note that we specify bean definition files
+       separately from the ContextLoaderListener, which only deals with middle tier
+       services. -->
+  <servlet>
+    <servlet-name>Guanxi Service Provider Engine</servlet-name>
+    <servlet-class>org.springframework.web.servlet.DispatcherServlet</servlet-class>
+    <init-param>
+      <param-name>contextConfigLocation</param-name>
+      <param-value>
+        WEB-INF/guanxi_sp_engine/config/spring/ui.xml
+        WEB-INF/guanxi_sp_engine/config/spring/security/*.xml
+        WEB-INF/guanxi_sp_engine/config/spring/services/**/*.xml
+        WEB-INF/guanxi_sp_engine/config/spring/profiles/**/*.xml
+      </param-value>
+    </init-param>
+    <load-on-startup>1</load-on-startup>
+  </servlet>
+
+  <!-- Core Engine endpoints -->
+  <servlet-mapping>
+    <servlet-name>Guanxi Service Provider Engine</servlet-name>
+    <url-pattern>*.gxEngine</url-pattern>
+  </servlet-mapping>
+  <servlet-mapping>
+    <servlet-name>Guanxi Service Provider Engine</servlet-name>
+    <url-pattern>/register/*</url-pattern>
+  </servlet-mapping>
+  <!-- Shibboleth endpoints -->
+  <servlet-mapping>
+    <servlet-name>Guanxi Service Provider Engine</servlet-name>
+    <url-pattern>/shibb/*</url-pattern>
+  </servlet-mapping>
+</web-app>

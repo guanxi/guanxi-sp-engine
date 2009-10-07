@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans
+                           http://www.springframework.org/schema/beans/spring-beans-2.0.xsd">
+
+  <bean id="engineBootstrap" class="org.guanxi.sp.engine.Bootstrap" init-method="init">
+    <!-- Engine config -->
+    <property name="config"><ref bean="engineConfig"/></property>
+    <property name="gxJobs">
+      <list>
+        <ref bean="spUKFederationMetadataParser" />
+      </list>
+    </property>
+    <property name="entityFarm"><ref bean="spEntityFarm"/></property>
+  </bean>
+
+</beans>
