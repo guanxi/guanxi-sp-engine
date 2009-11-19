@@ -64,8 +64,8 @@ public class Util {
    */
   public static boolean isGuardSecure(GuardRoleDescriptorExtensions guardExt) {
     return guardExt.getVerifierURL().toLowerCase().startsWith("https")                 ||
-           guardExt.getAttributeConsumerServiceURL().toLowerCase().startsWith("https") ||
-           guardExt.getPodderURL().toLowerCase().startsWith("https");
+           guardExt.getAttributeConsumerServiceURL().toLowerCase().startsWith("https");
+           //guardExt.getPodderURL().toLowerCase().startsWith("https"); 
   }
 
   /**

@@ -165,8 +165,9 @@ public class WAYFLocationService extends AbstractController implements ServletCo
 
     // Verify that the Guard actually sent the request
     String verificationResult = null;
+    EntityConnection verifierService = null;
     try {
-      EntityConnection verifierService = new EntityConnection(queryString,
+      verifierService = new EntityConnection(queryString,
                                                               config.getCertificateAlias(), // alias of cert
                                                               config.getKeystore(),
                                                               config.getKeystorePassword(),
@@ -198,11 +199,16 @@ public class WAYFLocationService extends AbstractController implements ServletCo
     // Find out which WAYF to use for this Guard
     String wayfForGuard = null;
     String defaultWAYFLocation = null;
+    
+    String lookupGuardId = getLookupGuardId(request, guardID);
+    
+    logger.info("handleRequestInternal: found lookupGuardId:" + lookupGuardId);
+    
     for (String guardId : wayfs.keySet()) {
       if (guardId.equals(DEFAULT_WAYF_MARKER)) {
         defaultWAYFLocation = wayfs.get(guardId);
       }
-      if (guardId.equals(guardID)) {
+      if (guardId.equals(lookupGuardId)) {
         wayfForGuard = wayfs.get(guardId);
       }
     }
@@ -213,6 +219,16 @@ public class WAYFLocationService extends AbstractController implements ServletCo
     logger.info("Guard '" + guardID + "' successfully obtained WAYF location : " + ((wayfForGuard != null) ? wayfForGuard : defaultWAYFLocation));
 
     return mAndV;
+  }
+  
+  /**
+   * Opportunity for extending classes to change the lookup guard id
+   * 
+   * @param guardRequest
+   */
+  protected String getLookupGuardId(HttpServletRequest request, String guardID)
+  {
+	  return guardID;
   }
 
   /**

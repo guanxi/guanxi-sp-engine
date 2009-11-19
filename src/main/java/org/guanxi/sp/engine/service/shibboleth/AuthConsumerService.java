@@ -134,7 +134,7 @@ public class AuthConsumerService extends MultiActionController implements Servle
     thread = new AuthConsumerServiceThread(this, guardSession,
                                            guardNativeMetadata.getAttributeConsumerServiceURL(),
                                            idpMetadata.getAttributeAuthorityURL(),
-                                           guardNativeMetadata.getPodderURL(),
+                                           getPodderURL(guardSession,config),
                                            guardEntityDescriptor.getEntityID(),
                                            guardNativeMetadata.getKeystore(), guardNativeMetadata.getKeystorePassword(),
                                            config.getTrustStore(), config.getTrustStorePassword(),
@@ -146,6 +146,18 @@ public class AuthConsumerService extends MultiActionController implements Servle
     threads.put(request.getSession(true), thread);
     
     response.sendRedirect("process");
+  }
+  
+  /**
+   * Opportunity for extending classes to do some work to generate the podder URL
+   * 
+   * @param guardRequest
+   */
+  protected String getPodderURL(String guardSession, Config config) throws GuanxiException
+  {
+	  EntityDescriptorType guardEntityDescriptor = (EntityDescriptorType)getServletContext().getAttribute(guardSession.replaceAll("GUARD", "ENGINE"));
+	  GuardRoleDescriptorExtensions guardNativeMetadata = Util.getGuardNativeMetadata(guardEntityDescriptor);
+	  return guardNativeMetadata.getPodderURL();
   }
   
   /**
