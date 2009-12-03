@@ -26,12 +26,14 @@ import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.util.Calendar;
 import java.net.URLEncoder;
+import java.net.URL;
 
 import org.apache.log4j.Logger;
 import org.apache.xmlbeans.XmlException;
 import org.guanxi.common.EntityConnection;
 import org.guanxi.common.GuanxiException;
 import org.guanxi.common.Utils;
+import org.guanxi.common.metadata.Metadata;
 import org.guanxi.common.entity.EntityManager;
 import org.guanxi.common.definitions.Shibboleth;
 import org.guanxi.common.definitions.Guanxi;
@@ -356,7 +358,9 @@ public class AuthConsumerServiceThread implements Runnable {
     // Do the trust
     X509Certificate x509 = connection.getServerCertificate();
     if (x509 != null) {
-      if (!manager.getTrustEngine().trustEntity(manager.getMetadata(idpProviderId), x509)) {
+      Metadata idpMetadata = manager.getMetadata(idpProviderId);
+      idpMetadata.setHostName(new URL(aaURL).getHost());
+      if (!manager.getTrustEngine().trustEntity(idpMetadata, x509)) {
         throw new GuanxiException("Trust failed");
       }
     }
