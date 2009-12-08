@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans
+                           http://www.springframework.org/schema/beans/spring-beans-2.0.xsd">
+
+  <bean id="spEntityFarm" class="org.guanxi.common.entity.impl.GuanxiEntityFarmImpl">
+    <property name="entityManagers">
+      <map>
+        <!-- This is for locally registered entity metadata -->
+        <entry key="local-metadata" value-ref="spLocalSAML2EntityManager"/>
+        <!-- This is for the UK Access Management Federation metadata -->
+        <entry key="http://metadata.ukfederation.org.uk/ukfederation-metadata.xml" value-ref="spSAML2EntityManager"/>
+      </map>
+    </property>
+  </bean>
+
+  <!-- This entity manager looks after Guards. They have the same metadata format as entities in
+       a SAML federation but have different trust requirements. -->
+  <bean id="spLocalSAML2EntityManager" class="org.guanxi.common.entity.impl.GuanxiEntityManagerImpl"
+        init-method="init" scope="prototype">
+    <property name="entityHandlerClass"><value>org.guanxi.common.metadata.impl.GuanxiSAML2MetadataImpl</value></property>
+    <property name="trustEngine"><ref bean="spLocalTrustEngine"/></property>
+  </bean>
+
+  <!-- This entity manager looks after SAML entities in a federation -->
+  <bean id="spSAML2EntityManager" class="org.guanxi.common.entity.impl.GuanxiEntityManagerImpl"
+        init-method="init" scope="prototype">
+    <property name="entityHandlerClass"><value>org.guanxi.common.metadata.impl.GuanxiSAML2MetadataImpl</value></property>
+    <property name="trustEngine"><ref bean="spShibbolethTrustEngine"/></property>
+  </bean>
+
+  <!-- Trust engine for use with local Guards -->
+  <bean id="spLocalTrustEngine" class="org.guanxi.sp.engine.trust.impl.GuanxiLocalTrustEngineImpl" scope="prototype" />
+
+  <!-- Trust engine for use with a Shibboleth federation -->
+  <bean id="spShibbolethTrustEngine" class="org.guanxi.common.trust.impl.ShibbolethTrustEngineImpl" scope="prototype" />
+
+</beans>
