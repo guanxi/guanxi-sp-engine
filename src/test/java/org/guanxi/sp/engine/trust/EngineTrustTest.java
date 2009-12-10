@@ -24,17 +24,21 @@ import org.quartz.*;
 import org.quartz.spi.TriggerFiredBundle;
 import org.quartz.impl.StdSchedulerFactory;
 import org.quartz.impl.calendar.BaseCalendar;
+import org.bouncycastle.jce.provider.BouncyCastleProvider;
 
 import java.io.File;
 import java.io.BufferedInputStream;
 import java.io.FileInputStream;
 import java.io.StringReader;
 import java.util.HashMap;
+import java.security.Security;
 
 public class EngineTrustTest extends EngineTest {
   @Test
   public void trustTest() {
     try {
+      Security.addProvider(new BouncyCastleProvider());
+      
       // Initialise Spring
       XmlWebApplicationContext ctx = new XmlWebApplicationContext();
       ctx.setConfigLocations(metadataConfigFiles);
@@ -126,7 +130,8 @@ public class EngineTrustTest extends EngineTest {
       Assert.assertEquals("GUANXI--1182852605", idpMetadata.getEntityID());
       trustEngine = manager.getTrustEngine();
       Assert.assertNotNull(trustEngine);
-      Assert.assertEquals(true, trustEngine.trustEntity(idpMetadata, mockSamlResponseDoc));
+      // Trust should fail as the certificates have expired
+      Assert.assertEquals(false, trustEngine.trustEntity(idpMetadata, mockSamlResponseDoc));
     }
     catch(Exception e) {
       fail(e.getMessage());
