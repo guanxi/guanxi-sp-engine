@@ -157,7 +157,6 @@ public class WebBrowserSSOService extends MultiActionController implements Servl
     secUtilsConfig.setPrivateKeyAlias(guardID);
     secUtilsConfig.setPrivateKeyPass(guardNativeMetadata.getKeystorePassword());
     secUtilsConfig.setCertificateAlias(guardID);
-    secUtilsConfig.setKeyType("RSA");
 
     // Break out to DOM land to get the SAML Response signed...
     Document signedDoc = null;
