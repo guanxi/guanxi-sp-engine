@@ -20,15 +20,23 @@ import org.springframework.web.servlet.mvc.multiaction.MultiActionController;
 import org.springframework.web.context.ServletContextAware;
 import org.springframework.context.MessageSource;
 import org.apache.log4j.Logger;
+import org.apache.xmlbeans.XmlException;
+import org.apache.xmlbeans.XmlOptions;
 import org.guanxi.common.GuanxiException;
+import org.guanxi.common.Utils;
+import org.guanxi.common.definitions.SAML;
 import org.guanxi.xal.saml_2_0.metadata.EntityDescriptorType;
+import org.guanxi.xal.saml_2_0.protocol.ResponseDocument;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.io.StringReader;
+import java.io.StringWriter;
 import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
 import java.security.cert.CertificateException;
+import java.util.HashMap;
 
 public class WebBrowserSSOAuthConsumerService extends MultiActionController implements ServletContextAware {
   /** Our logger */
@@ -63,6 +71,13 @@ public class WebBrowserSSOAuthConsumerService extends MultiActionController impl
     String b64SAMLResponse = request.getParameter("SAMLResponse");
 
     EntityDescriptorType guardEntityDescriptor = (EntityDescriptorType)getServletContext().getAttribute(guardSession.replaceAll("GUARD", "ENGINE"));
+
+    try {
+      ResponseDocument responseDocument = ResponseDocument.Factory.parse(new StringReader(Utils.decodeBase64(request.getParameter("SAMLResponse"))));
+      dumpSAML(responseDocument);
+    }
+    catch(XmlException xe) {
+    }
   }
 
   // Setters
@@ -70,4 +85,31 @@ public class WebBrowserSSOAuthConsumerService extends MultiActionController impl
   public void setPodderView(String podderView) { this.podderView = podderView; }
   public void setErrorView(String errorView) { this.errorView = errorView; }
   public void setErrorViewDisplayVar(String errorViewDisplayVar) { this.errorViewDisplayVar = errorViewDisplayVar; }
+
+
+
+
+  private void dumpSAML(org.guanxi.xal.saml_2_0.protocol.ResponseDocument samlResponseDoc) {
+    // Sort out the namespaces for saving the Response
+    HashMap<String, String> namespaces = new HashMap<String, String>();
+    namespaces.put(SAML.NS_SAML_20_PROTOCOL, SAML.NS_PREFIX_SAML_20_PROTOCOL);
+    namespaces.put(SAML.NS_SAML_20_ASSERTION, SAML.NS_PREFIX_SAML_20_ASSERTION);
+    XmlOptions xmlOptions = new XmlOptions();
+    xmlOptions.setSavePrettyPrint();
+    xmlOptions.setSavePrettyPrintIndent(2);
+    xmlOptions.setUseDefaultNamespace();
+    xmlOptions.setSaveAggressiveNamespaces();
+    xmlOptions.setSaveSuggestedPrefixes(namespaces);
+    xmlOptions.setSaveNamespacesFirst();
+
+    StringWriter sw = new StringWriter();
+    try {
+      samlResponseDoc.save(sw, xmlOptions);
+    }
+    catch(IOException ioe) {
+      // Do I care?
+    }
+
+    logger.debug(sw.toString());
+  }
 }
