@@ -26,7 +26,7 @@ import org.apache.xmlbeans.XmlException;
 import org.guanxi.common.entity.EntityFarm;
 import org.guanxi.common.entity.EntityManager;
 import org.guanxi.common.definitions.Guanxi;
-import org.guanxi.common.definitions.Shibboleth;
+import org.guanxi.common.definitions.SAML;
 import org.guanxi.common.metadata.Metadata;
 import org.guanxi.common.Utils;
 import org.guanxi.common.GuanxiException;
@@ -38,7 +38,6 @@ import org.guanxi.xal.saml_2_0.protocol.AuthnRequestDocument;
 import org.guanxi.xal.saml_2_0.protocol.AuthnRequestType;
 import org.guanxi.xal.saml_2_0.assertion.NameIDType;
 import org.guanxi.xal.saml2.metadata.GuardRoleDescriptorExtensions;
-import org.guanxi.xal.saml_1_0.protocol.ResponseDocument;
 import org.guanxi.sp.Util;
 import org.w3c.dom.Document;
 
@@ -135,8 +134,8 @@ public class WebBrowserSSOService extends MultiActionController implements Servl
 
     // Sort out the namespaces for saving the Response
     HashMap<String, String> namespaces = new HashMap<String, String>();
-    namespaces.put(Shibboleth.NS_SAML_10_PROTOCOL, Shibboleth.NS_PREFIX_SAML_10_PROTOCOL);
-    namespaces.put(Shibboleth.NS_SAML_10_ASSERTION, Shibboleth.NS_PREFIX_SAML_10_ASSERTION);
+    namespaces.put(SAML.NS_SAML_20_PROTOCOL, SAML.NS_PREFIX_SAML_20_PROTOCOL);
+    namespaces.put(SAML.NS_SAML_20_ASSERTION, SAML.NS_PREFIX_SAML_20_ASSERTION);
     
     XmlOptions xmlOptions = new XmlOptions();
     xmlOptions.setSavePrettyPrint();
