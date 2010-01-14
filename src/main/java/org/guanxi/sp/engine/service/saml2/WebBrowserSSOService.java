@@ -44,7 +44,13 @@ import org.w3c.dom.Document;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.util.HashMap;
+import java.util.Calendar;
 
+/**
+ * Initiates a SAML2 Web Browser SSO session with an IdP
+ *
+ * @author alistair
+ */
 public class WebBrowserSSOService extends MultiActionController implements ServletContextAware {
   private static final Logger logger = Logger.getLogger(WebBrowserSSOService.class.getName());
 
@@ -128,9 +134,15 @@ public class WebBrowserSSOService extends MultiActionController implements Servl
     // Create an AuthnRequest
     AuthnRequestDocument authnRequestDoc = AuthnRequestDocument.Factory.newInstance();
     AuthnRequestType authnRequest = authnRequestDoc.addNewAuthnRequest();
+    authnRequest.setID(Utils.createNCNameID());
+    authnRequest.setVersion("2.0");
+    authnRequest.setIssueInstant(Calendar.getInstance());
+    Utils.zuluXmlObject(authnRequest, 0);
     NameIDType issuer = NameIDType.Factory.newInstance();
     issuer.setStringValue(guardID);
     authnRequest.setIssuer(issuer);
+    // Only if signed
+    //authnRequest.setDestination("https://sgarbh.smo.uhi.ac.uk:8443/idp/profile/SAML2/POST/SSO");
 
     // Sort out the namespaces for saving the Response
     HashMap<String, String> namespaces = new HashMap<String, String>();
@@ -158,6 +170,7 @@ public class WebBrowserSSOService extends MultiActionController implements Servl
     secUtilsConfig.setCertificateAlias(guardID);
 
     // Break out to DOM land to get the SAML Response signed...
+    /*
     Document signedDoc = null;
     try {
       // Need to use newDomNode to preserve namespace information
@@ -179,9 +192,11 @@ public class WebBrowserSSOService extends MultiActionController implements Servl
                                                                     null, request.getLocale()));
       return mAndV;
     }
+    */
 
     // Base 64 encode the AuthnRequest
-    String authnRequestB64 = Utils.base64(signedDoc);
+    //String authnRequestB64 = Utils.base64(signedDoc);
+    String authnRequestB64 = Utils.base64((Document)authnRequestDoc.newDomNode(xmlOptions));
 
     // POST the AuthnRequest to the IdP
     request.setAttribute("SAMLRequest", authnRequestB64);
