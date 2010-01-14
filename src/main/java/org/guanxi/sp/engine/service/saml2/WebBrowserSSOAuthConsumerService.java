@@ -17,6 +17,7 @@
 package org.guanxi.sp.engine.service.saml2;
 
 import org.springframework.web.servlet.mvc.multiaction.MultiActionController;
+import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.context.ServletContextAware;
 import org.springframework.context.MessageSource;
 import org.apache.log4j.Logger;
@@ -29,6 +30,7 @@ import org.apache.xml.security.encryption.EncryptedData;
 import org.apache.xml.security.encryption.EncryptedKey;
 import org.guanxi.common.GuanxiException;
 import org.guanxi.common.Utils;
+import org.guanxi.common.EntityConnection;
 import org.guanxi.common.entity.EntityFarm;
 import org.guanxi.common.entity.EntityManager;
 import org.guanxi.common.trust.TrustUtils;
@@ -39,9 +41,13 @@ import org.guanxi.xal.saml_2_0.metadata.EntityDescriptorType;
 import org.guanxi.xal.saml_2_0.protocol.ResponseDocument;
 import org.guanxi.xal.w3.xmlenc.EncryptedKeyDocument;
 import org.guanxi.xal.saml2.metadata.GuardRoleDescriptorExtensions;
+import org.guanxi.xal.soap.*;
+import org.guanxi.xal.saml_2_0.protocol.ResponseType;
 import org.guanxi.sp.Util;
+import org.guanxi.sp.engine.Config;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
+import org.w3c.dom.Node;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -51,6 +57,7 @@ import java.security.*;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.util.HashMap;
+import java.net.URLEncoder;
 
 /**
  * Handles the trust and attribute decryption for SAML2 Web Browser SSO profile.
@@ -89,7 +96,10 @@ public class WebBrowserSSOAuthConsumerService extends MultiActionController impl
     String guardSession = request.getParameter("RelayState");
     String b64SAMLResponse = request.getParameter("SAMLResponse");
 
+    // We previously changed the Guard session ID to an Engine one...
     EntityDescriptorType guardEntityDescriptor = (EntityDescriptorType)getServletContext().getAttribute(guardSession.replaceAll("GUARD", "ENGINE"));
+    // ...so now change it back as it will be passed to the Guard
+    guardSession = guardSession.replaceAll("ENGINE", "GUARD");
 
     try {
       // Decode and marshall the response from the IdP
@@ -163,6 +173,18 @@ public class WebBrowserSSOAuthConsumerService extends MultiActionController impl
 
       // And back to XMLBeans for that nice API!
       responseDocument = ResponseDocument.Factory.parse(rawSAMLResponseDoc);
+
+      Config config = (Config)getServletContext().getAttribute(Guanxi.CONTEXT_ATTR_ENGINE_CONFIG);
+      EnvelopeDocument soapRequest = prepareGuardRequest(responseDocument, guardSession);
+      processGuardConnection(guardNativeMetadata.getAttributeConsumerServiceURL(),
+              guardEntityDescriptor.getEntityID(),
+              guardNativeMetadata.getKeystore(),
+              guardNativeMetadata.getKeystorePassword(),
+              config.getTrustStore(),
+              config.getTrustStorePassword(),
+              soapRequest);
+
+      response.sendRedirect(guardNativeMetadata.getPodderURL() + "?id=" + guardSession);
     }
     catch(XmlException xe) {
       logger.error(xe);
@@ -183,28 +205,52 @@ public class WebBrowserSSOAuthConsumerService extends MultiActionController impl
 
 
 
+  private EnvelopeDocument prepareGuardRequest(ResponseDocument samlResponseDoc, String guardSession) throws XmlException {
+    EnvelopeDocument soapEnvelopeDoc;
+    Envelope soapEnvelope;
 
-  private void dumpSAML(org.guanxi.xal.saml_2_0.protocol.ResponseDocument samlResponseDoc) {
-    // Sort out the namespaces for saving the Response
-    HashMap<String, String> namespaces = new HashMap<String, String>();
-    namespaces.put(SAML.NS_SAML_20_PROTOCOL, SAML.NS_PREFIX_SAML_20_PROTOCOL);
-    namespaces.put(SAML.NS_SAML_20_ASSERTION, SAML.NS_PREFIX_SAML_20_ASSERTION);
-    XmlOptions xmlOptions = new XmlOptions();
-    xmlOptions.setSavePrettyPrint();
-    xmlOptions.setSavePrettyPrintIndent(2);
-    xmlOptions.setUseDefaultNamespace();
-    xmlOptions.setSaveAggressiveNamespaces();
-    xmlOptions.setSaveSuggestedPrefixes(namespaces);
-    xmlOptions.setSaveNamespacesFirst();
+    soapEnvelopeDoc = EnvelopeDocument.Factory.newInstance();
+    soapEnvelope = soapEnvelopeDoc.addNewEnvelope();
 
-    StringWriter sw = new StringWriter();
-    try {
-      samlResponseDoc.save(sw, xmlOptions);
-    }
-    catch(IOException ioe) {
-      // Do I care?
-    }
+    // Before we send the SAML Response from the AA to the Guard, add the Guanxi SOAP header
+    Header soapHeader = soapEnvelope.addNewHeader();
+    Element gx = soapHeader.getDomNode().getOwnerDocument().createElementNS("urn:guanxi:sp", "GuanxiGuardSessionID");
+    Node gxNode = soapHeader.getDomNode().appendChild(gx);
+    org.w3c.dom.Text gxTextNode = soapHeader.getDomNode().getOwnerDocument().createTextNode(guardSession);
+    gxNode.appendChild(gxTextNode);
 
-    logger.debug(sw.toString());
+    Body soapBody = soapEnvelope.addNewBody();
+    soapBody.getDomNode().appendChild(soapBody.getDomNode().getOwnerDocument().importNode(samlResponseDoc.getResponse().getDomNode(), true));
+
+    return soapEnvelopeDoc;
+  }
+
+  private String processGuardConnection(String acsURL, String entityID, String keystoreFile, String keystorePassword, String truststoreFile,
+		  								String truststorePassword, EnvelopeDocument soapRequest) throws GuanxiException, IOException {
+    EntityConnection connection;
+
+    // Initialise the connection to the Guard's attribute consumer service
+    connection = new EntityConnection(acsURL, entityID,
+                                      keystoreFile, keystorePassword,
+                                      truststoreFile, truststorePassword,
+                                      EntityConnection.PROBING_OFF);
+    connection.setDoOutput(true);
+    connection.connect();
+
+    ByteArrayOutputStream os = new ByteArrayOutputStream();
+    soapRequest.save(os);
+
+    // Send the data to the Guard in an explicit POST variable
+    String soap = URLEncoder.encode(Guanxi.REQUEST_PARAMETER_SAML_ATTRIBUTES, "UTF-8") + "=" + URLEncoder.encode(os.toString(), "UTF-8");
+
+    OutputStreamWriter wr = new OutputStreamWriter(connection.getOutputStream());
+    wr.write(soap);
+    wr.flush();
+    wr.close();
+
+    os.close();
+
+    // ...and read the response from the Guard
+    return new String(Utils.read(connection.getInputStream()));
   }
 }
