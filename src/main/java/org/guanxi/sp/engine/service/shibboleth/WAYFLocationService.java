@@ -40,7 +40,7 @@ import java.io.FileInputStream;
 
 public class WAYFLocationService extends AbstractController implements ServletContextAware {
   private static final Logger logger = Logger.getLogger(WAYFLocationService.class.getName());
-  
+
   /** The marker in our WAYF location map for the one to use as the default location */
   private static final String DEFAULT_WAYF_MARKER = "__DEFAULT__";
   /** The list of Guard to WAYF location mappings */
@@ -96,7 +96,7 @@ public class WAYFLocationService extends AbstractController implements ServletCo
       mAndV.getModel().put("wayfLocation", Errors.ENGINE_CURRENTLY_INITIALISING);
       return mAndV;
     }
-    
+
     // Get the Guard's metadata, previously loaded by the Bootstrapper
     EntityDescriptorType guardEntityDescriptor = (EntityDescriptorType)getServletContext().getAttribute(guardID);
     if (guardEntityDescriptor == null) {
@@ -165,14 +165,15 @@ public class WAYFLocationService extends AbstractController implements ServletCo
 
     // Verify that the Guard actually sent the request
     String verificationResult = null;
+    EntityConnection verifierService = null;
     try {
-      EntityConnection verifierService = new EntityConnection(queryString,
-                                                              config.getCertificateAlias(), // alias of cert
-                                                              config.getKeystore(),
-                                                              config.getKeystorePassword(),
-                                                              config.getTrustStore(),
-                                                              config.getTrustStorePassword(),
-                                                              EntityConnection.PROBING_OFF);
+      verifierService = new EntityConnection(queryString,
+                                             config.getCertificateAlias(), // alias of cert
+                                             config.getKeystore(),
+                                             config.getKeystorePassword(),
+                                             config.getTrustStore(),
+                                             config.getTrustStorePassword(),
+                                             EntityConnection.PROBING_OFF);
       verifierService.setDoOutput(true);
       verifierService.connect();
       verificationResult = verifierService.getContentAsString();
@@ -198,11 +199,16 @@ public class WAYFLocationService extends AbstractController implements ServletCo
     // Find out which WAYF to use for this Guard
     String wayfForGuard = null;
     String defaultWAYFLocation = null;
+
+    String lookupGuardId = getLookupGuardId(request, guardID);
+
+    logger.info("handleRequestInternal: found lookupGuardId:" + lookupGuardId);
+
     for (String guardId : wayfs.keySet()) {
       if (guardId.equals(DEFAULT_WAYF_MARKER)) {
         defaultWAYFLocation = wayfs.get(guardId);
       }
-      if (guardId.equals(guardID)) {
+      if (guardId.equals(lookupGuardId)) {
         wayfForGuard = wayfs.get(guardId);
       }
     }
@@ -213,6 +219,17 @@ public class WAYFLocationService extends AbstractController implements ServletCo
     logger.info("Guard '" + guardID + "' successfully obtained WAYF location : " + ((wayfForGuard != null) ? wayfForGuard : defaultWAYFLocation));
 
     return mAndV;
+  }
+
+  /**
+   * Opportunity for extending classes to change the lookup guard id
+   *
+   * @param request Servlet request
+   * @param guardID the current Guard ID
+   * @return the new Guard ID. Can be the same as the current one.
+   */
+  protected String getLookupGuardId(HttpServletRequest request, String guardID) {
+	  return guardID;
   }
 
   /**
