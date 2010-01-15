@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<EntityDescriptor entityID="protectedapp" xmlns="urn:oasis:names:tc:SAML:2.0:metadata">
+  <RoleDescriptor xsi:type="GuanxiGuardDescriptorType" xmlns:urn="urn:guanxi:metadata" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+    <Extensions>
+      <GuanxiGuardService xmlns="urn:guanxi:metadata">
+        <VerifierURL>http://localhost/protectedapp/services/GuanxiGuardVerificationService</VerifierURL>
+        <AttributeConsumerServiceURL>http://localhost/protectedapp/guard.guanxiGuardACS</AttributeConsumerServiceURL>
+        <PodderURL>http://localhost/protectedapp/guard.guanxiGuardPodder</PodderURL>
+        <Keystore>/WWW/samlengine/WEB-INF/config/metadata/guards/protectedapp/protectedapp.jks</Keystore>
+        <KeystorePassword>800734116</KeystorePassword>
+      </GuanxiGuardService>
+    </Extensions>
+  </RoleDescriptor>
+  <Organization>
+    <OrganizationName xml:lang="en">Your Org</OrganizationName>
+    <OrganizationDisplayName xml:lang="en">Your Org</OrganizationDisplayName>
+    <OrganizationURL xml:lang="en">http://your.org</OrganizationURL>
+  </Organization>
+  <ContactPerson contactType="technical">
+    <Company>Your company</Company>
+    <GivenName>Joe</GivenName>
+    <SurName>Bloggs</SurName>
+    <EmailAddress>joe@bloggs.com</EmailAddress>
+    <TelephoneNumber>123</TelephoneNumber>
+  </ContactPerson>
+</EntityDescriptor>
