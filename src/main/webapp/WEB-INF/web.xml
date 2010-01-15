@@ -70,4 +70,9 @@
     <servlet-name>Guanxi Service Provider Engine</servlet-name>
     <url-pattern>/shibb/*</url-pattern>
   </servlet-mapping>
+  <!-- SAML2 endpoints -->
+  <servlet-mapping>
+    <servlet-name>Guanxi Service Provider Engine</servlet-name>
+    <url-pattern>/s2/*</url-pattern>
+  </servlet-mapping>
 </web-app>
