@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans
+                          http://www.springframework.org/schema/beans/spring-beans-2.0.xsd">
+
+  <!-- ********************************************************************************************* -->
+  <!-- The Engine's WAYF Location service. This is where Guards set up their sessions with
+       the Engine and obtain the WAYF location in return, once the Engine has verfied
+       them. -->
+  <bean id="saml2WBSSOService"
+        class="org.guanxi.sp.engine.service.saml2.WebBrowserSSOService"
+        init-method="init">
+    <property name="messages" ref="messageSource"/>
+		<property name="httpPOSTView"><value>/saml2/http-post</value></property>
+    <property name="errorView"><value>message</value></property>
+    <property name="errorViewDisplayVar"><value>message</value></property>
+  </bean>
+</beans>
