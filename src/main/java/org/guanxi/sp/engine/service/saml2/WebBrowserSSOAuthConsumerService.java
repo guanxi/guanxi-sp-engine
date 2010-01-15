@@ -17,7 +17,6 @@
 package org.guanxi.sp.engine.service.saml2;
 
 import org.springframework.web.servlet.mvc.multiaction.MultiActionController;
-import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.context.ServletContextAware;
 import org.springframework.context.MessageSource;
 import org.apache.log4j.Logger;
@@ -42,7 +41,6 @@ import org.guanxi.xal.saml_2_0.protocol.ResponseDocument;
 import org.guanxi.xal.w3.xmlenc.EncryptedKeyDocument;
 import org.guanxi.xal.saml2.metadata.GuardRoleDescriptorExtensions;
 import org.guanxi.xal.soap.*;
-import org.guanxi.xal.saml_2_0.protocol.ResponseType;
 import org.guanxi.sp.Util;
 import org.guanxi.sp.engine.Config;
 import org.w3c.dom.Document;
@@ -86,11 +84,11 @@ public class WebBrowserSSOAuthConsumerService extends MultiActionController impl
    *
    * @param request ServletRequest
    * @param response ServletResponse
-   * @throws java.io.IOException
-   * @throws org.guanxi.common.GuanxiException
-   * @throws java.security.KeyStoreException
-   * @throws java.security.NoSuchAlgorithmException
-   * @throws java.security.cert.CertificateException
+   * @throws java.io.IOException if an error occurs
+   * @throws org.guanxi.common.GuanxiException if an error occurs
+   * @throws java.security.KeyStoreException if an error occurs
+   * @throws java.security.NoSuchAlgorithmException if an error occurs
+   * @throws java.security.cert.CertificateException if an error occurs
    */
   public void acs(HttpServletRequest request, HttpServletResponse response) throws IOException, GuanxiException, KeyStoreException, NoSuchAlgorithmException, CertificateException {
     String guardSession = request.getParameter("RelayState");
