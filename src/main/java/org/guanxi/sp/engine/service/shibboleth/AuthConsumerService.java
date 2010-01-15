@@ -57,7 +57,7 @@ import org.springframework.context.MessageSource;
  */
 public class AuthConsumerService extends MultiActionController implements ServletContextAware {
   private static final Logger logger = Logger.getLogger(AuthConsumerService.class.getName());
-  
+
   /** The view to redirect to if no error occur */
   private String podderView = null;
   /** The view to use to display any errors */
@@ -93,21 +93,21 @@ public class AuthConsumerService extends MultiActionController implements Servle
    */
   public void destroy() {
   } // destroy
-  
+
   /**
-   * This is the handler for the initial /shibb/acs page. This receives the 
+   * This is the handler for the initial /shibb/acs page. This receives the
    * browser after it has visited the IdP and it spawns a thread associated
    * with the collection of attributes. It then redirects the user to the
    * process page which checks the status of the thread and displays a please
    * wait message, or forwards the user, as appropriate.
-   * 
-   * @param request
-   * @param response
-   * @throws IOException
-   * @throws GuanxiException
-   * @throws KeyStoreException 
-   * @throws NoSuchAlgorithmException 
-   * @throws CertificateException 
+   *
+   * @param request Servlet request
+   * @param response Servlet response
+   * @throws IOException if an error occurs
+   * @throws GuanxiException if an error occurs
+   * @throws KeyStoreException if an error occurs
+   * @throws NoSuchAlgorithmException if an error occurs
+   * @throws CertificateException if an error occurs
    */
   public void acs(HttpServletRequest request, HttpServletResponse response) throws IOException, GuanxiException, KeyStoreException, NoSuchAlgorithmException, CertificateException {
     /* When a Guard initially set up a session with the Engine, it passed its session ID to
@@ -134,7 +134,7 @@ public class AuthConsumerService extends MultiActionController implements Servle
     thread = new AuthConsumerServiceThread(this, guardSession,
                                            guardNativeMetadata.getAttributeConsumerServiceURL(),
                                            idpMetadata.getAttributeAuthorityURL(),
-                                           guardNativeMetadata.getPodderURL(),
+                                           getPodderURL(guardSession, config),
                                            guardEntityDescriptor.getEntityID(),
                                            guardNativeMetadata.getKeystore(), guardNativeMetadata.getKeystorePassword(),
                                            config.getTrustStore(), config.getTrustStorePassword(),
@@ -144,15 +144,29 @@ public class AuthConsumerService extends MultiActionController implements Servle
                                            messages, request, manager);
     new Thread(thread).start();
     threads.put(request.getSession(true), thread);
-    
+
     response.sendRedirect("process");
   }
-  
+
+  /**
+   * Opportunity for extending classes to do some work to generate the podder URL
+   *
+   * @param sessionID the current Engine session ID
+   * @param config the Engine config
+   * @return the Podder URL for the Guard identified by sessionID
+   * @throws GuanxiException if an error occurs
+   */
+  protected String getPodderURL(String sessionID, Config config) throws GuanxiException {
+	  EntityDescriptorType guardEntityDescriptor = (EntityDescriptorType)getServletContext().getAttribute(sessionID.replaceAll("GUARD", "ENGINE"));
+	  GuardRoleDescriptorExtensions guardNativeMetadata = Util.getGuardNativeMetadata(guardEntityDescriptor);
+	  return guardNativeMetadata.getPodderURL();
+  }
+
   /**
    * This checks the status of the thread associated with this request. This will display
    * either a please wait message (with progress bar) or will forward the user to the
    * Podder.
-   * 
+   *
    * @param request  the HttpServletRequest
    * @param response the HttpServletResponse
    * @return the ModelAndView
@@ -161,26 +175,26 @@ public class AuthConsumerService extends MultiActionController implements Servle
   public ModelAndView process(HttpServletRequest request, HttpServletResponse response) {
     AuthConsumerServiceThread thread;
     HttpSession session;
-    
+
     session = request.getSession(false);
     if ( session == null ) {
       ModelAndView mAndV;
-      
+
       mAndV = new ModelAndView();
       mAndV.setViewName(errorView);
       mAndV.getModel().put(errorViewDisplayVar, "Your session has expired");
-      
+
       return mAndV;
     }
-    
+
     thread = threads.get(session);
     if ( thread == null ) {
       ModelAndView mAndV;
-      
+
       mAndV = new ModelAndView();
       mAndV.setViewName(errorView);
       mAndV.getModel().put(errorViewDisplayVar, "Processing thread cannot be found");
-      
+
       return mAndV;
     }
     if ( thread.isCompleted() ) {
@@ -192,7 +206,7 @@ public class AuthConsumerService extends MultiActionController implements Servle
   /**
    * This is the name of the podder jsp page. This will be used
    * to set the Guard cookie.
-   * 
+   *
    * @return the podderView
    */
   public String getPodderView() {
@@ -201,7 +215,7 @@ public class AuthConsumerService extends MultiActionController implements Servle
   /**
    * This is the name of the podder jsp page. This will be used
    * to set the Guard cookie.
-   * 
+   *
    * @param podderView the podderView to set
    */
   public void setPodderView(String podderView) {
@@ -210,7 +224,7 @@ public class AuthConsumerService extends MultiActionController implements Servle
   /**
    * This is the name of the error jsp page. This will be used
    * to display any issues that arise during the AA process.
-   * 
+   *
    * @return the errorView
    */
   public String getErrorView() {
@@ -219,7 +233,7 @@ public class AuthConsumerService extends MultiActionController implements Servle
   /**
    * This is the name of the error jsp page. This will be used
    * to display any issues that arise during the AA process.
-   * 
+   *
    * @param errorView the errorView to set
    */
   public void setErrorView(String errorView) {
@@ -228,7 +242,7 @@ public class AuthConsumerService extends MultiActionController implements Servle
   /**
    * This is the key that is used to store the exception stack
    * trace and display it on the error page.
-   * 
+   *
    * @return the errorViewDisplayVar
    */
   public String getErrorViewDisplayVar() {
@@ -237,7 +251,7 @@ public class AuthConsumerService extends MultiActionController implements Servle
   /**
    * This is the key that is used to store the exception stack
    * trace and display it on the error page.
-   * 
+   *
    * @param errorViewDisplayVar the errorViewDisplayVar to set
    */
   public void setErrorViewDisplayVar(String errorViewDisplayVar) {
@@ -246,7 +260,7 @@ public class AuthConsumerService extends MultiActionController implements Servle
   /**
    * This is the key that is used to store the more understandable
    * error message intended to reduce the amount of support required.
-   * 
+   *
    * @return the errorViewSimpleVar
    */
   public String getErrorViewSimpleVar() {
@@ -255,7 +269,7 @@ public class AuthConsumerService extends MultiActionController implements Servle
   /**
    * This is the key that is used to store the brief description
    * of the error and display it on the error page.
-   * 
+   *
    * @param errorViewSimpleVar the errorViewSimpleVar to set
    */
   public void setErrorViewSimpleVar(String errorViewSimpleVar) {
