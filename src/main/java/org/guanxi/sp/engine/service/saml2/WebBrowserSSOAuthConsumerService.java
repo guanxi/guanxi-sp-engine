@@ -46,6 +46,7 @@ import org.guanxi.sp.engine.Config;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -150,24 +151,32 @@ public class WebBrowserSSOAuthConsumerService extends MultiActionController impl
       // Get a handle on the encypted data in DOM land
       String namespaceURI = EncryptionConstants.EncryptionSpecNS;
       String localName = EncryptionConstants._TAG_ENCRYPTEDDATA;
-      Element encryptedDataElement = (Element)rawSAMLResponseDoc.getElementsByTagNameNS(namespaceURI, localName).item(0);
 
-      /* This block unwraps and decrypts the secret key. The IdP first encrypts the attributes
-       * using a secret key. It then encrypts that secret key using the public key of the Guard.
-       * So the first step is to use the Guard's private key to decrypt the secret key.
-       */
-      String algorithm = encKeyDoc.getEncryptedKey().getEncryptionMethod().getAlgorithm();
-      XMLCipher xmlCipher = XMLCipher.getInstance();
-      xmlCipher.init(XMLCipher.UNWRAP_MODE, privateKey);
-      EncryptedData encryptedData = xmlCipher.loadEncryptedData(rawSAMLResponseDoc, encryptedDataElement);
-      EncryptedKey encryptedKey = encryptedData.getKeyInfo().itemEncryptedKey(0);
-      Key decryptedSecretKey = xmlCipher.decryptKey(encryptedKey, algorithm);
+      // Recurse through the decryption process
+      NodeList encyptedDataNodes = rawSAMLResponseDoc.getElementsByTagNameNS(namespaceURI, localName);
+      while (encyptedDataNodes.getLength() > 0) {
+        Element encryptedDataElement = (Element)encyptedDataNodes.item(0);
+        
+        /* This block unwraps and decrypts the secret key. The IdP first encrypts the attributes
+         * using a secret key. It then encrypts that secret key using the public key of the Guard.
+         * So the first step is to use the Guard's private key to decrypt the secret key.
+         */
+        String algorithm = encKeyDoc.getEncryptedKey().getEncryptionMethod().getAlgorithm();
+        XMLCipher xmlCipher = XMLCipher.getInstance();
+        xmlCipher.init(XMLCipher.UNWRAP_MODE, privateKey);
+        EncryptedData encryptedData = xmlCipher.loadEncryptedData(rawSAMLResponseDoc, encryptedDataElement);
+        EncryptedKey encryptedKey = encryptedData.getKeyInfo().itemEncryptedKey(0);
+        Key decryptedSecretKey = xmlCipher.decryptKey(encryptedKey, algorithm);
 
-      // This block uses the decrypted secret key to decrypt the attributes
-      Key secretKey = new SecretKeySpec(decryptedSecretKey.getEncoded(), "AES");
-      XMLCipher xmlDecryptCipher = XMLCipher.getInstance();
-      xmlDecryptCipher.init(XMLCipher.DECRYPT_MODE, secretKey);
-      xmlDecryptCipher.doFinal(rawSAMLResponseDoc, encryptedDataElement);
+        // This block uses the decrypted secret key to decrypt the attributes
+        Key secretKey = new SecretKeySpec(decryptedSecretKey.getEncoded(), "AES");
+        XMLCipher xmlDecryptCipher = XMLCipher.getInstance();
+        xmlDecryptCipher.init(XMLCipher.DECRYPT_MODE, secretKey);
+        xmlDecryptCipher.doFinal(rawSAMLResponseDoc, encryptedDataElement);
+
+        // Any more encryption to handle?
+        encyptedDataNodes = rawSAMLResponseDoc.getElementsByTagNameNS(namespaceURI, localName);
+      }
 
       // And back to XMLBeans for that nice API!
       responseDocument = ResponseDocument.Factory.parse(rawSAMLResponseDoc);
