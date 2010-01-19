@@ -136,7 +136,15 @@ public class WebBrowserSSOAuthConsumerService extends MultiActionController impl
       /* XMLBeans doesn't give us access to the embedded encryption key for some reason
        * so we need to break out to DOM and back again.
        */
-      EncryptedKeyDocument encKeyDoc = EncryptedKeyDocument.Factory.parse(responseDocument.getResponse().getEncryptedAssertionArray(0).getEncryptedData().getKeyInfo().getDomNode().getFirstChild(), xmlOptions);
+      NodeList nodes = responseDocument.getResponse().getEncryptedAssertionArray(0).getEncryptedData().getKeyInfo().getDomNode().getChildNodes();
+      Node node = null;
+      for (int c=0; c < nodes.getLength(); c++) {
+        node = nodes.item(c);
+        if (node.getLocalName() != null) {
+          if (node.getLocalName().equals("EncryptedKey")) break;
+        }
+      }
+      EncryptedKeyDocument encKeyDoc = EncryptedKeyDocument.Factory.parse(node, xmlOptions);
 
       /* Load up the Guard's private key. We need this to decrypt the secret key
        * which was used to encrypt the attributes.
