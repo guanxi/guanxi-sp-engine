@@ -42,6 +42,8 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.util.HashMap;
 import java.util.Calendar;
+import java.net.URLEncoder;
+import java.io.UnsupportedEncodingException;
 
 /**
  * Initiates a SAML2 Web Browser SSO session with an IdP
@@ -55,6 +57,8 @@ public class WebBrowserSSOService extends MultiActionController implements Servl
   private MessageSource messages = null;
   /** The JSP to use to POST the AuthnRequest to the IdP */
   private String httpPOSTView = null;
+  /** The JSP to use to GET the AuthnRequest to the IdP */
+  private String httpRedirectView = null;
   /** The JSP to use to display any errors */
   private String errorView = null;
   /** The request attribute that holds the error message for the error view */
@@ -69,6 +73,7 @@ public class WebBrowserSSOService extends MultiActionController implements Servl
     // Guard verification
     String guardID = request.getParameter(Guanxi.WAYF_PARAM_GUARD_ID);
     String guardSessionID = request.getParameter(Guanxi.WAYF_PARAM_SESSION_ID);
+    String binding = request.getParameter(Guanxi.WAYF_PARAM_GUARD_BINDING);
 
     // Get the Guard's metadata, previously loaded by the Bootstrapper
     EntityDescriptorType guardEntityDescriptor = (EntityDescriptorType)getServletContext().getAttribute(guardID);
@@ -113,10 +118,23 @@ public class WebBrowserSSOService extends MultiActionController implements Servl
     EntityDescriptorType saml2Metadata = (EntityDescriptorType)entityMetadata.getPrivateData();
 
     // Get the WBSSO profile endpoint at the IdP
+    String bindingURN = null;
+    if (binding == null) {
+      bindingURN = "urn:oasis:names:tc:SAML:2.0:bindings:HTTP-POST";
+      binding = "http-post";
+    }
+    else {
+      if (binding.equals("http-post")) {
+        bindingURN = "urn:oasis:names:tc:SAML:2.0:bindings:HTTP-POST";
+      }
+      else if (binding.equals("http-redirect")) {
+        bindingURN = "urn:oasis:names:tc:SAML:2.0:bindings:HTTP-Redirect";
+      }
+    }
     String wbssoURL = null;
     EndpointType[] ssos = saml2Metadata.getIDPSSODescriptorArray(0).getSingleSignOnServiceArray();
     for (EndpointType sso : ssos) {
-      if (sso.getBinding().equalsIgnoreCase("urn:oasis:names:tc:SAML:2.0:bindings:HTTP-POST")) {
+      if (sso.getBinding().equalsIgnoreCase(bindingURN)) {
         wbssoURL = sso.getLocation();
       }
     }
@@ -193,12 +211,37 @@ public class WebBrowserSSOService extends MultiActionController implements Servl
 
     // Base 64 encode the AuthnRequest
     //String authnRequestB64 = Utils.base64(signedDoc);
-    String authnRequestB64 = Utils.base64((Document)authnRequestDoc.newDomNode(xmlOptions));
+    //String authnRequestB64 = Utils.base64((Document)authnRequestDoc.newDomNode(xmlOptions));
 
-    // POST the AuthnRequest to the IdP
-    request.setAttribute("SAMLRequest", authnRequestB64);
+    // Do the profile quickstep
+    String authnRequestForIdP = null;
+    String bindingView = null;
+    if (binding.equals("http-redirect")) {
+      bindingView = httpRedirectView;
+      String deflatedRequest = Utils.deflate(authnRequestDoc.toString(), Utils.RFC1951_DEFAULT_COMPRESSION_LEVEL, Utils.RFC1951_NO_WRAP);
+      authnRequestForIdP = Utils.base64(deflatedRequest.getBytes());
+      authnRequestForIdP = authnRequestForIdP.replaceAll(System.getProperty("line.separator"), "");
+      try {
+        authnRequestForIdP = URLEncoder.encode(authnRequestForIdP, "UTF-8");
+        relayState = URLEncoder.encode(relayState, "UTF-8");
+      }
+      catch(UnsupportedEncodingException uee) {
+        logger.error("couldn't encode SAMLRequest");
+        mAndV.setViewName(errorView);
+        mAndV.getModel().put(errorViewDisplayVar, messages.getMessage("engine.error.missing.entityid.param",
+                                                                      null, request.getLocale()));
+        return mAndV;
+      }
+    }
+    else if (binding.equals("http-post")) {
+      bindingView = httpPOSTView;
+      authnRequestForIdP = Utils.base64(authnRequestDoc.toString().getBytes());
+    }
+
+    // Send the AuthnRequest to the IdP
+    request.setAttribute("SAMLRequest", authnRequestForIdP);
     request.setAttribute("RelayState", relayState);
-    mAndV.setViewName(httpPOSTView);
+    mAndV.setViewName(bindingView);
     mAndV.getModel().put("wbsso_endpoint", wbssoURL);
     return mAndV;
   }
@@ -206,6 +249,7 @@ public class WebBrowserSSOService extends MultiActionController implements Servl
   // Setters
   public void setMessages(MessageSource messages) { this.messages = messages; }
   public void setHttpPOSTView(String httpPOSTView) { this.httpPOSTView = httpPOSTView; }
+  public void setHttpRedirectView(String httpRedirectView) { this.httpRedirectView = httpRedirectView; }
   public void setErrorView(String errorView) { this.errorView = errorView; }
   public void setErrorViewDisplayVar(String errorViewDisplayVar) { this.errorViewDisplayVar = errorViewDisplayVar; }
 }
