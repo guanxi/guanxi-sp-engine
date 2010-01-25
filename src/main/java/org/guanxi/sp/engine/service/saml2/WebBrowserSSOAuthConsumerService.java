@@ -101,22 +101,31 @@ public class WebBrowserSSOAuthConsumerService extends MultiActionController impl
     guardSession = guardSession.replaceAll("ENGINE", "GUARD");
 
     try {
-      // Decode and marshall the response from the IdP
-      ResponseDocument responseDocument = ResponseDocument.Factory.parse(new StringReader(Utils.decodeBase64(b64SAMLResponse)));
+      // Decode and unmarshall the response from the IdP
+      String decodedRequest = Utils.decodeBase64(b64SAMLResponse);
+      ResponseDocument responseDocument = null;
+      if (request.getMethod().equalsIgnoreCase("post")) {
+        responseDocument = ResponseDocument.Factory.parse(new StringReader(decodedRequest));
+      }
+      else {
+        responseDocument = ResponseDocument.Factory.parse(Utils.inflate(decodedRequest, Utils.RFC1951_NO_WRAP));
+      }
       String idpProviderId = responseDocument.getResponse().getIssuer().getStringValue();
 
       // Do the trust
-      EntityFarm farm = (EntityFarm)getServletContext().getAttribute(Guanxi.CONTEXT_ATTR_ENGINE_ENTITY_FARM);
-      EntityManager manager = farm.getEntityManagerForID(idpProviderId);
-      X509Certificate x509 = TrustUtils.getX509CertFromSignature(responseDocument);
-      if (x509 != null) {
-        Metadata idpMetadata = manager.getMetadata(idpProviderId);
-        if (!manager.getTrustEngine().trustEntity(idpMetadata, x509)) {
-          throw new GuanxiException("Trust failed");
+      if (responseDocument.getResponse().getSignature() != null) {
+        EntityFarm farm = (EntityFarm)getServletContext().getAttribute(Guanxi.CONTEXT_ATTR_ENGINE_ENTITY_FARM);
+        EntityManager manager = farm.getEntityManagerForID(idpProviderId);
+        X509Certificate x509 = TrustUtils.getX509CertFromSignature(responseDocument);
+        if (x509 != null) {
+          Metadata idpMetadata = manager.getMetadata(idpProviderId);
+          if (!manager.getTrustEngine().trustEntity(idpMetadata, x509)) {
+            throw new GuanxiException("Trust failed");
+          }
         }
-      }
-      else {
-        throw new GuanxiException("No X509 from connection");
+        else {
+          throw new GuanxiException("No X509 from signature");
+        }
       }
 
       HashMap<String, String> namespaces = new HashMap<String, String>();
