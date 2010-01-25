@@ -13,6 +13,7 @@
         init-method="init">
     <property name="messages" ref="messageSource"/>
 		<property name="httpPOSTView"><value>/saml2/http-post</value></property>
+    <property name="httpRedirectView"><value>/saml2/http-redirect</value></property>
     <property name="errorView"><value>message</value></property>
     <property name="errorViewDisplayVar"><value>message</value></property>
   </bean>
