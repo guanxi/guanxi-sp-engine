@@ -87,7 +87,8 @@ public class Bootstrap implements ApplicationListener, ApplicationContextAware, 
                                             config.getKeystore(),
                                             config.getKeystorePassword(),
                                             config.getKeystorePassword(),
-                                            config.getCertificateAlias());
+                                            config.getCertificateAlias(),
+                                            config.getKeyType());
         }
         catch(GuanxiException ge) {
           logger.error("Can't create self signed keystore - secure Guard comms won't be available : ", ge);
