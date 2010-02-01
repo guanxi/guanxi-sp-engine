@@ -14,7 +14,7 @@
     <property name="keystore"><value>/WEB-INF/guanxi_sp_engine/keystore/samlengine.jks</value></property>
     <property name="keystorePassword"><value>changeme</value></property>
     <property name="certificateAlias"><value>webservices</value></property>
-    <property name="keyType"><value>DSA</value></property>
+    <property name="keyType"><value>RSA</value></property>
 
     <property name="trustStore"><value>/WEB-INF/guanxi_sp_engine/truststore/samlengine.jks</value></property>
     <property name="trustStorePassword"><value>changeme</value></property>
