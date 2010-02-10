@@ -114,6 +114,9 @@ public class WebBrowserSSOAuthConsumerService extends MultiActionController impl
 
       // Do the trust
       if (responseDocument.getResponse().getSignature() != null) {
+        if (!TrustUtils.verifySignature(responseDocument)) {
+          throw new GuanxiException("Trust failed");
+        }
         EntityFarm farm = (EntityFarm)getServletContext().getAttribute(Guanxi.CONTEXT_ATTR_ENGINE_ENTITY_FARM);
         EntityManager manager = farm.getEntityManagerForID(idpProviderId);
         X509Certificate x509 = TrustUtils.getX509CertFromSignature(responseDocument);
