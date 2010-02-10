@@ -31,6 +31,8 @@ import org.guanxi.xal.saml_2_0.metadata.*;
 import org.guanxi.xal.saml2.metadata.GuanxiGuardServiceDocument;
 import org.guanxi.xal.saml2.metadata.GuardRoleDescriptorExtensions;
 import org.guanxi.sp.engine.Config;
+import org.guanxi.xal.w3.xmldsig.KeyInfoType;
+import org.guanxi.xal.w3.xmldsig.X509DataType;
 import org.springframework.web.servlet.mvc.SimpleFormController;
 import org.springframework.web.servlet.ModelAndView;
 import org.springframework.validation.BindException;
@@ -42,6 +44,7 @@ import javax.servlet.ServletException;
 import javax.security.auth.x500.X500Principal;
 import java.io.*;
 import java.security.*;
+import java.security.cert.CertificateEncodingException;
 import java.security.cert.X509Certificate;
 import java.math.BigInteger;
 import java.util.*;
@@ -190,7 +193,7 @@ public class RegisterGuardFormController extends SimpleFormController {
     createKeystoreWithChain(guardKeystore, form.getGuardid().toLowerCase(),
                             keystorePassword, caBean);
 
-    createGuardMetadataFile(metadataDirectory, guardKeystore, keystorePassword, form);
+    createGuardMetadataFile(metadataDirectory, guardKeystore, keystorePassword, form, caBean);
 
     // Load the new Guard so the main Engine can use it
     loadGuardMetadata(metadataDirectory + File.separator + escapedGuardID + ".xml");
@@ -235,6 +238,7 @@ public class RegisterGuardFormController extends SimpleFormController {
       CABean caBean = new CABean();
       caBean.setChain(signedChain);
       caBean.setCSRPrivateKey(clientPrivateKey);
+      caBean.setSubjectDN(x509DN);
 
       // ...and send it back
       return caBean;
@@ -423,40 +427,14 @@ public class RegisterGuardFormController extends SimpleFormController {
    * @param keystore The name of the Guard's keystore that has been created
    * @param keystorePassword The password for the Guard's keystore
    * @param form The form object describing the Guard
+   * @param caBean The bean encapsulating certificate information
    */
   private void createGuardMetadataFile(String guardDir, String keystore, String keystorePassword,
-                                       RegisterGuard form) {
+                                       RegisterGuard form, CABean caBean) {
     EntityDescriptorDocument entityDoc = EntityDescriptorDocument.Factory.newInstance();
     EntityDescriptorType entityDescriptor = entityDoc.addNewEntityDescriptor();
 
     entityDescriptor.setEntityID(form.getGuardid().toLowerCase());
-
-    // <EntityDescriptor>/<Organization>
-    OrganizationType organisation = entityDescriptor.addNewOrganization();
-    // <EntityDescriptor>/<Organization>/<OrganizationName>
-    LocalizedNameType orgName = LocalizedNameType.Factory.newInstance();
-    orgName.setLang("en");
-    orgName.setStringValue(form.getOrg());
-    organisation.setOrganizationDisplayNameArray(new LocalizedNameType[] {orgName});
-    // <EntityDescriptor>/<Organization>/<OrganizationDisplayName>
-    LocalizedNameType displayName = LocalizedNameType.Factory.newInstance();
-    displayName.setLang("en");
-    displayName.setStringValue(form.getOrg());
-    organisation.setOrganizationNameArray(new LocalizedNameType[] {displayName});
-    // <EntityDescriptor>/<Organization>/<OrganizationURL>
-    LocalizedURIType orgURL = LocalizedURIType.Factory.newInstance();
-    orgURL.setLang("en");
-    orgURL.setStringValue(form.getOrg());
-    organisation.setOrganizationURLArray(new LocalizedURIType[] {orgURL});
-
-    // <EntityDescriptor>/<ContactPerson>
-    ContactType contact = entityDescriptor.addNewContactPerson();
-    contact.setContactType(ContactTypeType.TECHNICAL);
-    contact.setCompany(form.getContactCompany());
-    contact.setGivenName(form.getContactGivenName());
-    contact.setSurName(form.getContactSurname());
-    contact.setEmailAddressArray(new String[] {form.getContactEmail()});
-    contact.setTelephoneNumberArray(new String[] {form.getContactPhone()});
 
     // <EntityDescriptor>/<RoleDescriptor>
     RoleDescriptorDocument roleDoc = RoleDescriptorDocument.Factory.newInstance();
@@ -479,6 +457,83 @@ public class RegisterGuardFormController extends SimpleFormController {
 
     // Add the GuanxiGuardDescriptor to the EntityDescriptor
     entityDescriptor.setRoleDescriptorArray(new RoleDescriptorType[] {role});
+
+    // <EntityDescriptor>/<Organization>
+    OrganizationType organisation = entityDescriptor.addNewOrganization();
+    // <EntityDescriptor>/<Organization>/<OrganizationName>
+    LocalizedNameType orgName = LocalizedNameType.Factory.newInstance();
+    orgName.setLang("en");
+    orgName.setStringValue(form.getOrg());
+    organisation.setOrganizationDisplayNameArray(new LocalizedNameType[] {orgName});
+    // <EntityDescriptor>/<Organization>/<OrganizationDisplayName>
+    LocalizedNameType displayName = LocalizedNameType.Factory.newInstance();
+    displayName.setLang("en");
+    displayName.setStringValue(form.getOrg());
+    organisation.setOrganizationNameArray(new LocalizedNameType[] {displayName});
+    // <EntityDescriptor>/<Organization>/<OrganizationURL>
+    LocalizedURIType orgURL = LocalizedURIType.Factory.newInstance();
+    orgURL.setLang("en");
+    orgURL.setStringValue(form.getOrg());
+    organisation.setOrganizationURLArray(new LocalizedURIType[] {orgURL});
+
+    // <EntityDescriptor>/<SPSSODescriptor>
+    SPSSODescriptorType spSSO = entityDescriptor.addNewSPSSODescriptor();
+
+    // <EntityDescriptor>/SPSSODescriptor>/<KeyDescriptor> : signing
+    KeyDescriptorType keyDescriptor = spSSO.addNewKeyDescriptor();
+    keyDescriptor.setUse(KeyTypes.SIGNING);
+    KeyInfoType keyInfo = keyDescriptor.addNewKeyInfo();
+    X509DataType x509Data = keyInfo.addNewX509Data();
+
+    StringWriter sw = new StringWriter();
+    PEMWriter pemWriter = new PEMWriter(sw);
+    String x509 = null;
+
+    try {
+      pemWriter.writeObject(caBean.getSubjectCertificate());
+      pemWriter.close();
+      x509 = sw.toString();
+      x509 = x509.replaceAll("-----BEGIN CERTIFICATE-----", "");
+      x509 = x509.replaceAll("-----END CERTIFICATE-----", "");
+      x509Data.addNewX509Certificate().setStringValue(x509);
+    }
+    catch(Exception e) {
+      logger.error("Error creating Guard signing certificate metadata", e);
+    }
+    // <EntityDescriptor>/SPSSODescriptor>/<KeyDescriptor> : encryption
+    keyDescriptor = spSSO.addNewKeyDescriptor();
+    keyDescriptor.setUse(KeyTypes.ENCRYPTION);
+    keyInfo = keyDescriptor.addNewKeyInfo();
+    x509Data = keyInfo.addNewX509Data();
+    try {
+      x509Data.addNewX509Certificate().setStringValue(x509);
+    }
+    catch(Exception e) {
+      logger.error("Error creating Guard encryption certificate metadata", e);
+    }
+
+    // <EntityDescriptor>/<AssertionConsumerService>
+    IndexedEndpointType acs = spSSO.addNewAssertionConsumerService();
+    acs.setIndex(0);
+    acs.setBinding("urn:oasis:names:tc:SAML:1.0:profiles:browser-post");
+    acs.setLocation("YOUR_ENGINE_URL/samlengine/shibb/acs");
+    acs = spSSO.addNewAssertionConsumerService();
+    acs.setIndex(1);
+    acs.setBinding("urn:oasis:names:tc:SAML:2.0:bindings:HTTP-POST");
+    acs.setLocation("YOUR_ENGINE_URL/samlengine/s2/wbsso/acs");
+    acs = spSSO.addNewAssertionConsumerService();
+    acs.setIndex(2);
+    acs.setBinding("urn:oasis:names:tc:SAML:2.0:bindings:HTTP-Redirect");
+    acs.setLocation("YOUR_ENGINE_URL/samlengine/s2/wbsso/acs");
+
+    // <EntityDescriptor>/<ContactPerson>
+    ContactType contact = entityDescriptor.addNewContactPerson();
+    contact.setContactType(ContactTypeType.TECHNICAL);
+    contact.setCompany(form.getContactCompany());
+    contact.setGivenName(form.getContactGivenName());
+    contact.setSurName(form.getContactSurname());
+    contact.setEmailAddressArray(new String[] {form.getContactEmail()});
+    contact.setTelephoneNumberArray(new String[] {form.getContactPhone()});
 
     HashMap<String, String> ns = new HashMap<String, String>();
     ns.put("urn:guanxi:metadata", "gxmeta");
@@ -534,6 +589,16 @@ public class RegisterGuardFormController extends SimpleFormController {
     PrivateKey csrPrivateKey = null;
 
     /**
+     * Sets the subject DN
+     * @param subjectDN the dn of the subject of the chain
+     */
+    public void setSubjectDN(String subjectDN) {
+      this.subjectDN = subjectDN;
+    }
+
+    String subjectDN = null;
+
+    /**
      * Store the certificate chain in the bean
      * @param chain X509 certificate chain
      */
@@ -548,6 +613,23 @@ public class RegisterGuardFormController extends SimpleFormController {
      */
     public X509Certificate[] getChain() {
       return chain;
+    }
+
+    /**
+     * Returns the X509 certificate of the subject of the chain
+     *
+     * @return X509 certificate of the subject of the chain or null
+     */
+    public X509Certificate getSubjectCertificate() {
+      String subjectCN = subjectDN.split(",")[0].split("=")[1];
+      for (X509Certificate x509 : chain) {
+        String[] parts = x509.getSubjectDN().getName().split(",");
+        String x509CN = parts[parts.length - 1].split("=")[1];
+        if (x509CN.equals(subjectCN)) {
+          return x509;
+        }
+      }
+      return null;
     }
 
     /**
