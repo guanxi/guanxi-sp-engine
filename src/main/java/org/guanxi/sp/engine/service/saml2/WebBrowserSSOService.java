@@ -63,6 +63,10 @@ public class WebBrowserSSOService extends MultiActionController implements Servl
   private String errorView = null;
   /** The request attribute that holds the error message for the error view */
   private String errorViewDisplayVar = null;
+  /** The default endpoint for receiving SAML Response messages */
+  private String defaultAssertionConsumerServiceURL = null;
+  /** The default binding for receiving SAML Response messages */
+  private String defaultBinding = null;
 
   public void init() {}
 
@@ -156,6 +160,8 @@ public class WebBrowserSSOService extends MultiActionController implements Servl
     NameIDType issuer = NameIDType.Factory.newInstance();
     issuer.setStringValue(guardID);
     authnRequest.setIssuer(issuer);
+    authnRequest.setAssertionConsumerServiceURL(defaultAssertionConsumerServiceURL);
+    authnRequest.setProtocolBinding(defaultBinding);
     // Only if signed
     //authnRequest.setDestination("https://sgarbh.smo.uhi.ac.uk:8443/idp/profile/SAML2/POST/SSO");
 
@@ -252,4 +258,6 @@ public class WebBrowserSSOService extends MultiActionController implements Servl
   public void setHttpRedirectView(String httpRedirectView) { this.httpRedirectView = httpRedirectView; }
   public void setErrorView(String errorView) { this.errorView = errorView; }
   public void setErrorViewDisplayVar(String errorViewDisplayVar) { this.errorViewDisplayVar = errorViewDisplayVar; }
+  public void setDefaultAssertionConsumerServiceURL(String defaultAssertionConsumerServiceURL) { this.defaultAssertionConsumerServiceURL = defaultAssertionConsumerServiceURL; }
+  public void setDefaultBinding(String defaultBinding) { this.defaultBinding = defaultBinding; }
 }
