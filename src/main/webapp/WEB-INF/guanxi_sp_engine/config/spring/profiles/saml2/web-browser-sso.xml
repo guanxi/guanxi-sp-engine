@@ -3,23 +3,6 @@
        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
        xsi:schemaLocation="http://www.springframework.org/schema/beans
                           http://www.springframework.org/schema/beans/spring-beans-2.0.xsd">
-  <!-- This is the service a Guard redirects to to start the profile -->
-  <bean class="org.springframework.web.servlet.handler.SimpleUrlHandlerMapping">
-    <property name="alwaysUseFullPath"><value>true</value></property>
-
-    <property name="interceptors">
-      <list>
-        <ref bean="guardVerifier" />
-      </list>
-    </property>
-    
-    <property name="urlMap">
-      <map>
-        <entry key="/s2/wbsso"><ref bean="saml2WBSSOService"/></entry>
-      </map>
-    </property>
-  </bean>
-
   <!-- Authentication Consumer service -->
   <bean class="org.springframework.web.servlet.handler.SimpleUrlHandlerMapping">
     <property name="alwaysUseFullPath"><value>true</value></property>
