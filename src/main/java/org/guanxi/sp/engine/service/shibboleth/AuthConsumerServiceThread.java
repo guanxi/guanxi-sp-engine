@@ -17,7 +17,6 @@
 package org.guanxi.sp.engine.service.shibboleth;
 
 import java.io.IOException;
-import java.io.ByteArrayOutputStream;
 import java.io.OutputStreamWriter;
 import java.math.BigInteger;
 import java.security.KeyStoreException;
@@ -30,19 +29,18 @@ import java.net.URL;
 
 import org.apache.log4j.Logger;
 import org.apache.xmlbeans.XmlException;
+import org.apache.xmlbeans.XmlObject;
+import org.guanxi.common.Bag;
 import org.guanxi.common.EntityConnection;
 import org.guanxi.common.GuanxiException;
 import org.guanxi.common.Utils;
+import org.guanxi.common.definitions.EduPerson;
 import org.guanxi.common.metadata.Metadata;
 import org.guanxi.common.entity.EntityManager;
 import org.guanxi.common.definitions.Shibboleth;
 import org.guanxi.common.definitions.Guanxi;
-import org.guanxi.xal.saml_1_0.assertion.NameIdentifierType;
-import org.guanxi.xal.saml_1_0.assertion.SubjectType;
-import org.guanxi.xal.saml_1_0.protocol.AttributeQueryType;
-import org.guanxi.xal.saml_1_0.protocol.RequestDocument;
-import org.guanxi.xal.saml_1_0.protocol.RequestType;
-import org.guanxi.xal.saml_1_0.protocol.ResponseType;
+import org.guanxi.xal.saml_1_0.assertion.*;
+import org.guanxi.xal.saml_1_0.protocol.*;
 import org.guanxi.xal.soap.Body;
 import org.guanxi.xal.soap.Envelope;
 import org.guanxi.xal.soap.EnvelopeDocument;
@@ -51,6 +49,7 @@ import org.springframework.web.servlet.ModelAndView;
 import org.springframework.context.MessageSource;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
 
 import javax.servlet.http.HttpServletRequest;
 
@@ -417,31 +416,31 @@ public class AuthConsumerServiceThread implements Runnable {
    * @param truststoreFile      The location of the truststore to use to verify the guard
    * @param truststorePassword  The password for the truststore
    * @param soapRequest         The request that will be sent to the Guard
+   * @param guardSession        The Guard's session ID
    * @return                    A string containing the response from the guard
    * @throws GuanxiException    If there is a problem creating the EntityConnection or setting the attributes on it
    * @throws IOException        If there is a problem using the EntityConnection to read or write data
    */
-  private String processGuardConnection(String acsURL, String entityID, String keystoreFile, String keystorePassword, String truststoreFile, 
-		  								String truststorePassword, EnvelopeDocument soapRequest) throws GuanxiException, IOException {
-    EntityConnection connection;
+  private String processGuardConnection(String acsURL, String entityID, String keystoreFile, String keystorePassword,
+                                        String truststoreFile, String truststorePassword,
+                                        EnvelopeDocument soapRequest, String guardSession) throws GuanxiException, IOException {
+    ResponseDocument responseDoc = unmarshallSAML(soapRequest);
+    Bag bag = getBag(responseDoc, guardSession);
     
     // Initialise the connection to the Guard's attribute consumer service
-    connection = new EntityConnection(acsURL, entityID, keystoreFile, keystorePassword, truststoreFile, truststorePassword, EntityConnection.PROBING_OFF);
+    EntityConnection connection = new EntityConnection(acsURL, entityID, keystoreFile, keystorePassword,
+                                                       truststoreFile, truststorePassword,
+                                                       EntityConnection.PROBING_OFF);
     connection.setDoOutput(true);
     connection.connect();
 
-    ByteArrayOutputStream os = new ByteArrayOutputStream();
-    soapRequest.save(os);
-
     // Send the data to the Guard in an explicit POST variable
-    String soap = URLEncoder.encode(Guanxi.REQUEST_PARAMETER_SAML_ATTRIBUTES, "UTF-8") + "=" + URLEncoder.encode(os.toString(), "UTF-8");
+    String json = URLEncoder.encode(Guanxi.REQUEST_PARAMETER_SAML_ATTRIBUTES, "UTF-8") + "=" + URLEncoder.encode(bag.toJSON(), "UTF-8");
 
     OutputStreamWriter wr = new OutputStreamWriter(connection.getOutputStream());
-    wr.write(soap);
+    wr.write(json);
     wr.flush();
     wr.close();
-
-    os.close();
 
     // ...and read the response from the Guard
     return new String(Utils.read(connection.getInputStream()));
@@ -519,7 +518,7 @@ public class AuthConsumerServiceThread implements Runnable {
     
     setStatus(readingGuardResponse);
     try {
-      guardResponse = processGuardConnection(acsURL, entityID, keystoreFile, keystorePassword, truststoreFile, truststorePassword, guardSoapRequest);
+      guardResponse = processGuardConnection(acsURL, entityID, keystoreFile, keystorePassword, truststoreFile, truststorePassword, guardSoapRequest, guardSession);
     }
     catch (Exception e) {
       logger.error("Guard ACS connection error", e);
@@ -534,33 +533,82 @@ public class AuthConsumerServiceThread implements Runnable {
       return;
     }
     
-    // Done talking to the guard. Parse the response to ensure that it is valid and then redirect to the Podder
-    
-    try {
-      EnvelopeDocument.Factory.parse(guardResponse);
-    }
-    catch(XmlException xe) {
-      logger.error("Guard ACS response parse error", xe);
-      logger.error("SOAP response:");
-      logger.error("------------------------------------");
-      logger.error(guardResponse);
-      logger.error("------------------------------------");
-      mAndV.setViewName(parent.getErrorView());
-      mAndV.getModel().put(parent.getErrorViewDisplayVar(), xe.getMessage());
-      mAndV.getModel().put(parent.getErrorViewSimpleVar(), 
-                           "There was a problem parsing the response from the Guard." +
-                           "Check that the Attribute Consumer Service URL of the "    +
-                           "Guard is correct.");
-      
-      setStatus(mAndV);
-      setCompleted(true);
-      return;
-    }
-    
+    // Done talking to the guard. Redirect to the Podder
     mAndV.setViewName(parent.getPodderView());
     mAndV.getModel().put("podderURL", podderURL + "?id=" + guardSession);
     
     setStatus(mAndV);
     setCompleted(true);
+  }
+
+  /**
+   * Extracts the SAML Response from a SOAP message
+   *
+   * @param soapDoc The SOAP message containing the SAML Response
+   * @return ResponseDocument
+   * @throws GuanxiException if an error occurs
+   */
+  private ResponseDocument unmarshallSAML(EnvelopeDocument soapDoc) throws GuanxiException {
+    // Rake through the SOAP to find the SAML Response...
+    NodeList nodes = soapDoc.getEnvelope().getBody().getDomNode().getChildNodes();
+    Node samlResponseNode = null;
+    for (int c=0; c < nodes.getLength(); c++) {
+      samlResponseNode = nodes.item(c);
+      if (samlResponseNode.getLocalName() != null) {
+        if (samlResponseNode.getLocalName().equals("Response"))
+          break;
+      }
+    }
+    // ...and parse it
+    try {
+      return ResponseDocument.Factory.parse(samlResponseNode);
+    }
+    catch(XmlException xe) {
+      throw new GuanxiException("can't parse response: " + xe.getMessage());
+    }
+  }
+
+  
+
+  private Bag getBag(ResponseDocument responseDocument, String guardSession) throws GuanxiException {
+    Bag bag = new Bag();
+    bag.setSessionID(guardSession);
+    bag.setSamlResponse(Utils.base64(responseDocument.toString().getBytes()));
+    
+    // Grab the Assertions, if there are any...
+    AssertionType[] assertions = responseDocument.getResponse().getAssertionArray();
+    if (assertions.length > 0) {
+      // ...to get the AttributeStatement...
+      AttributeStatementType[] attrStatements = assertions[0].getAttributeStatementArray();
+      // ...and the corresponding attributes...
+      AttributeType[] attributes = attrStatements[0].getAttributeArray();
+      // ...adding them as convenience objects to the Bag
+      for (int c=0; c < attributes.length; c++) {
+        XmlObject[] obj = attributes[c].getAttributeValueArray();
+        for (int cc=0; cc < obj.length; cc++) {
+          if ((attributes[c].getAttributeName().equals(EduPerson.EDUPERSON_SCOPED_AFFILIATION)) ||
+              (attributes[c].getAttributeName().equals(EduPerson.EDUPERSON_TARGETED_ID))) {
+            String attrValue = obj[cc].getDomNode().getFirstChild().getNodeValue();
+            if (obj[cc].getDomNode().getAttributes().getNamedItem(EduPerson.EDUPERSON_SCOPE_ATTRIBUTE) != null) {
+              attrValue += EduPerson.EDUPERSON_SCOPED_DELIMITER;
+              attrValue += obj[cc].getDomNode().getAttributes().getNamedItem(EduPerson.EDUPERSON_SCOPE_ATTRIBUTE).getNodeValue();
+            }
+            bag.addAttribute(attributes[c].getAttributeName(), attrValue);
+          }
+          else {
+            if (obj[cc].getDomNode().getFirstChild() != null) {
+              if (obj[cc].getDomNode().getFirstChild().getNodeValue() != null) {
+                bag.addAttribute(attributes[c].getAttributeName(), obj[cc].getDomNode().getFirstChild().getNodeValue());
+              }
+              else {
+                bag.addAttribute(attributes[c].getAttributeName(), "");
+              }
+            }
+          }
+        }
+      }
+    }
+
+    return bag;
   }
 }
