@@ -16,6 +16,11 @@
 
 package org.guanxi.sp.engine.service.saml2;
 
+import org.apache.xmlbeans.XmlObject;
+import org.guanxi.common.Bag;
+import org.guanxi.common.definitions.EduPerson;
+import org.guanxi.common.definitions.EduPersonOID;
+import org.guanxi.xal.saml_2_0.assertion.*;
 import org.springframework.web.servlet.mvc.multiaction.MultiActionController;
 import org.springframework.web.context.ServletContextAware;
 import org.springframework.context.MessageSource;
@@ -40,7 +45,6 @@ import org.guanxi.xal.saml_2_0.metadata.EntityDescriptorType;
 import org.guanxi.xal.saml_2_0.protocol.ResponseDocument;
 import org.guanxi.xal.w3.xmlenc.EncryptedKeyDocument;
 import org.guanxi.xal.saml2.metadata.GuardRoleDescriptorExtensions;
-import org.guanxi.xal.soap.*;
 import org.guanxi.sp.Util;
 import org.guanxi.sp.engine.Config;
 import org.w3c.dom.Document;
@@ -202,14 +206,14 @@ public class WebBrowserSSOAuthConsumerService extends MultiActionController impl
       responseDocument = ResponseDocument.Factory.parse(rawSAMLResponseDoc);
 
       Config config = (Config)getServletContext().getAttribute(Guanxi.CONTEXT_ATTR_ENGINE_CONFIG);
-      EnvelopeDocument soapRequest = prepareGuardRequest(responseDocument, guardSession);
       processGuardConnection(guardNativeMetadata.getAttributeConsumerServiceURL(),
               guardEntityDescriptor.getEntityID(),
               guardNativeMetadata.getKeystore(),
               guardNativeMetadata.getKeystorePassword(),
               config.getTrustStore(),
               config.getTrustStorePassword(),
-              soapRequest);
+              responseDocument,
+              guardSession);
 
       response.sendRedirect(guardNativeMetadata.getPodderURL() + "?id=" + guardSession);
     }
@@ -224,37 +228,12 @@ public class WebBrowserSSOAuthConsumerService extends MultiActionController impl
     }
   }
 
-  // Setters
-  public void setMessages(MessageSource messages) { this.messages = messages; }
-  public void setPodderView(String podderView) { this.podderView = podderView; }
-  public void setErrorView(String errorView) { this.errorView = errorView; }
-  public void setErrorViewDisplayVar(String errorViewDisplayVar) { this.errorViewDisplayVar = errorViewDisplayVar; }
-
-
-
-  private EnvelopeDocument prepareGuardRequest(ResponseDocument samlResponseDoc, String guardSession) throws XmlException {
-    EnvelopeDocument soapEnvelopeDoc;
-    Envelope soapEnvelope;
-
-    soapEnvelopeDoc = EnvelopeDocument.Factory.newInstance();
-    soapEnvelope = soapEnvelopeDoc.addNewEnvelope();
-
-    // Before we send the SAML Response from the AA to the Guard, add the Guanxi SOAP header
-    Header soapHeader = soapEnvelope.addNewHeader();
-    Element gx = soapHeader.getDomNode().getOwnerDocument().createElementNS("urn:guanxi:sp", "GuanxiGuardSessionID");
-    Node gxNode = soapHeader.getDomNode().appendChild(gx);
-    org.w3c.dom.Text gxTextNode = soapHeader.getDomNode().getOwnerDocument().createTextNode(guardSession);
-    gxNode.appendChild(gxTextNode);
-
-    Body soapBody = soapEnvelope.addNewBody();
-    soapBody.getDomNode().appendChild(soapBody.getDomNode().getOwnerDocument().importNode(samlResponseDoc.getResponse().getDomNode(), true));
-
-    return soapEnvelopeDoc;
-  }
-
-  private String processGuardConnection(String acsURL, String entityID, String keystoreFile, String keystorePassword, String truststoreFile,
-		  								String truststorePassword, EnvelopeDocument soapRequest) throws GuanxiException, IOException {
+  private String processGuardConnection(String acsURL, String entityID, String keystoreFile, String keystorePassword,
+                                        String truststoreFile, String truststorePassword,
+                                        ResponseDocument responseDocument, String guardSession) throws GuanxiException, IOException {
     EntityConnection connection;
+
+    Bag bag = getBag(responseDocument, guardSession);
 
     // Initialise the connection to the Guard's attribute consumer service
     connection = new EntityConnection(acsURL, entityID,
@@ -264,20 +243,116 @@ public class WebBrowserSSOAuthConsumerService extends MultiActionController impl
     connection.setDoOutput(true);
     connection.connect();
 
-    ByteArrayOutputStream os = new ByteArrayOutputStream();
-    soapRequest.save(os);
+    //ByteArrayOutputStream os = new ByteArrayOutputStream();
+    //soapRequest.save(os);
 
     // Send the data to the Guard in an explicit POST variable
-    String soap = URLEncoder.encode(Guanxi.REQUEST_PARAMETER_SAML_ATTRIBUTES, "UTF-8") + "=" + URLEncoder.encode(os.toString(), "UTF-8");
+    String json = URLEncoder.encode(Guanxi.REQUEST_PARAMETER_SAML_ATTRIBUTES, "UTF-8") + "=" + URLEncoder.encode(bag.toJSON(), "UTF-8");
 
     OutputStreamWriter wr = new OutputStreamWriter(connection.getOutputStream());
-    wr.write(soap);
+    wr.write(json);
     wr.flush();
     wr.close();
 
-    os.close();
+    //os.close();
 
     // ...and read the response from the Guard
     return new String(Utils.read(connection.getInputStream()));
   }
+
+
+  /**
+   * Constructs a Bag of attributes from the SAML Response
+   *
+   * @param responseDocument The SAML Response containing the attributes
+   * @param guardSession the Guard's session ID
+   * @return Bag of attributes
+   * @throws GuanxiException if an error occurred
+   */
+  private Bag getBag(ResponseDocument responseDocument, String guardSession) throws GuanxiException {
+    Bag bag = new Bag();
+    bag.setSessionID(guardSession);
+    
+    try {
+      bag.setSamlResponse(Utils.base64(responseDocument.toString().getBytes()));
+      
+      EncryptedElementType[] assertions = responseDocument.getResponse().getEncryptedAssertionArray();
+      for (EncryptedElementType assertion : assertions) {
+        NodeList nodes = assertion.getDomNode().getChildNodes();
+        Node assertionNode = null;
+        for (int c=0; c < nodes.getLength(); c++) {
+          assertionNode = nodes.item(c);
+          if (assertionNode.getLocalName() != null) {
+            if (assertionNode.getLocalName().equals("Assertion"))
+              break;
+          }
+        }
+        if (assertionNode == null) {
+          continue;
+        }
+
+        AssertionDocument ass = AssertionDocument.Factory.parse(assertionNode);
+        AttributeStatementType att = ass.getAssertion().getAttributeStatementArray(0);
+        AttributeType[] attributes = att.getAttributeArray();
+
+        String attributeOID = null;
+        for (AttributeType attribute : attributes) {
+          // Remove the prefix from the attribute name
+          attributeOID = attribute.getName().replaceAll(EduPersonOID.ATTRIBUTE_NAME_PREFIX, "");
+
+          XmlObject[] obj = attribute.getAttributeValueArray();
+          for (int cc=0; cc < obj.length; cc++) {
+            // Is it a scoped attribute?
+            if (obj[cc].getDomNode().getAttributes().getNamedItem(EduPerson.EDUPERSON_SCOPE_ATTRIBUTE) != null) {
+              String attrValue = obj[cc].getDomNode().getFirstChild().getNodeValue();
+              attrValue += EduPerson.EDUPERSON_SCOPED_DELIMITER;
+              attrValue += obj[cc].getDomNode().getAttributes().getNamedItem(EduPerson.EDUPERSON_SCOPE_ATTRIBUTE).getNodeValue();
+              bag.addAttribute(attribute.getFriendlyName(), attrValue);
+              bag.addAttribute(attributeOID, attrValue);
+            }
+            // What about eduPersonTargetedID?
+            else if (attributeOID.equals(EduPersonOID.OID_EDUPERSON_TARGETED_ID)) {
+              NodeList attrValueNodes = obj[cc].getDomNode().getChildNodes();
+              Node attrValueNode = null;
+              for (int c=0; c < nodes.getLength(); c++) {
+                attrValueNode = attrValueNodes.item(c);
+                if (attrValueNode.getLocalName() != null) {
+                  if (attrValueNode.getLocalName().equals("NameID"))
+                    break;
+                }
+              }
+              if (attrValueNode != null) {
+                NameIDDocument nameIDDoc = NameIDDocument.Factory.parse(attrValueNode);
+                bag.addAttribute(attribute.getFriendlyName(), nameIDDoc.getNameID().getStringValue());
+                bag.addAttribute(attributeOID, nameIDDoc.getNameID().getStringValue());
+              }
+            }
+            else {
+              if (obj[cc].getDomNode().getFirstChild() != null) {
+                if (obj[cc].getDomNode().getFirstChild().getNodeValue() != null) {
+                  bag.addAttribute(attribute.getFriendlyName(), obj[cc].getDomNode().getFirstChild().getNodeValue());
+                  bag.addAttribute(attributeOID, obj[cc].getDomNode().getFirstChild().getNodeValue());
+                }
+                else {
+                  bag.addAttribute(attribute.getFriendlyName(), "");
+                  bag.addAttribute(attributeOID, "");
+                }
+              }
+            }
+          } // for (int cc=0; cc < obj.length; cc++)
+        } // for (AttributeType attribute : attributes)
+      } // for (EncryptedElementType assertion : assertions)
+
+      return bag;
+    }
+    catch(XmlException xe) {
+      throw new GuanxiException(xe.getMessage());
+    }
+  }
+
+  // Setters
+  public void setMessages(MessageSource messages) { this.messages = messages; }
+  public void setPodderView(String podderView) { this.podderView = podderView; }
+  public void setErrorView(String errorView) { this.errorView = errorView; }
+  public void setErrorViewDisplayVar(String errorViewDisplayVar) { this.errorViewDisplayVar = errorViewDisplayVar; }
 }
