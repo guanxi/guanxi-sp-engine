@@ -243,9 +243,6 @@ public class WebBrowserSSOAuthConsumerService extends MultiActionController impl
     connection.setDoOutput(true);
     connection.connect();
 
-    //ByteArrayOutputStream os = new ByteArrayOutputStream();
-    //soapRequest.save(os);
-
     // Send the data to the Guard in an explicit POST variable
     String json = URLEncoder.encode(Guanxi.REQUEST_PARAMETER_SAML_ATTRIBUTES, "UTF-8") + "=" + URLEncoder.encode(bag.toJSON(), "UTF-8");
 
