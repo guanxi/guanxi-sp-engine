@@ -289,6 +289,10 @@ public class WebBrowserSSOAuthConsumerService extends MultiActionController impl
         }
 
         AssertionDocument ass = AssertionDocument.Factory.parse(assertionNode);
+        if (ass.getAssertion().getAttributeStatementArray().length == 0) {
+          // No attributes available
+          return bag;
+        }
         AttributeStatementType att = ass.getAssertion().getAttributeStatementArray(0);
         AttributeType[] attributes = att.getAttributeArray();
 
