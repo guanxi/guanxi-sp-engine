@@ -1,0 +1,158 @@
+<?xml version="1.0"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0">
+  <modelVersion>4.0.0</modelVersion>
+
+  <!-- mvn clean install war:war -->
+
+  <parent>
+    <artifactId>guanxi-core</artifactId>
+    <groupId>org.guanxi</groupId>
+    <version>2.0.7-SNAPSHOT</version>
+    <relativePath>../Core/pom.xml</relativePath>
+  </parent>
+
+  <name>guanxi-sp-engine</name>
+  <groupId>org.guanxi</groupId>
+  <artifactId>guanxi-sp-engine</artifactId>
+  <version>2.2.1-SNAPSHOT</version>
+
+  <organization>
+    <name>UHI Millennium Institute</name>
+    <url>http://codebrane.com/blog/?cat=2</url>
+  </organization>
+
+  <inceptionYear>2007</inceptionYear>
+
+  <packaging>war</packaging>
+
+  <dependencies>
+
+    <!-- **************************************************** -->
+    <!-- Guanxi -->
+    <dependency>
+      <groupId>org.guanxi</groupId>
+      <artifactId>guanxi-common</artifactId>
+    </dependency>
+
+    <dependency>
+      <groupId>org.guanxi</groupId>
+      <artifactId>guanxi-beans</artifactId>
+    </dependency>
+    <!-- **************************************************** -->
+
+    <!-- **************************************************** -->
+    <!-- External dependencies -->
+    <dependency>
+	    <groupId>bouncycastle</groupId>
+      <artifactId>bcprov-jdk14</artifactId>
+    </dependency>
+
+    <dependency>
+	    <groupId>xml-security</groupId>
+      <artifactId>xmlsec</artifactId>
+    </dependency>
+    <dependency>
+	    <groupId>xalan</groupId>
+      <artifactId>xalan</artifactId>
+    </dependency>
+
+    <dependency>
+      <groupId>org.apache.xmlbeans</groupId>
+      <artifactId>jsr173_1.0_api</artifactId>
+    </dependency>
+
+    <dependency>
+      <groupId>org.apache.xmlbeans</groupId>
+      <artifactId>xbean</artifactId>
+    </dependency>
+
+    <dependency>
+      <groupId>log4j</groupId>
+      <artifactId>log4j</artifactId>
+    </dependency>
+
+    <dependency>
+      <groupId>org.apache</groupId>
+      <artifactId>xercesImpl</artifactId>
+    </dependency>
+
+    <dependency>
+      <groupId>org.apache</groupId>
+      <artifactId>xml-apis</artifactId>
+    </dependency>
+
+    <dependency>
+      <groupId>org.springframework</groupId>
+      <artifactId>spring</artifactId>
+    </dependency>
+
+    <dependency>
+      <groupId>org.springframework</groupId>
+      <artifactId>spring-webmvc</artifactId>
+    </dependency>
+
+    <dependency>
+      <groupId>org.springframework</groupId>
+      <artifactId>spring-mock</artifactId>
+    </dependency>
+
+    <dependency>
+      <groupId>jstl</groupId>
+      <artifactId>jstl</artifactId>
+    </dependency>
+
+    <dependency>
+      <groupId>taglibs</groupId>
+      <artifactId>standard</artifactId>
+    </dependency>
+
+    <dependency>
+      <groupId>commons-logging</groupId>
+      <artifactId>commons-logging</artifactId>
+    </dependency>
+
+    <dependency>
+      <groupId>opensymphony</groupId>
+      <artifactId>quartz</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>jta</groupId>
+      <artifactId>jta</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>commons-collections</groupId>
+      <artifactId>commons-collections</artifactId>
+    </dependency>
+
+    <dependency>
+      <groupId>servletapi</groupId>
+      <artifactId>servletapi</artifactId>
+    </dependency>
+
+    <dependency>
+      <groupId>junit</groupId>
+      <artifactId>junit</artifactId>
+    </dependency>
+    <!-- **************************************************** -->
+
+  </dependencies>
+
+  <build>
+    <resources>
+      <resource>
+        <directory>src/main/resources</directory>
+        <includes>
+          <include>**/*.*</include>
+        </includes>
+      </resource>
+      
+      <resource>
+        <directory>../Core</directory>
+        <includes>
+          <include>messages/common.properties</include>
+          <include>messages/sp.properties</include>
+        </includes>
+      </resource>
+    </resources>
+  </build>
+</project>

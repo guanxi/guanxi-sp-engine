@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans
+                          http://www.springframework.org/schema/beans/spring-beans-2.0.xsd">
+
+  <!-- ********************************************************************************************* -->
+  <!-- The Engine's WAYF Location service. This is where Guards set up their sessions with
+       the Engine and obtain the WAYF location in return, once the Engine has verfied
+       them. -->
+  <bean id="genericProfileService"
+        class="org.guanxi.sp.engine.service.generic.GenericProfileService"
+        init-method="init">
+    <property name="messages" ref="messageSource"/>
+    <property name="errorView"><value>message</value></property>
+    <property name="errorViewDisplayVar"><value>message</value></property>
+    <property name="shibbolethProfileService" ref="shibbolethProfileService" />
+    <property name="saml2ProfileService" ref="saml2ProfileService" />
+
+    <!-- The Guard can send an entityID when contacting the GPS
+         or you can specify a default entityID to use for the
+         Guard here. The entityID the Guard sends will always override
+         these mappings. -->
+    <!--
+    <property name="entityIDs">
+      <map>
+        <entry key="__DEFAULT__" value="https://idp.test.com/shibboleth" />
+        <entry key="protectedappguard" value="https://idp2.test.com/shibboleth" />
+      </map>
+    </property>
+    -->
+  </bean>
+
+  <bean id="shibbolethProfileService"
+        class="org.guanxi.sp.engine.service.shibboleth.ShibbolethProfileService"
+        init-method="init">
+
+    <property name="wayfs">
+      <map>
+        <entry key="__DEFAULT__" value="https://localhost:8443/guanxi_wayf/WAYF" />
+        <entry key="protectedappguard" value="https://localhost2/guanxi_wayf/WAYF" />
+      </map>
+    </property>
+    <property name="attributeConsumerService"><value>https://your.sp.com/samlengine/shibb/acs</value></property>
+    <property name="wayfViewJSP"><value>/shibboleth/wayf</value></property>
+    
+  </bean>
+
+  <bean id="saml2ProfileService"
+        class="org.guanxi.sp.engine.service.saml2.SAML2ProfileService"
+        init-method="init">
+
+		<property name="httpPOSTView"><value>/saml2/http-post</value></property>
+    <property name="httpRedirectView"><value>/saml2/http-redirect</value></property>
+    <property name="assertionConsumerServiceURL"><value>https://your.sp.com/samlengine/s2/wbsso/acs</value></property>
+    
+  </bean>
+</beans>
