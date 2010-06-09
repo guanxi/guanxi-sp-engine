@@ -16,6 +16,19 @@
     <property name="errorViewDisplayVar"><value>message</value></property>
     <property name="shibbolethProfileService" ref="shibbolethProfileService" />
     <property name="saml2ProfileService" ref="saml2ProfileService" />
+
+    <!-- The Guard can send an entityID when contacting the GPS
+         or you can specify a default entityID to use for the
+         Guard here. The entityID the Guard sends will always override
+         these mappings. -->
+    <!--
+    <property name="entityIDs">
+      <map>
+        <entry key="__DEFAULT__" value="https://idp.test.com/shibboleth" />
+        <entry key="protectedappguard" value="https://idp2.test.com/shibboleth" />
+      </map>
+    </property>
+    -->
   </bean>
 
   <bean id="shibbolethProfileService"
