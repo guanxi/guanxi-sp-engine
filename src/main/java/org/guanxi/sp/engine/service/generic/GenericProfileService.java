@@ -34,6 +34,7 @@ import org.springframework.web.servlet.mvc.multiaction.MultiActionController;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import java.util.HashMap;
 
 /**
  * Generic profile service for selecting a profile based on metadata
@@ -43,6 +44,8 @@ import javax.servlet.http.HttpServletResponse;
 public class GenericProfileService extends MultiActionController implements ServletContextAware {
   /** Our logger */
   private static final Logger logger = Logger.getLogger(GenericProfileService.class.getName());
+  /** The marker in our entityID map for the one to use as the default entityID */
+  private static final String DEFAULT_ENTITYID_MARKER = "__DEFAULT__";
   /** The localised messages to use */
   private MessageSource messages = null;
   /** The JSP to use to display any errors */
@@ -53,16 +56,41 @@ public class GenericProfileService extends MultiActionController implements Serv
   private ProfileService shibbolethProfileService = null;
   /** The SAML2 profile service to use */
   private ProfileService saml2ProfileService = null;
+  /** The list of Guard to entityID mappings */
+  private HashMap<String, String> entityIDs = null;
 
   public void init() {}
 
   public ModelAndView gps(HttpServletRequest request, HttpServletResponse response) {
+    String guardID = request.getParameter(Guanxi.WAYF_PARAM_GUARD_ID);
+    String guardSessionID = request.getParameter(Guanxi.WAYF_PARAM_SESSION_ID);
+    
     // Optional entityID
     String entityID = request.getParameter("entityID");
 
-    // Guard verification
-    String guardID = request.getParameter(Guanxi.WAYF_PARAM_GUARD_ID);
-    String guardSessionID = request.getParameter(Guanxi.WAYF_PARAM_SESSION_ID);
+    // If the Guard hasn't specified an entityID, see if it has one registered for it
+    if (entityID == null) {
+      if (entityIDs != null) {
+        String entityIDForGuard = null;
+        String defaultEntityID = null;
+
+        // Find out which entityID to use for this Guard
+        for (String registeredGuardID : entityIDs.keySet()) {
+          if (registeredGuardID.equals(DEFAULT_ENTITYID_MARKER)) {
+            defaultEntityID = entityIDs.get(registeredGuardID);
+          }
+          if (guardID.equals(registeredGuardID)) {
+            entityIDForGuard = entityIDs.get(registeredGuardID);
+          }
+        }
+
+        entityID = (entityIDForGuard != null) ? entityIDForGuard : defaultEntityID;
+        logger.info("Guard '" + guardID + "' obtained entityID : " + entityID);
+      }
+    }
+    else {
+      logger.info("Guard '" + guardID + "' specified entityID : " + entityID);
+    }
 
     // Get the Guard's metadata, previously loaded by the Bootstrapper
     EntityDescriptorType guardEntityDescriptor = (EntityDescriptorType)getServletContext().getAttribute(guardID);
@@ -132,7 +160,7 @@ public class GenericProfileService extends MultiActionController implements Serv
         }
       }
 
-      // If we get here, SAML2 isn't supported to use Shibboleth
+      // If we get here, SAML2 isn't supported so use Shibboleth
       return shibbolethProfileService;
     }
   }
@@ -143,4 +171,5 @@ public class GenericProfileService extends MultiActionController implements Serv
   public void setErrorViewDisplayVar(String errorViewDisplayVar) { this.errorViewDisplayVar = errorViewDisplayVar; }
   public void setShibbolethProfileService(ProfileService shibbolethProfileService) { this.shibbolethProfileService = shibbolethProfileService; }
   public void setSaml2ProfileService(ProfileService saml2ProfileService) { this.saml2ProfileService = saml2ProfileService; }
+  public void setEntityIDs(HashMap<String, String> entityIDs) { this.entityIDs = entityIDs; }
 }
