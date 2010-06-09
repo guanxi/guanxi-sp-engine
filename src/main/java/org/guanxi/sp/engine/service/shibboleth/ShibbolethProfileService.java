@@ -94,7 +94,7 @@ public class ShibbolethProfileService implements ProfileService {
       mAndV.getModel().put("wayfLocation", wayfForGuard);
       mAndV.getModel().put("shire", URLEncoder.encode(attributeConsumerService, "UTF-8"));
       mAndV.getModel().put("target", URLEncoder.encode(guardSessionID, "UTF-8"));
-      mAndV.getModel().put("time", Utils.zuluNow());
+      mAndV.getModel().put("time", Long.toString(System.currentTimeMillis() / 1000));
       mAndV.getModel().put("providerId", guardID);
     }
     catch(UnsupportedEncodingException uee) {
