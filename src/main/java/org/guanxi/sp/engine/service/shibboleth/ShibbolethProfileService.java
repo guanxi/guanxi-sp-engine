@@ -18,7 +18,6 @@ package org.guanxi.sp.engine.service.shibboleth;
 
 import org.apache.log4j.Logger;
 import org.guanxi.common.GuanxiException;
-import org.guanxi.common.Utils;
 import org.guanxi.common.entity.EntityFarm;
 import org.guanxi.common.entity.EntityManager;
 import org.guanxi.common.metadata.Metadata;
