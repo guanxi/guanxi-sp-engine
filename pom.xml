@@ -8,7 +8,7 @@
     <artifactId>guanxi-core</artifactId>
     <groupId>org.guanxi</groupId>
     <version>2.0.7-SNAPSHOT</version>
-    <relativePath>../Core/pom.xml</relativePath>
+    <relativePath>../guanxi-core/pom.xml</relativePath>
   </parent>
 
   <name>guanxi-sp-engine</name>
@@ -147,7 +147,7 @@
       </resource>
       
       <resource>
-        <directory>../Core</directory>
+        <directory>../guanxi-core</directory>
         <includes>
           <include>messages/common.properties</include>
           <include>messages/sp.properties</include>
