@@ -5,6 +5,7 @@ o Introduction
 o Building
 o More information
 o License
+o Donations
 
 Introduction
 ------------
@@ -34,3 +35,10 @@ This program is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 Mozilla Public License for details.
+
+Donations
+---------
+If you use the Guanxi Service Provider Engine and find it useful, please think about donating
+to support the development of the module. The link to donate to the Guanxi
+project can be found on the module's page on GitHub:
+http://github.com/guanxi/guanxi-sp-engine
