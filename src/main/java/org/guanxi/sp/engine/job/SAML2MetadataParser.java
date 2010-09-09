@@ -66,8 +66,7 @@ public class SAML2MetadataParser extends ShibbolethSAML2MetadataParser implement
       ArrayList<String> newEntityIDs = new ArrayList<String>();
 
       if (!loadCAListFromMetadata(manager)) {
-        logger.error("Failed to load root CA list from metadata");
-        return;
+        logger.error("No CA list in metadata");
       }
 
       for (EntityDescriptorType entityDescriptor : entityDescriptors) {
