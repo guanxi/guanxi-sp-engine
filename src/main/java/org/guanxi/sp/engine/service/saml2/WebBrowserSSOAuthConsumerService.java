@@ -78,6 +78,8 @@ public class WebBrowserSSOAuthConsumerService extends MultiActionController impl
   private String errorView = null;
   /** The variable to use in the error view to display the error */
   private String errorViewDisplayVar = null;
+  /** Whether to dump the incoming response to the log */
+  private boolean logResponse = false;
 
   public void init() {}
 
@@ -116,6 +118,29 @@ public class WebBrowserSSOAuthConsumerService extends MultiActionController impl
       }
       String idpProviderId = responseDocument.getResponse().getIssuer().getStringValue();
 
+      HashMap<String, String> namespaces = new HashMap<String, String>();
+      namespaces.put(SAML.NS_SAML_20_PROTOCOL, SAML.NS_PREFIX_SAML_20_PROTOCOL);
+      namespaces.put(SAML.NS_SAML_20_ASSERTION, SAML.NS_PREFIX_SAML_20_ASSERTION);
+      XmlOptions xmlOptions = new XmlOptions();
+      xmlOptions.setSavePrettyPrint();
+      xmlOptions.setSavePrettyPrintIndent(2);
+      xmlOptions.setUseDefaultNamespace();
+      xmlOptions.setSaveAggressiveNamespaces();
+      xmlOptions.setSaveSuggestedPrefixes(namespaces);
+      xmlOptions.setSaveNamespacesFirst();
+
+      if (logResponse) {
+        logger.info("=======================================================");
+        logger.info("IdP response from providerId " + idpProviderId);
+        logger.info("");
+        StringWriter sw = new StringWriter();
+        responseDocument.save(sw, xmlOptions);
+        logger.info(sw.toString());
+        sw.close();
+        logger.info("");
+        logger.info("=======================================================");
+      }
+
       // Do the trust
       if (responseDocument.getResponse().getSignature() != null) {
         if (!TrustUtils.verifySignature(responseDocument)) {
@@ -134,17 +159,6 @@ public class WebBrowserSSOAuthConsumerService extends MultiActionController impl
           throw new GuanxiException("No X509 from signature");
         }
       }
-
-      HashMap<String, String> namespaces = new HashMap<String, String>();
-      namespaces.put(SAML.NS_SAML_20_PROTOCOL, SAML.NS_PREFIX_SAML_20_PROTOCOL);
-      namespaces.put(SAML.NS_SAML_20_ASSERTION, SAML.NS_PREFIX_SAML_20_ASSERTION);
-      XmlOptions xmlOptions = new XmlOptions();
-      xmlOptions.setSavePrettyPrint();
-      xmlOptions.setSavePrettyPrintIndent(2);
-      xmlOptions.setUseDefaultNamespace();
-      xmlOptions.setSaveAggressiveNamespaces();
-      xmlOptions.setSaveSuggestedPrefixes(namespaces);
-      xmlOptions.setSaveNamespacesFirst();
 
       // For decryption, we need to be in DOM land
       Document rawSAMLResponseDoc = (Document)responseDocument.newDomNode(xmlOptions);
@@ -356,4 +370,5 @@ public class WebBrowserSSOAuthConsumerService extends MultiActionController impl
   public void setPodderView(String podderView) { this.podderView = podderView; }
   public void setErrorView(String errorView) { this.errorView = errorView; }
   public void setErrorViewDisplayVar(String errorViewDisplayVar) { this.errorViewDisplayVar = errorViewDisplayVar; }
+  public void setLogResponse(boolean logResponse) { this.logResponse = logResponse; }
 }
