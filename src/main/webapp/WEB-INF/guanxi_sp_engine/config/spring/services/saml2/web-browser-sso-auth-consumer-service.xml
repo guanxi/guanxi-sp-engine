@@ -12,6 +12,7 @@
     <property name="podderView"><value>podderRedirector</value></property>
     <property name="errorView"><value>message</value></property>
     <property name="errorViewDisplayVar"><value>message</value></property>
+    <property name="logResponse"><value>false</value></property>
   </bean>
 
 </beans>
