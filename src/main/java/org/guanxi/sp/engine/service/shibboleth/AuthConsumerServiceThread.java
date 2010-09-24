@@ -352,6 +352,7 @@ public class AuthConsumerServiceThread implements Runnable {
 
     connection.setDoOutput(true);
     connection.setRequestProperty("Content-type", "text/xml");
+    connection.setRequestProperty("SOAPAction", "http://www.oasis-open.org/committees/security");
     connection.connect();
 
     // Do the trust
