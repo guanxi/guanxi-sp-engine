@@ -345,11 +345,11 @@ public class WebBrowserSSOAuthConsumerService extends MultiActionController impl
             else {
               if (obj[cc].getDomNode().getFirstChild() != null) {
                 if (obj[cc].getDomNode().getFirstChild().getNodeValue() != null) {
-                  bag.addAttribute(attribute.getFriendlyName(), obj[cc].getDomNode().getFirstChild().getNodeValue());
+                  bag.addAttribute(attribute.getName(), obj[cc].getDomNode().getFirstChild().getNodeValue());
                   bag.addAttribute(attributeOID, obj[cc].getDomNode().getFirstChild().getNodeValue());
                 }
                 else {
-                  bag.addAttribute(attribute.getFriendlyName(), "");
+                  bag.addAttribute(attribute.getName(), "");
                   bag.addAttribute(attributeOID, "");
                 }
               }
