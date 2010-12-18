@@ -60,6 +60,8 @@ public class Bootstrap implements ApplicationListener, ApplicationContextAware, 
   private GuanxiJobConfig[] gxJobs = null;
   /** The MetadataFarm instance to use */
   private EntityFarm entityFarm = null;
+  /** Our job scheduler */
+  private Scheduler scheduler = null;
 
   /**
    * Initialise the intercepter
@@ -160,11 +162,17 @@ public class Bootstrap implements ApplicationListener, ApplicationContextAware, 
               Security.removeProvider(Guanxi.BOUNCY_CASTLE_PROVIDER_NAME);
             }
           }
+
+          // Stop the jobs
+          scheduler.shutdown();
         }
         catch(SecurityException se) {
           /* We'll end up here if a security manager is installed and it refuses us
            * permission to remove the BouncyCastle provider
            */
+        }
+        catch (SchedulerException se) {
+          logger.error("Could not stop jobs", se);
         }
       }
     }
@@ -306,7 +314,7 @@ public class Bootstrap implements ApplicationListener, ApplicationContextAware, 
   private void startJobs() {
     try {
       // Get a new scheduler
-      Scheduler scheduler = new StdSchedulerFactory().getScheduler();
+      scheduler = new StdSchedulerFactory().getScheduler();
       // Start it up. This won't start any jobs though.
       scheduler.start();
 
