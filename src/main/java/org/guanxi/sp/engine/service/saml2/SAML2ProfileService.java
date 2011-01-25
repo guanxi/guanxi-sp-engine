@@ -34,6 +34,7 @@ import org.guanxi.xal.saml_2_0.protocol.AuthnRequestDocument;
 import org.guanxi.xal.saml_2_0.protocol.AuthnRequestType;
 import org.springframework.web.servlet.ModelAndView;
 
+import javax.servlet.http.HttpServletRequest;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.util.Calendar;
@@ -57,8 +58,9 @@ public class SAML2ProfileService implements ProfileService {
   /** @see org.guanxi.sp.engine.service.generic.ProfileService#init() */
   public void init() {}
 
-  /** @see org.guanxi.sp.engine.service.generic.ProfileService#doProfile(String, String, org.guanxi.xal.saml2.metadata.GuardRoleDescriptorExtensions, String, org.guanxi.common.entity.EntityFarm)  */
-  public ModelAndView doProfile(String guardID, String guardSessionID, GuardRoleDescriptorExtensions guardNativeMetadata,
+  /** @see org.guanxi.sp.engine.service.generic.ProfileService#doProfile(javax.servlet.http.HttpServletRequest, String, String, org.guanxi.xal.saml2.metadata.GuardRoleDescriptorExtensions, String, org.guanxi.common.entity.EntityFarm) */
+  public ModelAndView doProfile(HttpServletRequest request, String guardID, String guardSessionID,
+                                GuardRoleDescriptorExtensions guardNativeMetadata,
                                 String entityID, EntityFarm farm) throws GuanxiException {
     ModelAndView mAndV = new ModelAndView();
 
