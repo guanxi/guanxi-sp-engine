@@ -16,6 +16,8 @@
     <property name="errorViewDisplayVar"><value>message</value></property>
     <property name="shibbolethProfileService" ref="shibbolethProfileService" />
     <property name="saml2ProfileService" ref="saml2ProfileService" />
+    <property name="saml2DiscoveryProfileService" ref="saml2DiscoveryProfileService" />
+    <property name="useDiscoveryService"><value>true</value></property>
 
     <!-- The Guard can send an entityID when contacting the GPS
          or you can specify a default entityID to use for the
@@ -54,5 +56,14 @@
     <property name="httpRedirectView"><value>/saml2/http-redirect</value></property>
     <property name="assertionConsumerServiceURL"><value>https://your.sp.com/samlengine/s2/wbsso/acs</value></property>
     
+  </bean>
+
+  <bean id="saml2DiscoveryProfileService"
+        class="org.guanxi.sp.engine.service.saml2.DiscoveryProfileService"
+        init-method="init">
+
+    <property name="viewName"><value>/saml2/discovery</value></property>
+    <property name="edsBaseURL"><value>https://localhost/samlengine/guanxi_sp/eds</value></property>
+
   </bean>
 </beans>
