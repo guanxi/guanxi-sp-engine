@@ -56,20 +56,24 @@ public class GenericProfileService extends MultiActionController implements Serv
   private ProfileService shibbolethProfileService = null;
   /** The SAML2 profile service to use */
   private ProfileService saml2ProfileService = null;
+  /** The SAML2 Discovery profile service to use */
+  private ProfileService saml2DiscoveryProfileService = null;
   /** The list of Guard to entityID mappings */
   private HashMap<String, String> entityIDs = null;
+  /** Whether to use the SAML2 Discovery Service */
+  private boolean useDiscoveryService;
 
   public void init() {}
 
   public ModelAndView gps(HttpServletRequest request, HttpServletResponse response) {
     String guardID = request.getParameter(Guanxi.WAYF_PARAM_GUARD_ID);
     String guardSessionID = request.getParameter(Guanxi.WAYF_PARAM_SESSION_ID);
-    
+
     // Optional entityID
-    String entityID = request.getParameter("entityID");
+    String idpEntityID = request.getParameter("entityID");
 
     // If the Guard hasn't specified an entityID, see if it has one registered for it
-    if (entityID == null) {
+    if (idpEntityID == null) {
       if (entityIDs != null) {
         String entityIDForGuard = null;
         String defaultEntityID = null;
@@ -84,12 +88,17 @@ public class GenericProfileService extends MultiActionController implements Serv
           }
         }
 
-        entityID = (entityIDForGuard != null) ? entityIDForGuard : defaultEntityID;
-        logger.info("Guard '" + guardID + "' obtained entityID : " + entityID);
+        idpEntityID = (entityIDForGuard != null) ? entityIDForGuard : defaultEntityID;
+        logger.info("Guard '" + guardID + "' obtained entityID : " + idpEntityID);
       }
     }
     else {
-      logger.info("Guard '" + guardID + "' specified entityID : " + entityID);
+      logger.info("Guard '" + guardID + "' specified entityID : " + idpEntityID);
+    }
+
+    // If no IdP entityID, see if it's coming from the discovery service
+    if ((idpEntityID == null) && (useDiscoveryService)) {
+      idpEntityID = request.getParameter("edsEntityID");
     }
 
     // Get the Guard's metadata, previously loaded by the Bootstrapper
@@ -113,7 +122,7 @@ public class GenericProfileService extends MultiActionController implements Serv
 
     EntityFarm farm = (EntityFarm)getServletContext().getAttribute(Guanxi.CONTEXT_ATTR_ENGINE_ENTITY_FARM);
     try {
-      return getProfileService(farm, entityID).doProfile(guardID, guardSessionID, guardNativeMetadata, entityID, farm);
+      return getProfileService(request, farm, idpEntityID).doProfile(request, guardID, guardSessionID, guardNativeMetadata, idpEntityID, farm);
     }
     catch(GuanxiException ge) {
       logger.error("Shibboleth error: ", ge);
@@ -128,41 +137,55 @@ public class GenericProfileService extends MultiActionController implements Serv
   /**
    * Selects a profile to use
    *
+   * @param request the request
    * @param farm entity farm
-   * @param entityID entityID of the IdP or null if there isn't one
+   * @param idpEntityID entityID of the IdP or null if there isn't one
    * @return ProfileService instance which defaults to Shibboleth
    * @throws GuanxiException if an error occurs
    */
-  private ProfileService getProfileService(EntityFarm farm, String entityID) throws GuanxiException {
-    if (entityID == null) {
-      // No entityID so assume Shibboleth
-      return shibbolethProfileService;
-    }
-    else {
-      // Load the metadata for the IdP
-      EntityManager manager = farm.getEntityManagerForID(entityID);
-      if (manager == null) {
-        throw new GuanxiException("Could not find manager for IdP '" + entityID);
-      }
-      Metadata entityMetadata = manager.getMetadata(entityID);
-      if (entityMetadata == null) {
-        throw new GuanxiException("Could not find metadata for IdP " + entityID);
-      }
-      EntityDescriptorType saml2Metadata = (EntityDescriptorType)entityMetadata.getPrivateData();
-
-      // Look for SAML2 endpoints
-      EndpointType[] ssos = saml2Metadata.getIDPSSODescriptorArray(0).getSingleSignOnServiceArray();
-      for (EndpointType sso : ssos) {
-        String binding = sso.getBinding();
-        if ((binding.equals(SAML.SAML2_BINDING_HTTP_POST)) ||
-            (binding.equals(SAML.SAML2_BINDING_HTTP_REDIRECT))) {
-          return saml2ProfileService;
+  private ProfileService getProfileService(HttpServletRequest request, EntityFarm farm, String idpEntityID) throws GuanxiException {
+    if (idpEntityID == null) {
+      // Check to see if the Discovery Service has anything for us
+      if (useDiscoveryService) {
+        if (request.getParameter("edsEntityID") != null) {
+          idpEntityID = request.getParameter("edsEntityID");
+        }
+        else if (request.getParameter("edsEntityID") == null) {
+          // Use the Embedded Discovery Service to get an IdP entityID
+          return saml2DiscoveryProfileService;
         }
       }
-
-      // If we get here, SAML2 isn't supported so use Shibboleth
-      return shibbolethProfileService;
+      else {
+        // No entityID so assume Shibboleth
+        return shibbolethProfileService;
+      }
     }
+
+    // By now we have an IdP entityID
+
+    // Load the metadata for the IdP
+    EntityManager manager = farm.getEntityManagerForID(idpEntityID);
+    if (manager == null) {
+      throw new GuanxiException("Could not find manager for IdP '" + idpEntityID);
+    }
+    Metadata entityMetadata = manager.getMetadata(idpEntityID);
+    if (entityMetadata == null) {
+      throw new GuanxiException("Could not find metadata for IdP " + idpEntityID);
+    }
+    EntityDescriptorType saml2Metadata = (EntityDescriptorType)entityMetadata.getPrivateData();
+
+    // Look for SAML2 endpoints
+    EndpointType[] ssos = saml2Metadata.getIDPSSODescriptorArray(0).getSingleSignOnServiceArray();
+    for (EndpointType sso : ssos) {
+      String binding = sso.getBinding();
+      if ((binding.equals(SAML.SAML2_BINDING_HTTP_POST)) ||
+          (binding.equals(SAML.SAML2_BINDING_HTTP_REDIRECT))) {
+        return saml2ProfileService;
+      }
+    }
+
+    // If we get here, SAML2 isn't supported so use Shibboleth
+    return shibbolethProfileService;
   }
 
   // Setters
@@ -171,5 +194,7 @@ public class GenericProfileService extends MultiActionController implements Serv
   public void setErrorViewDisplayVar(String errorViewDisplayVar) { this.errorViewDisplayVar = errorViewDisplayVar; }
   public void setShibbolethProfileService(ProfileService shibbolethProfileService) { this.shibbolethProfileService = shibbolethProfileService; }
   public void setSaml2ProfileService(ProfileService saml2ProfileService) { this.saml2ProfileService = saml2ProfileService; }
+  public void setSaml2DiscoveryProfileService(ProfileService saml2DiscoveryProfileService) { this.saml2DiscoveryProfileService = saml2DiscoveryProfileService; }
   public void setEntityIDs(HashMap<String, String> entityIDs) { this.entityIDs = entityIDs; }
+  public void setUseDiscoveryService(boolean useDiscoveryService) { this.useDiscoveryService = useDiscoveryService; }
 }
