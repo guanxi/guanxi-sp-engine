@@ -21,6 +21,8 @@ import org.guanxi.common.entity.EntityFarm;
 import org.guanxi.xal.saml2.metadata.GuardRoleDescriptorExtensions;
 import org.springframework.web.servlet.ModelAndView;
 
+import javax.servlet.http.HttpServletRequest;
+
 /**
  * Profile service defintion
  *
@@ -35,6 +37,7 @@ public interface ProfileService {
   /**
    * Performs the work of constructing a route to an entity using a particular profile
    *
+   * @param request the original request
    * @param guardID the ID of the Guard which wants to talk to the entity
    * @param guardSessionID the sessionid of the Guard which wants to talk to the entity
    * @param guardNativeMetadata the metadata of the Guard which wants to talk to the entity
@@ -43,6 +46,7 @@ public interface ProfileService {
    * @return ModelAndView that is ready to be used to communicate with the entity
    * @throws GuanxiException if an error occurs
    */
-  public ModelAndView doProfile(String guardID, String guardSessionID, GuardRoleDescriptorExtensions guardNativeMetadata,
+  public ModelAndView doProfile(HttpServletRequest request, String guardID, String guardSessionID,
+                                GuardRoleDescriptorExtensions guardNativeMetadata,
                                 String entityID, EntityFarm farm) throws GuanxiException;
 }
