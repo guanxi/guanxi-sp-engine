@@ -59,6 +59,7 @@ import java.io.*;
 import java.security.*;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.net.URLEncoder;
 
@@ -160,22 +161,6 @@ public class WebBrowserSSOAuthConsumerService extends MultiActionController impl
         }
       }
 
-      // For decryption, we need to be in DOM land
-      Document rawSAMLResponseDoc = (Document)responseDocument.newDomNode(xmlOptions);
-
-      /* XMLBeans doesn't give us access to the embedded encryption key for some reason
-       * so we need to break out to DOM and back again.
-       */
-      NodeList nodes = responseDocument.getResponse().getEncryptedAssertionArray(0).getEncryptedData().getKeyInfo().getDomNode().getChildNodes();
-      Node node = null;
-      for (int c=0; c < nodes.getLength(); c++) {
-        node = nodes.item(c);
-        if (node.getLocalName() != null) {
-          if (node.getLocalName().equals("EncryptedKey")) break;
-        }
-      }
-      EncryptedKeyDocument encKeyDoc = EncryptedKeyDocument.Factory.parse(node, xmlOptions);
-
       /* Load up the Guard's private key. We need this to decrypt the secret key
        * which was used to encrypt the attributes.
        */
@@ -184,40 +169,12 @@ public class WebBrowserSSOAuthConsumerService extends MultiActionController impl
       FileInputStream fis = new FileInputStream(guardNativeMetadata.getKeystore());
       guardKeystore.load(fis, guardNativeMetadata.getKeystorePassword().toCharArray());
       fis.close();
-      PrivateKey privateKey = (PrivateKey)guardKeystore.getKey(guardEntityDescriptor.getEntityID(), guardNativeMetadata.getKeystorePassword().toCharArray());
+      PrivateKey guardPrivateKey = (PrivateKey)guardKeystore.getKey(guardEntityDescriptor.getEntityID(), guardNativeMetadata.getKeystorePassword().toCharArray());
 
-      // Get a handle on the encypted data in DOM land
-      String namespaceURI = EncryptionConstants.EncryptionSpecNS;
-      String localName = EncryptionConstants._TAG_ENCRYPTEDDATA;
-
-      // Recurse through the decryption process
-      NodeList encyptedDataNodes = rawSAMLResponseDoc.getElementsByTagNameNS(namespaceURI, localName);
-      while (encyptedDataNodes.getLength() > 0) {
-        Element encryptedDataElement = (Element)encyptedDataNodes.item(0);
-        
-        /* This block unwraps and decrypts the secret key. The IdP first encrypts the attributes
-         * using a secret key. It then encrypts that secret key using the public key of the Guard.
-         * So the first step is to use the Guard's private key to decrypt the secret key.
-         */
-        String algorithm = encKeyDoc.getEncryptedKey().getEncryptionMethod().getAlgorithm();
-        XMLCipher xmlCipher = XMLCipher.getInstance();
-        xmlCipher.init(XMLCipher.UNWRAP_MODE, privateKey);
-        EncryptedData encryptedData = xmlCipher.loadEncryptedData(rawSAMLResponseDoc, encryptedDataElement);
-        EncryptedKey encryptedKey = encryptedData.getKeyInfo().itemEncryptedKey(0);
-        Key decryptedSecretKey = xmlCipher.decryptKey(encryptedKey, algorithm);
-
-        // This block uses the decrypted secret key to decrypt the attributes
-        Key secretKey = new SecretKeySpec(decryptedSecretKey.getEncoded(), "AES");
-        XMLCipher xmlDecryptCipher = XMLCipher.getInstance();
-        xmlDecryptCipher.init(XMLCipher.DECRYPT_MODE, secretKey);
-        xmlDecryptCipher.doFinal(rawSAMLResponseDoc, encryptedDataElement);
-
-        // Any more encryption to handle?
-        encyptedDataNodes = rawSAMLResponseDoc.getElementsByTagNameNS(namespaceURI, localName);
+      // Decrypt the response if required
+      if (isEncrypted(responseDocument)) {
+        responseDocument = decryptResponse(responseDocument, xmlOptions, guardPrivateKey);
       }
-
-      // And back to XMLBeans for that nice API!
-      responseDocument = ResponseDocument.Factory.parse(rawSAMLResponseDoc);
 
       Config config = (Config)getServletContext().getAttribute(Guanxi.CONTEXT_ATTR_ENGINE_CONFIG);
       processGuardConnection(guardNativeMetadata.getAttributeConsumerServiceURL(),
@@ -233,9 +190,6 @@ public class WebBrowserSSOAuthConsumerService extends MultiActionController impl
     }
     catch(XmlException xe) {
       logger.error(xe);
-    }
-    catch(XMLEncryptionException xee) {
-      logger.error(xee);
     }
     catch(Exception e) {
       logger.error(e);
@@ -286,75 +240,82 @@ public class WebBrowserSSOAuthConsumerService extends MultiActionController impl
     
     try {
       bag.setSamlResponse(Utils.base64(responseDocument.toString().getBytes()));
-      
-      EncryptedElementType[] assertions = responseDocument.getResponse().getEncryptedAssertionArray();
-      for (EncryptedElementType assertion : assertions) {
-        NodeList nodes = assertion.getDomNode().getChildNodes();
-        Node assertionNode = null;
-        for (int c=0; c < nodes.getLength(); c++) {
-          assertionNode = nodes.item(c);
-          if (assertionNode.getLocalName() != null) {
-            if (assertionNode.getLocalName().equals("Assertion"))
-              break;
-          }
-        }
-        if (assertionNode == null) {
-          continue;
-        }
 
-        AssertionDocument ass = AssertionDocument.Factory.parse(assertionNode);
-        if (ass.getAssertion().getAttributeStatementArray().length == 0) {
+      AssertionType[] assertions = null;
+      if (isEncrypted(responseDocument)) {
+        assertions = getAssertionsFromDecryptedResponse(responseDocument);
+      }
+      else {
+        assertions = responseDocument.getResponse().getAssertionArray();
+      }
+
+      for (AssertionType assertion : assertions) {
+        if (assertion.getAttributeStatementArray().length == 0) {
           // No attributes available
           return bag;
         }
-        AttributeStatementType att = ass.getAssertion().getAttributeStatementArray(0);
-        AttributeType[] attributes = att.getAttributeArray();
+        AttributeStatementType attributeStatement = assertion.getAttributeStatementArray(0);
+        AttributeType[] attributes = attributeStatement.getAttributeArray();
 
         String attributeOID = null;
         for (AttributeType attribute : attributes) {
-          // Remove the prefix from the attribute name
-          attributeOID = attribute.getName().replaceAll(EduPersonOID.ATTRIBUTE_NAME_PREFIX, "");
+          if (attribute.getNameFormat().equals(SAML.SAML2_ATTRIBUTE_PROFILE_BASIC)) {
+            XmlObject[] attributeValues = attribute.getAttributeValueArray();
+            for (int cc=0; cc < attributeValues.length; cc++) {
+              String attrValue = attributeValues[cc].getDomNode().getFirstChild().getNodeValue();
+              bag.addAttribute(attribute.getName(), attrValue);
+            }
+          }
+          else if (attribute.getNameFormat().equals(SAML.SAML2_ATTRIBUTE_PROFILE_X500_LDAP)) {
+            // Remove the prefix from the attribute name
+            attributeOID = attribute.getName().replaceAll(EduPersonOID.ATTRIBUTE_NAME_PREFIX, "");
 
-          XmlObject[] obj = attribute.getAttributeValueArray();
-          for (int cc=0; cc < obj.length; cc++) {
-            // Is it a scoped attribute?
-            if (obj[cc].getDomNode().getAttributes().getNamedItem(EduPerson.EDUPERSON_SCOPE_ATTRIBUTE) != null) {
-              String attrValue = obj[cc].getDomNode().getFirstChild().getNodeValue();
-              attrValue += EduPerson.EDUPERSON_SCOPED_DELIMITER;
-              attrValue += obj[cc].getDomNode().getAttributes().getNamedItem(EduPerson.EDUPERSON_SCOPE_ATTRIBUTE).getNodeValue();
-              bag.addAttribute(attribute.getFriendlyName(), attrValue);
-              bag.addAttribute(attributeOID, attrValue);
-            }
-            // What about eduPersonTargetedID?
-            else if (attributeOID.equals(EduPersonOID.OID_EDUPERSON_TARGETED_ID)) {
-              NodeList attrValueNodes = obj[cc].getDomNode().getChildNodes();
-              Node attrValueNode = null;
-              for (int c=0; c < nodes.getLength(); c++) {
-                attrValueNode = attrValueNodes.item(c);
-                if (attrValueNode.getLocalName() != null) {
-                  if (attrValueNode.getLocalName().equals("NameID"))
-                    break;
+            XmlObject[] attributeValues = attribute.getAttributeValueArray();
+            for (int cc=0; cc < attributeValues.length; cc++) {
+              // Is it a scoped attribute?
+              if (attributeValues[cc].getDomNode().getAttributes().getNamedItem(EduPerson.EDUPERSON_SCOPE_ATTRIBUTE) != null) {
+                String attrValue = attributeValues[cc].getDomNode().getFirstChild().getNodeValue();
+                attrValue += EduPerson.EDUPERSON_SCOPED_DELIMITER;
+                attrValue += attributeValues[cc].getDomNode().getAttributes().getNamedItem(EduPerson.EDUPERSON_SCOPE_ATTRIBUTE).getNodeValue();
+                if (attributeHasFriendlyName(attribute)) {
+                  bag.addAttribute(attribute.getFriendlyName(), attrValue);
+                }
+                bag.addAttribute(attribute.getName(), attrValue);
+                bag.addAttribute(attributeOID, attrValue);
+              }
+              // What about eduPersonTargetedID?
+              else if (attributeOID.equals(EduPersonOID.OID_EDUPERSON_TARGETED_ID)) {
+                NodeList attrValueNodes = attributeValues[cc].getDomNode().getChildNodes();
+                Node attrValueNode = null;
+                for (int c=0; c < attrValueNodes.getLength(); c++) {
+                  attrValueNode = attrValueNodes.item(c);
+                  if (attrValueNode.getLocalName() != null) {
+                    if (attrValueNode.getLocalName().equals("NameID"))
+                      break;
+                  }
+                }
+                if (attrValueNode != null) {
+                  NameIDDocument nameIDDoc = NameIDDocument.Factory.parse(attrValueNode);
+                  if (attributeHasFriendlyName(attribute)) {
+                    bag.addAttribute(attribute.getFriendlyName(), nameIDDoc.getNameID().getStringValue());
+                  }
+                  bag.addAttribute(attribute.getName(), nameIDDoc.getNameID().getStringValue());
+                  bag.addAttribute(attributeOID, nameIDDoc.getNameID().getStringValue());
                 }
               }
-              if (attrValueNode != null) {
-                NameIDDocument nameIDDoc = NameIDDocument.Factory.parse(attrValueNode);
-                bag.addAttribute(attribute.getFriendlyName(), nameIDDoc.getNameID().getStringValue());
-                bag.addAttribute(attributeOID, nameIDDoc.getNameID().getStringValue());
-              }
-            }
-            else {
-              if (obj[cc].getDomNode().getFirstChild() != null) {
-                if (obj[cc].getDomNode().getFirstChild().getNodeValue() != null) {
-                  bag.addAttribute(attribute.getName(), obj[cc].getDomNode().getFirstChild().getNodeValue());
-                  bag.addAttribute(attributeOID, obj[cc].getDomNode().getFirstChild().getNodeValue());
-                }
-                else {
-                  bag.addAttribute(attribute.getName(), "");
-                  bag.addAttribute(attributeOID, "");
+              else {
+                if (attributeValues[cc].getDomNode().getFirstChild() != null) {
+                  if (attributeValues[cc].getDomNode().getFirstChild().getNodeValue() != null) {
+                    if (attributeHasFriendlyName(attribute)) {
+                      bag.addAttribute(attribute.getFriendlyName(), attributeValues[cc].getDomNode().getFirstChild().getNodeValue());
+                    }
+                    bag.addAttribute(attribute.getName(), attributeValues[cc].getDomNode().getFirstChild().getNodeValue());
+                    bag.addAttribute(attributeOID, attributeValues[cc].getDomNode().getFirstChild().getNodeValue());
+                  }
                 }
               }
-            }
-          } // for (int cc=0; cc < obj.length; cc++)
+            } // for (int cc=0; cc < obj.length; cc++)
+          } // else if (attribute.getNameFormat().equals(SAML.SAML2_ATTRIBUTE_PROFILE_X500_LDAP)) {
         } // for (AttributeType attribute : attributes)
       } // for (EncryptedElementType assertion : assertions)
 
@@ -362,6 +323,136 @@ public class WebBrowserSSOAuthConsumerService extends MultiActionController impl
     }
     catch(XmlException xe) {
       throw new GuanxiException(xe.getMessage());
+    }
+  }
+
+  /**
+   * Determines whether an Attribute has a FriendlyName
+   *
+   * @param attribute the Attribute
+   * @return true if it has a FriendlyName, otherwise false
+   */
+  private boolean attributeHasFriendlyName(AttributeType attribute) {
+    return ((attribute.getFriendlyName() != null) &&
+            (attribute.getFriendlyName().length() > 0));
+  }
+
+  /**
+   * Extracts the Assertions from a decrypted SAML2 Response
+   *
+   * @param decryptedResponse the Response which contains the Assertions
+   * @return array of AssertionType objects or null
+   */
+  private AssertionType[] getAssertionsFromDecryptedResponse(ResponseDocument decryptedResponse) {
+    try {
+      ArrayList<AssertionType> assertions = new ArrayList<AssertionType>();
+
+      EncryptedElementType[] encryptedElements = decryptedResponse.getResponse().getEncryptedAssertionArray();
+
+      for (EncryptedElementType encryptedElement : encryptedElements) {
+        NodeList nodes = encryptedElement.getDomNode().getChildNodes();
+        Node assertionNode = null;
+        for (int c=0; c < nodes.getLength(); c++) {
+          assertionNode = nodes.item(c);
+          if (assertionNode.getLocalName() != null) {
+            if (assertionNode.getLocalName().equals("Assertion")) {
+              assertions.add(AssertionDocument.Factory.parse(assertionNode).getAssertion());
+            }
+          }
+        }
+        if (assertionNode == null) {
+          continue;
+        }
+      }
+
+      return assertions.toArray(new AssertionType[assertions.size()]);
+    }
+    catch(XmlException xe) {
+      return null;
+    }
+  }
+
+  /**
+   * Determines whether a SAML2 Response is encrypted
+   *
+   * @param responseDoc the Response to check for encryption
+   * @return true if the Response is encrypted, otherwise false
+   */
+  private boolean isEncrypted(ResponseDocument responseDoc) {
+    return ((responseDoc.getResponse().getEncryptedAssertionArray() != null) &&
+            (responseDoc.getResponse().getEncryptedAssertionArray().length > 0));
+  }
+
+  /**
+   * Decrypts a SAML2 Web Browser SSO Response from an IdP
+   *
+   * @param encryptedResponse The encrypted Response
+   * @param xmlOptions XmlOptions describing namesapces in the Response
+   * @param privateKey the Guard's private key used to decrypt the Response
+   * @return decrypted Response
+   */
+  private ResponseDocument decryptResponse(ResponseDocument encryptedResponse, XmlOptions xmlOptions, PrivateKey privateKey) {
+    try {
+      // For decryption, we need to be in DOM land
+      Document rawSAMLResponseDoc = (Document)encryptedResponse.newDomNode(xmlOptions);
+
+      /* XMLBeans doesn't give us access to the embedded encryption key for some reason
+       * so we need to break out to DOM and back again.
+       */
+      NodeList nodes = encryptedResponse.getResponse().getEncryptedAssertionArray(0).getEncryptedData().getKeyInfo().getDomNode().getChildNodes();
+      Node node = null;
+      for (int c=0; c < nodes.getLength(); c++) {
+        node = nodes.item(c);
+        if (node.getLocalName() != null) {
+          if (node.getLocalName().equals("EncryptedKey")) break;
+        }
+      }
+      EncryptedKeyDocument encKeyDoc = EncryptedKeyDocument.Factory.parse(node, xmlOptions);
+
+      // Get a handle on the encypted data in DOM land
+      String namespaceURI = EncryptionConstants.EncryptionSpecNS;
+      String localName = EncryptionConstants._TAG_ENCRYPTEDDATA;
+
+      // Recurse through the decryption process
+      NodeList encyptedDataNodes = rawSAMLResponseDoc.getElementsByTagNameNS(namespaceURI, localName);
+      while (encyptedDataNodes.getLength() > 0) {
+        Element encryptedDataElement = (Element)encyptedDataNodes.item(0);
+
+        /* This block unwraps and decrypts the secret key. The IdP first encrypts the attributes
+         * using a secret key. It then encrypts that secret key using the public key of the Guard.
+         * So the first step is to use the Guard's private key to decrypt the secret key.
+         */
+        String algorithm = encKeyDoc.getEncryptedKey().getEncryptionMethod().getAlgorithm();
+        XMLCipher xmlCipher = XMLCipher.getInstance();
+        xmlCipher.init(XMLCipher.UNWRAP_MODE, privateKey);
+        EncryptedData encryptedData = xmlCipher.loadEncryptedData(rawSAMLResponseDoc, encryptedDataElement);
+        EncryptedKey encryptedKey = encryptedData.getKeyInfo().itemEncryptedKey(0);
+        Key decryptedSecretKey = xmlCipher.decryptKey(encryptedKey, algorithm);
+
+        // This block uses the decrypted secret key to decrypt the attributes
+        Key secretKey = new SecretKeySpec(decryptedSecretKey.getEncoded(), "AES");
+        XMLCipher xmlDecryptCipher = XMLCipher.getInstance();
+        xmlDecryptCipher.init(XMLCipher.DECRYPT_MODE, secretKey);
+        xmlDecryptCipher.doFinal(rawSAMLResponseDoc, encryptedDataElement);
+
+        // Any more encryption to handle?
+        encyptedDataNodes = rawSAMLResponseDoc.getElementsByTagNameNS(namespaceURI, localName);
+      }
+
+      // And back to XMLBeans for that nice API!
+      return ResponseDocument.Factory.parse(rawSAMLResponseDoc);
+    }
+    catch(XmlException xe) {
+      logger.error("XML problem decrypting the response", xe);
+      return null;
+    }
+    catch(XMLEncryptionException xee) {
+      logger.error("XML problem decrypting the response", xee);
+      return null;
+    }
+    catch(Exception e) {
+      logger.error("XML problem decrypting the response", e);
+      return null;
     }
   }
 
