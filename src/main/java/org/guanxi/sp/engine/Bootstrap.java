@@ -16,6 +16,7 @@
 
 package org.guanxi.sp.engine;
 
+import org.guanxi.sp.engine.service.saml2.DiscoveryFeedManager;
 import org.springframework.web.context.ServletContextAware;
 import org.springframework.context.ApplicationListener;
 import org.springframework.context.ApplicationContextAware;
@@ -62,6 +63,8 @@ public class Bootstrap implements ApplicationListener, ApplicationContextAware, 
   private EntityFarm entityFarm = null;
   /** Our job scheduler */
   private Scheduler scheduler = null;
+  /** The SAML2 Discovery Service feed manager to use */
+  private DiscoveryFeedManager saml2DiscoveryFeedManager = null;
 
   /**
    * Initialise the intercepter
@@ -112,6 +115,9 @@ public class Bootstrap implements ApplicationListener, ApplicationContextAware, 
 
       // Inject the metadata farm to handle all source of metadata
       servletContext.setAttribute(Guanxi.CONTEXT_ATTR_ENGINE_ENTITY_FARM, entityFarm);
+
+      // Inject the Discovery Service feed manager
+      servletContext.setAttribute(Guanxi.CONTEXT_ATTR_ENGINE_DISCOVERY_FEED_MANAGER, saml2DiscoveryFeedManager);
 
       loadGuardMetadata(config.getGuardsMetadataDirectory());
       loadIdPMetadata(config.getIdPMetadataDirectory());
@@ -401,4 +407,5 @@ public class Bootstrap implements ApplicationListener, ApplicationContextAware, 
 
   public EntityFarm getEntityFarm() { return entityFarm; }
   public void setEntityFarm(EntityFarm entityFarm) { this.entityFarm = entityFarm; }
+  public void setSaml2DiscoveryFeedManager(DiscoveryFeedManager saml2DiscoveryFeedManager) { this.saml2DiscoveryFeedManager = saml2DiscoveryFeedManager; }
 }
