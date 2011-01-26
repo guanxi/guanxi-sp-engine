@@ -13,6 +13,13 @@
       </list>
     </property>
     <property name="entityFarm"><ref bean="spEntityFarm"/></property>
+    <property name="saml2DiscoveryFeedManager"><ref bean="saml2DiscoveryFeedManager"/></property>
+  </bean>
+
+  <bean id="saml2DiscoveryFeedManager"
+        class="org.guanxi.sp.engine.service.saml2.DiscoveryFeedManager"
+        init-method="init"
+        destroy-method="destroy">
   </bean>
 
 </beans>
