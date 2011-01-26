@@ -17,6 +17,7 @@
 package org.guanxi.sp.engine.service.saml2;
 
 import org.apache.log4j.Logger;
+import org.guanxi.common.definitions.Guanxi;
 import org.springframework.web.context.ServletContextAware;
 import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.mvc.multiaction.MultiActionController;
@@ -42,9 +43,10 @@ public class EmbeddedDiscoveryService extends MultiActionController implements S
    */
   public ModelAndView handleRequest(HttpServletRequest request, HttpServletResponse response)
               throws ServletException, IOException {
+    DiscoveryFeedManager feedManager = (DiscoveryFeedManager)getServletContext().getAttribute(Guanxi.CONTEXT_ATTR_ENGINE_DISCOVERY_FEED_MANAGER);
     ModelAndView mAndV = new ModelAndView();
     mAndV.setViewName("/saml2/eds");
-    mAndV.getModel().put("testvar", "testvar-value");
+    mAndV.getModel().put("jsonFeed", feedManager.toJSON());
     return mAndV;
   }
 }
