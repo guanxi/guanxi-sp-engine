@@ -301,6 +301,8 @@ public class WebBrowserSSOAuthConsumerService extends MultiActionController impl
                   }
                   bag.addAttribute(attribute.getName(), nameIDDoc.getNameID().getStringValue());
                   bag.addAttribute(attributeOID, nameIDDoc.getNameID().getStringValue());
+                  bag.addAttribute("namequalifier", nameIDDoc.getNameID().getNameQualifier());
+                  bag.addAttribute("spnamequalifier", nameIDDoc.getNameID().getSPNameQualifier());
                 }
               }
               else {
