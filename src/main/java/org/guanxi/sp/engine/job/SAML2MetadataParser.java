@@ -17,6 +17,8 @@
 package org.guanxi.sp.engine.job;
 
 import org.guanxi.common.trust.TrustUtils;
+import org.guanxi.sp.engine.service.saml2.DiscoveryFeedManager;
+import org.guanxi.xal.saml_2_0.metadata.LocalizedNameType;
 import org.quartz.Job;
 import org.quartz.JobExecutionContext;
 import org.quartz.JobExecutionException;
@@ -71,6 +73,8 @@ public class SAML2MetadataParser extends ShibbolethSAML2MetadataParser implement
 
     EntityManager manager = loadEntityManager(Guanxi.CONTEXT_ATTR_ENGINE_ENTITY_FARM);
 
+    DiscoveryFeedManager discoveryFeedManager = (DiscoveryFeedManager)config.getServletContext().getAttribute(Guanxi.CONTEXT_ATTR_ENGINE_DISCOVERY_FEED_MANAGER);
+
     try {
       // Store the new entity IDs for cleaning out old ones later
       ArrayList<String> newEntityIDs = new ArrayList<String>();
@@ -91,6 +95,9 @@ public class SAML2MetadataParser extends ShibbolethSAML2MetadataParser implement
           manager.addMetadata(metadataHandler);
 
           newEntityIDs.add(entityDescriptor.getEntityID());
+
+          // SAML2 Discovery Service feed
+          addEntityToDiscoveryFeed(entityDescriptor, discoveryFeedManager);
         }
       }
 
@@ -99,11 +106,33 @@ public class SAML2MetadataParser extends ShibbolethSAML2MetadataParser implement
       for (String oldEntityID : oldEntityIDs) {
         if (!newEntityIDs.contains(oldEntityID)) {
           manager.removeMetadata(oldEntityID);
+          deleteEntityFromDiscoveryFeed(oldEntityID, discoveryFeedManager);
         }
       }
     }
     catch(GuanxiException ge) {
       logger.error("Could not get an entity handler from the metadata manager", ge);
     }
+  }
+
+  /**
+   * Adds an IdP to the list of entities the Embedded Discovery Service will display
+   *
+   * @param entityDescriptor the IdP's metadata
+   * @param manager the DiscoveryFeedManager to use
+   */
+  private void addEntityToDiscoveryFeed(EntityDescriptorType entityDescriptor, DiscoveryFeedManager manager) {
+    if (entityDescriptor.getOrganization() != null) {
+      manager.addEntity(entityDescriptor.getEntityID());
+      
+      LocalizedNameType[] orgs = entityDescriptor.getOrganization().getOrganizationDisplayNameArray();
+      for (LocalizedNameType org : orgs) {
+        manager.addDisplayName(entityDescriptor.getEntityID(), org.getStringValue(), org.getLang());
+      }
+    }
+  }
+
+  private void deleteEntityFromDiscoveryFeed(String entityID, DiscoveryFeedManager manager) {
+    manager.deleteEntity(entityID);
   }
 }
