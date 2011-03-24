@@ -13,6 +13,7 @@
     <property name="errorView"><value>message</value></property>
     <property name="errorViewDisplayVar"><value>message</value></property>
     <property name="logResponse"><value>false</value></property>
+    <property name="subjectNameIDAttributeName"><value>REMOTE_USER</value></property>
   </bean>
 
 </beans>
