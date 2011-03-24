@@ -81,6 +81,8 @@ public class WebBrowserSSOAuthConsumerService extends MultiActionController impl
   private String errorViewDisplayVar = null;
   /** Whether to dump the incoming response to the log */
   private boolean logResponse = false;
+  /** Add a Subject/NameID to the bag of attributes under this name */
+  private String subjectNameIDAttributeName = null;
 
   public void init() {}
 
@@ -254,6 +256,13 @@ public class WebBrowserSSOAuthConsumerService extends MultiActionController impl
           // No attributes available
           return bag;
         }
+
+        if (assertion.getSubject() != null) {
+          if (assertion.getSubject().getNameID() != null) {
+            bag.addAttribute(subjectNameIDAttributeName, assertion.getSubject().getNameID().getStringValue());
+          }
+        }
+
         AttributeStatementType attributeStatement = assertion.getAttributeStatementArray(0);
         AttributeType[] attributes = attributeStatement.getAttributeArray();
 
@@ -464,4 +473,5 @@ public class WebBrowserSSOAuthConsumerService extends MultiActionController impl
   public void setErrorView(String errorView) { this.errorView = errorView; }
   public void setErrorViewDisplayVar(String errorViewDisplayVar) { this.errorViewDisplayVar = errorViewDisplayVar; }
   public void setLogResponse(boolean logResponse) { this.logResponse = logResponse; }
+  public void setSubjectNameIDAttributeName(String subjectNameIDAttributeName) { this.subjectNameIDAttributeName = subjectNameIDAttributeName; }
 }
