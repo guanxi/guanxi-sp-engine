@@ -111,12 +111,12 @@ public class WebBrowserSSOAuthConsumerService extends MultiActionController impl
 
     try {
       // Decode and unmarshall the response from the IdP
-      String decodedRequest = Utils.decodeBase64(b64SAMLResponse);
       ResponseDocument responseDocument = null;
       if (request.getMethod().equalsIgnoreCase("post")) {
-        responseDocument = ResponseDocument.Factory.parse(new StringReader(decodedRequest));
+        responseDocument = ResponseDocument.Factory.parse(new StringReader(Utils.decodeBase64(b64SAMLResponse)));
       }
       else {
+        byte[] decodedRequest = Utils.decodeBase64b(b64SAMLResponse);
         responseDocument = ResponseDocument.Factory.parse(Utils.inflate(decodedRequest, Utils.RFC1951_NO_WRAP));
       }
       String idpProviderId = responseDocument.getResponse().getIssuer().getStringValue();
