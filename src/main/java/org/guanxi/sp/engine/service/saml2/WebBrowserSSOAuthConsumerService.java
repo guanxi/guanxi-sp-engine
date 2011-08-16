@@ -104,6 +104,16 @@ public class WebBrowserSSOAuthConsumerService extends MultiActionController impl
     String guardSession = request.getParameter("RelayState");
     String b64SAMLResponse = request.getParameter("SAMLResponse");
 
+    if ((getServletContext().getAttribute(guardSession.replaceAll("GUARD", "ENGINE")) == null)) {
+      response.setContentType("text/html");
+      PrintWriter out = response.getWriter();
+      out.println("Metadata error<br /><br />");
+      out.println("Not a valid session");
+      out.flush();
+      out.close();
+      return;
+    }
+
     // We previously changed the Guard session ID to an Engine one...
     EntityDescriptorType guardEntityDescriptor = (EntityDescriptorType)getServletContext().getAttribute(guardSession.replaceAll("GUARD", "ENGINE"));
     // ...so now change it back as it will be passed to the Guard
@@ -175,7 +185,18 @@ public class WebBrowserSSOAuthConsumerService extends MultiActionController impl
 
       // Decrypt the response if required
       if (isEncrypted(responseDocument)) {
-        responseDocument = decryptResponse(responseDocument, xmlOptions, guardPrivateKey);
+        try {
+          responseDocument = decryptResponse(responseDocument, xmlOptions, guardPrivateKey);
+        }
+        catch(GuanxiException ge) {
+          response.setContentType("text/html");
+          PrintWriter out = response.getWriter();
+          out.println("Decryption error<br /><br />");
+          out.println(ge.getMessage());
+          out.flush();
+          out.close();
+          return;
+        }
       }
 
       Config config = (Config)getServletContext().getAttribute(Guanxi.CONTEXT_ATTR_ENGINE_CONFIG);
@@ -187,6 +208,12 @@ public class WebBrowserSSOAuthConsumerService extends MultiActionController impl
               config.getTrustStorePassword(),
               responseDocument,
               guardSession);
+
+      /* Stop replay attacks.
+       * If another message comes in with the same RelayState we won't be able
+       * to find the Guard metadata it refers to as we've deleted it.
+       */
+      getServletContext().removeAttribute(guardSession.replaceAll("GUARD", "ENGINE"));
 
       response.sendRedirect(guardNativeMetadata.getPodderURL() + "?id=" + guardSession);
     }
@@ -402,7 +429,7 @@ public class WebBrowserSSOAuthConsumerService extends MultiActionController impl
    * @param privateKey the Guard's private key used to decrypt the Response
    * @return decrypted Response
    */
-  private ResponseDocument decryptResponse(ResponseDocument encryptedResponse, XmlOptions xmlOptions, PrivateKey privateKey) {
+  private ResponseDocument decryptResponse(ResponseDocument encryptedResponse, XmlOptions xmlOptions, PrivateKey privateKey) throws GuanxiException {
     try {
       // For decryption, we need to be in DOM land
       Document rawSAMLResponseDoc = (Document)encryptedResponse.newDomNode(xmlOptions);
@@ -455,15 +482,15 @@ public class WebBrowserSSOAuthConsumerService extends MultiActionController impl
     }
     catch(XmlException xe) {
       logger.error("XML problem decrypting the response", xe);
-      return null;
+      throw new GuanxiException(xe);
     }
     catch(XMLEncryptionException xee) {
       logger.error("XML problem decrypting the response", xee);
-      return null;
+      throw new GuanxiException(xee);
     }
     catch(Exception e) {
-      logger.error("XML problem decrypting the response", e);
-      return null;
+      logger.error("Problem decrypting the response", e);
+      throw new GuanxiException(e);
     }
   }
 
