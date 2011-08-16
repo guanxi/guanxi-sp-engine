@@ -83,9 +83,11 @@ public class SAML2ProfileService implements ProfileService {
     String binding = null;
     EndpointType[] ssos = saml2Metadata.getIDPSSODescriptorArray(0).getSingleSignOnServiceArray();
     for (EndpointType sso : ssos) {
-      if (sso.getBinding().equalsIgnoreCase(SAML.SAML2_BINDING_HTTP_POST)) {
+      if ((sso.getBinding().equalsIgnoreCase(SAML.SAML2_BINDING_HTTP_POST)) ||
+          (sso.getBinding().equalsIgnoreCase(SAML.SAML2_BINDING_HTTP_REDIRECT))) {
         wbssoURL = sso.getLocation();
-        binding = SAML.SAML2_BINDING_HTTP_POST;
+        if (sso.getBinding().equalsIgnoreCase(SAML.SAML2_BINDING_HTTP_POST)) binding = SAML.SAML2_BINDING_HTTP_POST;
+        else if (sso.getBinding().equalsIgnoreCase(SAML.SAML2_BINDING_HTTP_REDIRECT)) binding = SAML.SAML2_BINDING_HTTP_REDIRECT;
         break;
       }
     }
