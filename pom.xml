@@ -7,7 +7,7 @@
   <parent>
     <artifactId>guanxi-core</artifactId>
     <groupId>org.guanxi</groupId>
-    <version>2.0.9-SNAPSHOT</version>
+    <version>2.0.10</version>
     <relativePath>../guanxi-core/pom.xml</relativePath>
   </parent>
 
@@ -38,7 +38,7 @@
     <dependency>
       <groupId>org.guanxi</groupId>
       <artifactId>guanxi-beans</artifactId>
-      <version>1.4.6</version>
+      <version>1.4.7</version>
     </dependency>
     <!-- **************************************************** -->
 
@@ -156,5 +156,32 @@
         </includes>
       </resource>
     </resources>
+
+    <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-deploy-plugin</artifactId>
+        <version>2.6</version>
+        <executions>
+          <execution>
+            <phase>deploy</phase>
+            <goals>
+              <goal>deploy-file</goal>
+            </goals>
+            <configuration>
+              <repositoryId>source.uhi.ac.uk-repository</repositoryId>
+              <url>http://source.uhi.ac.uk/mvn</url>
+              <packaging>jar</packaging>
+              <artifactId>${project.artifactId}</artifactId>
+              <groupId>${project.groupId}</groupId>
+              <version>${project.version}</version>
+              <uniqueVersion>false</uniqueVersion>
+              <pomFile>${basedir}/pom.xml</pomFile>
+              <file>${project.build.directory}/${project.artifactId}-${project.version}.jar</file>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+    </plugins>
   </build>
 </project>
