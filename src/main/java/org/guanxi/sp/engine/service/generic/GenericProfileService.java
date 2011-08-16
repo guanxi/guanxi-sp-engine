@@ -116,7 +116,8 @@ public class GenericProfileService extends MultiActionController implements Serv
     GuardRoleDescriptorExtensions guardNativeMetadata = Util.getGuardNativeMetadata(guardEntityDescriptor);
 
     /* Convert the Guard's session ID to an Engine session ID and store the Guard's GuanxiGuardService
-     * node under it.
+     * node under it. This will be deleted from the context once the SAML round trip has been processed
+     * and the attributes sent to the Guard.
      */
     getServletContext().setAttribute(guardSessionID.replaceAll("GUARD", "ENGINE"), guardEntityDescriptor);
 
@@ -125,11 +126,10 @@ public class GenericProfileService extends MultiActionController implements Serv
       return getProfileService(request, farm, idpEntityID).doProfile(request, guardID, guardSessionID, guardNativeMetadata, idpEntityID, farm);
     }
     catch(GuanxiException ge) {
-      logger.error("Shibboleth error: ", ge);
+      logger.error("Profile Service error: ", ge);
       ModelAndView mAndV = new ModelAndView();
       mAndV.setViewName(errorView);
-      mAndV.getModel().put(errorViewDisplayVar, messages.getMessage("engine.error.no.guard.metadata",
-                                                                    null, request.getLocale()));
+      mAndV.getModel().put(errorViewDisplayVar, ge.getMessage());
       return mAndV;
     }
   }
