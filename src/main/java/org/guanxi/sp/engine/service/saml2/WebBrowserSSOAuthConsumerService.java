@@ -16,52 +16,71 @@
 
 package org.guanxi.sp.engine.service.saml2;
 
-import org.apache.xmlbeans.XmlObject;
-import org.guanxi.common.Bag;
-import org.guanxi.common.definitions.EduPerson;
-import org.guanxi.common.definitions.EduPersonOID;
-import org.guanxi.xal.saml_2_0.assertion.*;
-import org.springframework.web.servlet.mvc.multiaction.MultiActionController;
-import org.springframework.web.context.ServletContextAware;
-import org.springframework.context.MessageSource;
-import org.apache.log4j.Logger;
-import org.apache.xmlbeans.XmlException;
-import org.apache.xmlbeans.XmlOptions;
-import org.apache.xml.security.utils.EncryptionConstants;
-import org.apache.xml.security.encryption.XMLCipher;
-import org.apache.xml.security.encryption.XMLEncryptionException;
-import org.apache.xml.security.encryption.EncryptedData;
-import org.apache.xml.security.encryption.EncryptedKey;
-import org.guanxi.common.GuanxiException;
-import org.guanxi.common.Utils;
-import org.guanxi.common.EntityConnection;
-import org.guanxi.common.entity.EntityFarm;
-import org.guanxi.common.entity.EntityManager;
-import org.guanxi.common.trust.TrustUtils;
-import org.guanxi.common.metadata.Metadata;
-import org.guanxi.common.definitions.SAML;
-import org.guanxi.common.definitions.Guanxi;
-import org.guanxi.xal.saml_2_0.metadata.EntityDescriptorType;
-import org.guanxi.xal.saml_2_0.protocol.ResponseDocument;
-import org.guanxi.xal.w3.xmlenc.EncryptedKeyDocument;
-import org.guanxi.xal.saml2.metadata.GuardRoleDescriptorExtensions;
-import org.guanxi.sp.Util;
-import org.guanxi.sp.engine.Config;
-import org.w3c.dom.Document;
-import org.w3c.dom.Element;
-import org.w3c.dom.Node;
-import org.w3c.dom.NodeList;
-
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import javax.crypto.spec.SecretKeySpec;
-import java.io.*;
-import java.security.*;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.OutputStreamWriter;
+import java.io.PrintWriter;
+import java.io.StringReader;
+import java.io.StringWriter;
+import java.net.URLEncoder;
+import java.security.Key;
+import java.security.KeyStore;
+import java.security.KeyStoreException;
+import java.security.NoSuchAlgorithmException;
+import java.security.PrivateKey;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.net.URLEncoder;
+import java.util.Map;
+
+import javax.crypto.spec.SecretKeySpec;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
+import org.apache.log4j.Logger;
+import org.apache.xerces.util.URI;
+import org.apache.xerces.util.URI.MalformedURIException;
+import org.apache.xml.security.encryption.EncryptedData;
+import org.apache.xml.security.encryption.EncryptedKey;
+import org.apache.xml.security.encryption.XMLCipher;
+import org.apache.xml.security.encryption.XMLEncryptionException;
+import org.apache.xml.security.utils.EncryptionConstants;
+import org.apache.xmlbeans.XmlException;
+import org.apache.xmlbeans.XmlObject;
+import org.apache.xmlbeans.XmlOptions;
+import org.guanxi.common.Bag;
+import org.guanxi.common.EntityConnection;
+import org.guanxi.common.GuanxiException;
+import org.guanxi.common.Utils;
+import org.guanxi.common.definitions.EduPerson;
+import org.guanxi.common.definitions.EduPersonOID;
+import org.guanxi.common.definitions.Guanxi;
+import org.guanxi.common.definitions.SAML;
+import org.guanxi.common.entity.EntityFarm;
+import org.guanxi.common.entity.EntityManager;
+import org.guanxi.common.metadata.Metadata;
+import org.guanxi.common.trust.TrustUtils;
+import org.guanxi.sp.Util;
+import org.guanxi.sp.engine.Config;
+import org.guanxi.xal.saml2.metadata.GuardRoleDescriptorExtensions;
+import org.guanxi.xal.saml_2_0.assertion.AssertionDocument;
+import org.guanxi.xal.saml_2_0.assertion.AssertionType;
+import org.guanxi.xal.saml_2_0.assertion.AttributeStatementType;
+import org.guanxi.xal.saml_2_0.assertion.AttributeType;
+import org.guanxi.xal.saml_2_0.assertion.EncryptedElementType;
+import org.guanxi.xal.saml_2_0.assertion.NameIDDocument;
+import org.guanxi.xal.saml_2_0.metadata.EntityDescriptorType;
+import org.guanxi.xal.saml_2_0.protocol.ResponseDocument;
+import org.guanxi.xal.w3.xmlenc.EncryptedKeyDocument;
+import org.springframework.context.MessageSource;
+import org.springframework.util.StringUtils;
+import org.springframework.web.context.ServletContextAware;
+import org.springframework.web.servlet.mvc.multiaction.MultiActionController;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
 
 /**
  * Handles the trust and attribute decryption for SAML2 Web Browser SSO profile.
@@ -83,6 +102,8 @@ public class WebBrowserSSOAuthConsumerService extends MultiActionController impl
   private boolean logResponse = false;
   /** Add a Subject/NameID to the bag of attributes under this name */
   private String subjectNameIDAttributeName = null;
+  /** If we allow unsolicited responses */
+  private boolean allowUnsolicited = false;
 
   public void init() {}
 
@@ -101,23 +122,48 @@ public class WebBrowserSSOAuthConsumerService extends MultiActionController impl
    * @throws java.security.cert.CertificateException if an error occurs
    */
   public void acs(HttpServletRequest request, HttpServletResponse response) throws IOException, GuanxiException, KeyStoreException, NoSuchAlgorithmException, CertificateException {
-    String guardSession = request.getParameter("RelayState");
+    String relayState = request.getParameter("RelayState");
     String b64SAMLResponse = request.getParameter("SAMLResponse");
+    EntityDescriptorType guardEntityDescriptor = null;
+    String guardSession = null;
+    boolean unsolicitedMode = false;
+    
+    logger.info("Received RelayState: " + relayState);
 
-    if ((getServletContext().getAttribute(guardSession.replaceAll("GUARD", "ENGINE")) == null)) {
-      response.setContentType("text/html");
-      PrintWriter out = response.getWriter();
-      out.println("Metadata error<br /><br />");
-      out.println("Not a valid session");
-      out.flush();
-      out.close();
-      return;
+    if(allowUnsolicited && checkForUnsolicited(relayState))
+    {
+    	if(!StringUtils.hasText(relayState))
+    	{
+    	  response.setContentType("text/html");
+  	      PrintWriter out = response.getWriter();
+  	      out.println("Metadata error<br /><br />");
+  	      out.println("Not a valid unsolitied session");
+  	      out.flush();
+  	      out.close();
+  	      return;
+    	}
+    	
+    	unsolicitedMode = true;
+    	guardEntityDescriptor = getUnsolicitedGuard(relayState);
+    	guardSession = getTargetResource(relayState);
     }
-
-    // We previously changed the Guard session ID to an Engine one...
-    EntityDescriptorType guardEntityDescriptor = (EntityDescriptorType)getServletContext().getAttribute(guardSession.replaceAll("GUARD", "ENGINE"));
-    // ...so now change it back as it will be passed to the Guard
-    guardSession = guardSession.replaceAll("ENGINE", "GUARD");
+    else
+    {
+	    if ((getServletContext().getAttribute(relayState.replaceAll("GUARD", "ENGINE")) == null)) {
+	      response.setContentType("text/html");
+	      PrintWriter out = response.getWriter();
+	      out.println("Metadata error<br /><br />");
+	      out.println("Not a valid session");
+	      out.flush();
+	      out.close();
+	      return;
+	    }
+	
+	    // We previously changed the Guard session ID to an Engine one...
+	    guardEntityDescriptor = (EntityDescriptorType)getServletContext().getAttribute(relayState.replaceAll("GUARD", "ENGINE"));
+	    // ...so now change it back as it will be passed to the Guard
+	    guardSession = relayState.replaceAll("ENGINE", "GUARD");
+    }
 
     try {
       // Decode and unmarshall the response from the IdP
@@ -200,22 +246,20 @@ public class WebBrowserSSOAuthConsumerService extends MultiActionController impl
       }
 
       Config config = (Config)getServletContext().getAttribute(Guanxi.CONTEXT_ATTR_ENGINE_CONFIG);
-      processGuardConnection(guardNativeMetadata.getAttributeConsumerServiceURL(),
-              guardEntityDescriptor.getEntityID(),
-              guardNativeMetadata.getKeystore(),
-              guardNativeMetadata.getKeystorePassword(),
-              config.getTrustStore(),
-              config.getTrustStorePassword(),
+      guardSession = processGuardConnection(guardEntityDescriptor.getEntityID(),
+              guardNativeMetadata,
+              config,
               responseDocument,
-              guardSession);
+              guardSession,
+              unsolicitedMode);
 
+      response.sendRedirect(getPodderURL(guardSession, config, guardNativeMetadata) + "?id=" + guardSession);
+      
       /* Stop replay attacks.
        * If another message comes in with the same RelayState we won't be able
        * to find the Guard metadata it refers to as we've deleted it.
        */
       getServletContext().removeAttribute(guardSession.replaceAll("GUARD", "ENGINE"));
-
-      response.sendRedirect(guardNativeMetadata.getPodderURL() + "?id=" + guardSession);
     }
     catch(XmlException xe) {
       logger.error(xe);
@@ -224,19 +268,68 @@ public class WebBrowserSSOAuthConsumerService extends MultiActionController impl
       logger.error(e);
     }
   }
+  
+  	protected String getTargetResource(String relayState) 
+	{
+		return relayState;
+	}
 
-  private String processGuardConnection(String acsURL, String entityID, String keystoreFile, String keystorePassword,
-                                        String truststoreFile, String truststorePassword,
-                                        ResponseDocument responseDocument, String guardSession) throws GuanxiException, IOException {
+	protected EntityDescriptorType getUnsolicitedGuard(String relayState) throws MalformedURIException 
+	{
+		URI uri = new URI(relayState);
+		return (EntityDescriptorType)getServletContext().getAttribute(
+				getQueryMap(uri.getQueryString()).get("sp"));
+	}
+	
+	public static Map<String, String> getQueryMap(String query)  
+	{  
+		Map<String, String> map = new HashMap<String, String>(); 
+		
+		if(query != null)
+		{
+		    String[] params = query.split("&");  
+		    
+		    logger.debug("Parsing query map: " + params.length);
+		     
+		    for (String param : params)  
+		    {  
+		        String name = param.split("=")[0];  
+		        String value = param.split("=")[1];  
+		        map.put(name, value);  
+		    }
+		}
+		
+	    return map;  
+	}  
+	
+	private boolean checkForUnsolicited(String relayState) {
+		//for now check if the relaystate is a session id 
+		return relayState != null && !relayState.contains("GUARD") && !relayState.contains("ENGINE");
+	}
+  
+  /**
+   * Opportunity for extending classes to do some work to generate the podder URL
+   *
+   */
+  protected String getPodderURL(String sessionID, Config config, GuardRoleDescriptorExtensions guardNativeMetadata) throws GuanxiException {
+	  return guardNativeMetadata.getPodderURL();
+  }
+
+  private String processGuardConnection(String entityID, GuardRoleDescriptorExtensions guardNativeMetadata, Config config,
+                                        ResponseDocument responseDocument, String guardSession, boolean unsolicitedMode) 
+  										throws GuanxiException, IOException {
     EntityConnection connection;
 
-    Bag bag = getBag(responseDocument, guardSession);
+    Bag bag = getBag(responseDocument, guardSession, unsolicitedMode);
 
     // Initialise the connection to the Guard's attribute consumer service
-    connection = new EntityConnection(acsURL, entityID,
-                                      keystoreFile, keystorePassword,
-                                      truststoreFile, truststorePassword,
-                                      EntityConnection.PROBING_OFF);
+    connection = new EntityConnection(guardNativeMetadata.getAttributeConsumerServiceURL(), 
+    									entityID,
+    									guardNativeMetadata.getKeystore(), 
+    									guardNativeMetadata.getKeystorePassword(),
+    									config.getTrustStore(), 
+    									config.getTrustStorePassword(),
+    									EntityConnection.PROBING_OFF);
     connection.setDoOutput(true);
     connection.connect();
 
@@ -251,7 +344,17 @@ public class WebBrowserSSOAuthConsumerService extends MultiActionController impl
     //os.close();
 
     // ...and read the response from the Guard
-    return new String(Utils.read(connection.getInputStream()));
+    String returnedSessionID = new String(Utils.read(connection.getInputStream()));
+    
+    if(!bag.isUnsolicitedMode())
+    {
+    	if(!returnedSessionID.equals(guardSession)){
+    		throw new GuanxiException("Guards session id does not match working session id");
+    	}
+    }
+    
+    return returnedSessionID;
+    
   }
 
 
@@ -263,9 +366,10 @@ public class WebBrowserSSOAuthConsumerService extends MultiActionController impl
    * @return Bag of attributes
    * @throws GuanxiException if an error occurred
    */
-  private Bag getBag(ResponseDocument responseDocument, String guardSession) throws GuanxiException {
+  private Bag getBag(ResponseDocument responseDocument, String guardSession, boolean unsolicitedMode) throws GuanxiException {
     Bag bag = new Bag();
     bag.setSessionID(guardSession);
+    bag.setUnsolicitedMode(unsolicitedMode);
     
     try {
       bag.setSamlResponse(Utils.base64(responseDocument.toString().getBytes()));
@@ -500,5 +604,6 @@ public class WebBrowserSSOAuthConsumerService extends MultiActionController impl
   public void setErrorView(String errorView) { this.errorView = errorView; }
   public void setErrorViewDisplayVar(String errorViewDisplayVar) { this.errorViewDisplayVar = errorViewDisplayVar; }
   public void setLogResponse(boolean logResponse) { this.logResponse = logResponse; }
+  public void setAllowUnsolicited(boolean allowUnsolicited) { this.allowUnsolicited = allowUnsolicited; }
   public void setSubjectNameIDAttributeName(String subjectNameIDAttributeName) { this.subjectNameIDAttributeName = subjectNameIDAttributeName; }
 }
