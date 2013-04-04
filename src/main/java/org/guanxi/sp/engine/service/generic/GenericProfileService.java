@@ -43,7 +43,7 @@ import java.util.HashMap;
  */
 public class GenericProfileService extends MultiActionController implements ServletContextAware {
   /** Our logger */
-  private static final Logger logger = Logger.getLogger(GenericProfileService.class.getName());
+  protected static final Logger logger = Logger.getLogger(GenericProfileService.class.getName());
   /** The marker in our entityID map for the one to use as the default entityID */
   private static final String DEFAULT_ENTITYID_MARKER = "__DEFAULT__";
   /** The localised messages to use */
@@ -123,7 +123,7 @@ public class GenericProfileService extends MultiActionController implements Serv
 
     EntityFarm farm = (EntityFarm)getServletContext().getAttribute(Guanxi.CONTEXT_ATTR_ENGINE_ENTITY_FARM);
     try {
-      return getProfileService(request, farm, idpEntityID).doProfile(request, guardID, guardSessionID, guardNativeMetadata, idpEntityID, farm);
+      return doProfile(request, getProfileService(request, farm, idpEntityID), guardID, guardSessionID, guardNativeMetadata, idpEntityID, farm);
     }
     catch(GuanxiException ge) {
       logger.error("Profile Service error: ", ge);
@@ -132,6 +132,14 @@ public class GenericProfileService extends MultiActionController implements Serv
       mAndV.getModel().put(errorViewDisplayVar, ge.getMessage());
       return mAndV;
     }
+  }
+  
+  protected ModelAndView doProfile(HttpServletRequest request, ProfileService profileService, String guardID, String guardSessionID,
+          GuardRoleDescriptorExtensions guardNativeMetadata,
+          String entityID, EntityFarm farm) throws GuanxiException {
+	  
+	  return profileService.doProfile(request, guardID, guardSessionID, guardNativeMetadata, entityID, farm);
+	  
   }
 
   /**
@@ -143,7 +151,7 @@ public class GenericProfileService extends MultiActionController implements Serv
    * @return ProfileService instance which defaults to Shibboleth
    * @throws GuanxiException if an error occurs
    */
-  private ProfileService getProfileService(HttpServletRequest request, EntityFarm farm, String idpEntityID) throws GuanxiException {
+  protected ProfileService getProfileService(HttpServletRequest request, EntityFarm farm, String idpEntityID) throws GuanxiException {
     if (idpEntityID == null) {
       // Check to see if the Discovery Service has anything for us
       if (useDiscoveryService) {

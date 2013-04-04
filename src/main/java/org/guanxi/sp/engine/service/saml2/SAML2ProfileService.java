@@ -16,15 +16,20 @@
 
 package org.guanxi.sp.engine.service.saml2;
 
+import java.io.UnsupportedEncodingException;
+import java.net.URLEncoder;
+import java.util.Calendar;
+import java.util.HashMap;
+
+import javax.servlet.http.HttpServletRequest;
+
 import org.apache.log4j.Logger;
-import org.apache.xmlbeans.XmlOptions;
 import org.guanxi.common.GuanxiException;
 import org.guanxi.common.Utils;
 import org.guanxi.common.definitions.SAML;
 import org.guanxi.common.entity.EntityFarm;
 import org.guanxi.common.entity.EntityManager;
 import org.guanxi.common.metadata.Metadata;
-import org.guanxi.common.security.SecUtilsConfig;
 import org.guanxi.sp.engine.service.generic.ProfileService;
 import org.guanxi.xal.saml2.metadata.GuardRoleDescriptorExtensions;
 import org.guanxi.xal.saml_2_0.assertion.NameIDType;
@@ -34,12 +39,6 @@ import org.guanxi.xal.saml_2_0.protocol.AuthnRequestDocument;
 import org.guanxi.xal.saml_2_0.protocol.AuthnRequestType;
 import org.springframework.web.servlet.ModelAndView;
 
-import javax.servlet.http.HttpServletRequest;
-import java.io.UnsupportedEncodingException;
-import java.net.URLEncoder;
-import java.util.Calendar;
-import java.util.HashMap;
-
 /**
  * SAML2 ProfileService implementation
  *
@@ -47,7 +46,7 @@ import java.util.HashMap;
  */
 public class SAML2ProfileService implements ProfileService {
   /** Our logger */
-  private static final Logger logger = Logger.getLogger(SAML2ProfileService.class.getName());
+  protected static final Logger logger = Logger.getLogger(SAML2ProfileService.class.getName());
   /** The JSP to use to POST the AuthnRequest to the IdP */
   private String httpPOSTView = null;
   /** The JSP to use to GET the AuthnRequest to the IdP */
@@ -116,7 +115,7 @@ public class SAML2ProfileService implements ProfileService {
     namespaces.put(SAML.NS_SAML_20_PROTOCOL, SAML.NS_PREFIX_SAML_20_PROTOCOL);
     namespaces.put(SAML.NS_SAML_20_ASSERTION, SAML.NS_PREFIX_SAML_20_ASSERTION);
 
-    XmlOptions xmlOptions = new XmlOptions();
+    /*XmlOptions xmlOptions = new XmlOptions();
     xmlOptions.setSavePrettyPrint();
     xmlOptions.setSavePrettyPrintIndent(2);
     xmlOptions.setUseDefaultNamespace();
@@ -131,7 +130,7 @@ public class SAML2ProfileService implements ProfileService {
     secUtilsConfig.setKeystoreType("JKS");
     secUtilsConfig.setPrivateKeyAlias(guardID);
     secUtilsConfig.setPrivateKeyPass(guardNativeMetadata.getKeystorePassword());
-    secUtilsConfig.setCertificateAlias(guardID);
+    secUtilsConfig.setCertificateAlias(guardID);*/
 
     // Break out to DOM land to get the SAML Response signed...
     /*

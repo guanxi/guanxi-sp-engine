@@ -5,16 +5,22 @@ import org.guanxi.common.EntityConnection;
 import org.guanxi.common.GuanxiException;
 import org.guanxi.common.definitions.Guanxi;
 import org.guanxi.sp.engine.Config;
-import org.guanxi.sp.engine.service.saml2.WebBrowserSSOAuthConsumerService;
 import org.guanxi.xal.saml2.metadata.GuardRoleDescriptorExtensions;
 
 /**
- * This class extends WebBrowserSSOAuthConsumerService to provide support
+ * This class extends WebBrowserSSO to provide support
  * for systems with multitenancy (dynamic domains)
+ * 
+ * Use DYNAMIC_GUARD_DOMAIN in the guard Podder URL 
+ * e.g. http://DYNAMIC_GUARD_DOMAIN/guard.guanxiGuardPodder
+ * 
+ * Use cookie.domain=.DYNAMIC_GUARD_DOMAIN in the guard config
+ * 
+ * The engine will ask the guard what external multitenancy domain to use 
  * 
  * @author rotis23
  */
-public class DynamicWebBrowserSSOAuthConsumerService extends WebBrowserSSOAuthConsumerService
+public class DynamicWebBrowserSSOAuthConsumerService extends ClusteredSSOAuthConsumerService
 {
 	protected final Logger logger = Logger.getLogger(getClass());
 	

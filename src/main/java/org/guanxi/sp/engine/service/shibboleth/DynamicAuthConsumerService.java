@@ -11,6 +11,13 @@ import org.guanxi.xal.saml2.metadata.GuardRoleDescriptorExtensions;
  * This class extends AuthConsumerService to provide support
  * for systems with multitenancy (dynamic domains)
  * 
+ * Use DYNAMIC_GUARD_DOMAIN in the guard Podder URL 
+ * e.g. http://DYNAMIC_GUARD_DOMAIN/guard.guanxiGuardPodder
+ * 
+ * Use cookie.domain=.DYNAMIC_GUARD_DOMAIN in the guard config
+ * 
+ * The engine will ask the guard what external multitenancy domain to use 
+ * 
  * @author rotis23
  */
 public class DynamicAuthConsumerService extends AuthConsumerService
