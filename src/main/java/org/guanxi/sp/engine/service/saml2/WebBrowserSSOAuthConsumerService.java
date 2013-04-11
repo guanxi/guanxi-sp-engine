@@ -236,9 +236,9 @@ public class WebBrowserSSOAuthConsumerService extends MultiActionController
 			getServletContext().removeAttribute(
 					guardSession.replaceAll("GUARD", "ENGINE"));
 		} catch (XmlException xe) {
-			logger.error(xe);
+			logger.error("Exception: ",xe);
 		} catch (Exception e) {
-			logger.error(e);
+			logger.error("Exception: ",e);
 		}
 	}
 	
