@@ -151,7 +151,7 @@ public class WebBrowserSSOAuthConsumerService extends MultiActionController
 			
 			logger.info("Processing unsolicited request for guardSession:" + guardSession);
 		} else {
-			if ((getServletContext().getAttribute(
+			if (StringUtils.hasText(relayState) && (getServletContext().getAttribute(
 					relayState.replaceAll("GUARD", "ENGINE")) == null)) {
 				response.setContentType("text/html");
 				PrintWriter out = response.getWriter();
