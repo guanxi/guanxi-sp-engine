@@ -135,7 +135,7 @@ public class AuthConsumerService extends MultiActionController implements Servle
                                            guardNativeMetadata.getAttributeConsumerServiceURL(),
                                            idpMetadata.getAttributeAuthorityURL(),
                                            getPodderURL(guardSession, config, guardNativeMetadata),
-                                           guardEntityDescriptor.getEntityID(),
+                                           getGuardEntrityId(guardEntityDescriptor),
                                            guardNativeMetadata.getKeystore(), guardNativeMetadata.getKeystorePassword(),
                                            config.getTrustStore(), config.getTrustStorePassword(),
                                            (String)request.getAttribute(Config.REQUEST_ATTRIBUTE_IDP_PROVIDER_ID),
@@ -146,6 +146,17 @@ public class AuthConsumerService extends MultiActionController implements Servle
     threads.put(request.getSession(true), thread);
 
     response.sendRedirect("process");
+  }
+  
+  /**
+   * Opportunity for extending classes to determine the guardID
+   * 
+   * @param guardEntityDescriptor
+   * @return
+   */
+  protected String getGuardEntrityId(EntityDescriptorType guardEntityDescriptor) throws GuanxiException
+  {
+	  return guardEntityDescriptor.getEntityID();
   }
 
   /**

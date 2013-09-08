@@ -20,7 +20,7 @@ import org.guanxi.xal.saml2.metadata.GuardRoleDescriptorExtensions;
  * 
  * @author rotis23
  */
-public class DynamicAuthConsumerService extends AuthConsumerService
+public class DynamicAuthConsumerService extends ClusteredAuthConsumerService
 {
 	protected final Logger logger = Logger.getLogger(getClass());
 	
