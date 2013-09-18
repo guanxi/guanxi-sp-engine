@@ -1,6 +1,8 @@
 package org.guanxi.sp.engine.service.shibboleth;
 
 import org.guanxi.common.GuanxiException;
+import org.guanxi.sp.Util;
+import org.guanxi.xal.saml2.metadata.GuardRoleDescriptorExtensions;
 import org.guanxi.xal.saml_2_0.metadata.EntityDescriptorType;
 
 /**
@@ -32,6 +34,16 @@ public class ClusteredAuthConsumerService extends AuthConsumerService {
 		}
 	}
 	
+	@Override
+	protected GuardRoleDescriptorExtensions getGuardNativeMetadata(
+			EntityDescriptorType guardEntityDescriptor,
+			GuardRoleDescriptorExtensions guardNativeMetadata) throws GuanxiException {
+
+		EntityDescriptorType clusteredSPEntityDescriptor = 
+			(EntityDescriptorType) getServletContext().getAttribute(getGuardEntrityId(guardEntityDescriptor));
+		return Util.getGuardNativeMetadata(clusteredSPEntityDescriptor);
+	}
+
 	private String getClusterSPEntityId(String entityId) throws GuanxiException {
 		if(entityId.contains(delimiter)) {
 			return entityId.split(delimiter)[1];
