@@ -261,8 +261,10 @@ public class WebBrowserSSOAuthConsumerService extends MultiActionController
 	}
 
 	protected void checkTrust(ResponseDocument responseDocument) throws GuanxiException {
+		logger.debug("checkTrust: entry");
 		// Do the trust
-		if (responseDocument.getResponse().getSignature() != null) {
+		if (responseDocument.getResponse().getSignature() != null ||
+				(!isEncrypted(responseDocument) && responseDocument.getResponse().getAssertionArray(0).getSignature() != null)) {
 			String idpProviderId = responseDocument.getResponse().getIssuer().getStringValue();
 			
 			if (!TrustUtils.verifySignature(responseDocument)) {
@@ -282,6 +284,12 @@ public class WebBrowserSSOAuthConsumerService extends MultiActionController
 				throw new GuanxiException("No X509 from signature");
 			}
 		}
+		else
+		{
+			logger.warn("checkTrust: found no signature in response");
+		}
+		
+		logger.debug("checkTrust: exit");
 	}
 
 	protected String getTargetResource(HttpServletRequest request, String relayState) {

@@ -35,6 +35,8 @@ public class DynamicWebBrowserSSOAuthConsumerService extends ClusteredSSOAuthCon
 	    String queryString = guardNativeMetadata.getVerifierURL() + "?" +
 	                         Guanxi.SESSION_VERIFIER_PARAM_SESSION_ID + "=" +
 	                         sessionID + "&" + "dynamicDomainNameRequest=true";
+	    
+	    logger.info("getPodderURL: queryString: " + queryString);
 
 		EntityConnection verifierService = new EntityConnection(queryString,
 				config.getCertificateAlias(), // alias of cert
