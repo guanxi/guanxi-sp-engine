@@ -5,7 +5,7 @@
                           http://www.springframework.org/schema/beans/spring-beans-2.0.xsd">
 
   <bean id="authConsumerService"
-        class="org.guanxi.sp.engine.service.shibboleth.AuthConsumerService"
+        class="org.guanxi.sp.engine.service.shibboleth.DynamicAuthConsumerService"
         init-method="init"
         destroy-method="destroy">
     <property name="messages" ref="messageSource"/>
