@@ -6,7 +6,7 @@
 
   <bean class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer">
 	<property name="location">
-		<value>file:///${catalina.home}/conf/classpath:guanxi.properties</value>
+		<value>file:///${catalina.home}/conf/guanxi.properties</value>
 	</property>
   </bean>
   
