@@ -43,7 +43,7 @@
         <entry key="protectedappguard" value="https://localhost2/guanxi_wayf/WAYF" />
       </map>
     </property>
-    <property name="attributeConsumerService"><value>${shib.acs.url:https://your.sp.com/samlengine/shibb/acs}</value></property>
+    <property name="attributeConsumerService"><value>${shib.acs.url}</value></property>
     <property name="wayfViewJSP"><value>/shibboleth/wayf</value></property>
     
   </bean>
@@ -54,7 +54,7 @@
 
 		<property name="httpPOSTView"><value>/saml2/http-post</value></property>
     <property name="httpRedirectView"><value>/saml2/http-redirect</value></property>
-    <property name="assertionConsumerServiceURL"><value>${saml2.acs.url:https://your.sp.com/samlengine/s2/wbsso/acs}</value></property>
+    <property name="assertionConsumerServiceURL"><value>${saml2.acs.url}</value></property>
     
   </bean>
 
@@ -63,7 +63,7 @@
         init-method="init">
 
     <property name="viewName"><value>/saml2/discovery</value></property>
-    <property name="edsBaseURL"><value>${saml.discovery.url:https://localhost/samlengine/guanxi_sp/eds}</value></property>
+    <property name="edsBaseURL"><value>${saml.discovery.url}</value></property>
 
   </bean>
 </beans>

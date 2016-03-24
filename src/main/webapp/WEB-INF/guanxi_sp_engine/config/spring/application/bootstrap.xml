@@ -4,6 +4,12 @@
        xsi:schemaLocation="http://www.springframework.org/schema/beans
                            http://www.springframework.org/schema/beans/spring-beans-2.0.xsd">
 
+  <bean class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer">
+	<property name="location">
+		<value>claspath:gunaxi.properties</value>
+	</property>
+  </bean>
+  
   <bean id="engineBootstrap" class="org.guanxi.sp.engine.Bootstrap" init-method="init">
     <!-- Engine config -->
     <property name="config"><ref bean="engineConfig"/></property>
