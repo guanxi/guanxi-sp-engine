@@ -64,6 +64,8 @@ public class SAML2ProfileService implements ProfileService {
     ModelAndView mAndV = new ModelAndView();
 
     String relayState = guardSessionID.replaceAll("GUARD", "ENGINE");
+    
+    logger.debug("assertionConsumerServiceURL=" + assertionConsumerServiceURL);
 
     // Load the metadata for the IdP
     EntityManager manager = farm.getEntityManagerForID(entityID);

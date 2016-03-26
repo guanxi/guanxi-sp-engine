@@ -8,6 +8,12 @@
   <!-- The Engine's WAYF Location service. This is where Guards set up their sessions with
        the Engine and obtain the WAYF location in return, once the Engine has verfied
        them. -->
+  <bean class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer">
+	<property name="location">
+		<value>file:///${catalina.home}/conf/guanxi.properties</value>
+	</property>
+  </bean>
+       
   <bean id="genericProfileService"
         class="org.guanxi.sp.engine.service.generic.ClusteredGenericProfileService"
         init-method="init">
