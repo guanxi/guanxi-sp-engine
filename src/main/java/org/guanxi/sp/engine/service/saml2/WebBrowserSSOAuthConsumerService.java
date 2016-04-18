@@ -203,7 +203,7 @@ public class WebBrowserSSOAuthConsumerService extends MultiActionController
 					.getGuardNativeMetadata(guardEntityDescriptor);
 
 			// Decrypt the response if required
-			if (isEncrypted(responseDocument)) {
+			if (TrustUtils.isEncrypted(responseDocument)) {
 				try {
 					responseDocument = decryptResponse(responseDocument, 
 							guardEntityDescriptor.getEntityID(),
@@ -264,7 +264,7 @@ public class WebBrowserSSOAuthConsumerService extends MultiActionController
 		logger.debug("checkTrust: entry");
 		// Do the trust
 		if (responseDocument.getResponse().getSignature() != null ||
-				(!isEncrypted(responseDocument) && responseDocument.getResponse().getAssertionArray(0).getSignature() != null)) {
+				(!TrustUtils.isEncrypted(responseDocument) && responseDocument.getResponse().getAssertionArray(0).getSignature() != null)) {
 			String idpProviderId = responseDocument.getResponse().getIssuer().getStringValue();
 			
 			if (!TrustUtils.verifySignature(responseDocument)) {
@@ -405,7 +405,7 @@ public class WebBrowserSSOAuthConsumerService extends MultiActionController
 			bag.setSamlResponse(Utils.base64(responseDocument.toString().getBytes()));
 
 			AssertionType[] assertions = null;
-			if (isEncrypted(responseDocument)) {
+			if (TrustUtils.isEncrypted(responseDocument)) {
 				assertions = getAssertionsFromDecryptedResponse(responseDocument);
 			} else {
 				assertions = responseDocument.getResponse().getAssertionArray();
@@ -593,18 +593,6 @@ public class WebBrowserSSOAuthConsumerService extends MultiActionController
 		} catch (XmlException xe) {
 			return null;
 		}
-	}
-
-	/**
-	 * Determines whether a SAML2 Response is encrypted
-	 * 
-	 * @param responseDoc
-	 *            the Response to check for encryption
-	 * @return true if the Response is encrypted, otherwise false
-	 */
-	private boolean isEncrypted(ResponseDocument responseDoc) {
-		return ((responseDoc.getResponse().getEncryptedAssertionArray() != null) && (responseDoc
-				.getResponse().getEncryptedAssertionArray().length > 0));
 	}
 
 	/**
