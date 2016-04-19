@@ -355,6 +355,10 @@ public class WebBrowserSSOAuthConsumerService extends MultiActionController
 				EntityConnection.PROBING_OFF);
 		connection.setDoOutput(true);
 		connection.connect();
+		
+		if(logger.isDebugEnabled()) {
+			logger.debug("bag:" + bag.toJSON());
+		}
 
 		// Send the data to the Guard in an explicit POST variable
 		String json = URLEncoder.encode(
