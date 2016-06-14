@@ -117,59 +117,11 @@ public class SAML2ProfileService implements ProfileService {
     namespaces.put(SAML.NS_SAML_20_PROTOCOL, SAML.NS_PREFIX_SAML_20_PROTOCOL);
     namespaces.put(SAML.NS_SAML_20_ASSERTION, SAML.NS_PREFIX_SAML_20_ASSERTION);
 
-    /*XmlOptions xmlOptions = new XmlOptions();
-    xmlOptions.setSavePrettyPrint();
-    xmlOptions.setSavePrettyPrintIndent(2);
-    xmlOptions.setUseDefaultNamespace();
-    xmlOptions.setSaveAggressiveNamespaces();
-    xmlOptions.setSaveSuggestedPrefixes(namespaces);
-    xmlOptions.setSaveNamespacesFirst();
-
-    // Get the config ready for signing
-    SecUtilsConfig secUtilsConfig = new SecUtilsConfig();
-    secUtilsConfig.setKeystoreFile(guardNativeMetadata.getKeystore());
-    secUtilsConfig.setKeystorePass(guardNativeMetadata.getKeystorePassword());
-    secUtilsConfig.setKeystoreType("JKS");
-    secUtilsConfig.setPrivateKeyAlias(guardID);
-    secUtilsConfig.setPrivateKeyPass(guardNativeMetadata.getKeystorePassword());
-    secUtilsConfig.setCertificateAlias(guardID);*/
-
-    // Break out to DOM land to get the SAML Response signed...
-    /*
-    Document signedDoc = null;
-    try {
-      // Need to use newDomNode to preserve namespace information
-      signedDoc = SecUtils.getInstance().sign(secUtilsConfig, (Document)authnRequestDoc.newDomNode(xmlOptions), "");
-      // ...and go back to XMLBeans land when it's ready
-      authnRequestDoc = AuthnRequestDocument.Factory.parse(signedDoc);
-    }
-    catch(GuanxiException ge) {
-      logger.error("Could not sign AuthnRequest", ge);
-      mAndV.setViewName(errorView);
-      mAndV.getModel().put(errorViewDisplayVar, messages.getMessage("engine.error.could.not.sign.message",
-                                                                    null, request.getLocale()));
-      return mAndV;
-    }
-    catch(XmlException xe) {
-      logger.error("Couldn't convert signed AuthnRequest back to XMLBeans", xe);
-      mAndV.setViewName(errorView);
-      mAndV.getModel().put(errorViewDisplayVar, messages.getMessage("engine.error.could.not.sign.message",
-                                                                    null, request.getLocale()));
-      return mAndV;
-    }
-    */
-
-    // Base 64 encode the AuthnRequest
-    //String authnRequestB64 = Utils.base64(signedDoc);
-    //String authnRequestB64 = Utils.base64((Document)authnRequestDoc.newDomNode(xmlOptions));
-
     // Do the profile quickstep
     String authnRequestForIdP = null;
     if (binding.equals(SAML.SAML2_BINDING_HTTP_REDIRECT)) {
       mAndV.setViewName(httpRedirectView);
-      String deflatedRequest = Utils.deflate(authnRequestDoc.toString(), Utils.RFC1951_DEFAULT_COMPRESSION_LEVEL, Utils.RFC1951_NO_WRAP);
-      authnRequestForIdP = Utils.base64(deflatedRequest.getBytes());
-      authnRequestForIdP = authnRequestForIdP.replaceAll(System.getProperty("line.separator"), "");
+      authnRequestForIdP = Utils.deflateBase64(authnRequestDoc.toString(), Utils.RFC1951_DEFAULT_COMPRESSION_LEVEL, Utils.RFC1951_NO_WRAP);
       try {
         authnRequestForIdP = URLEncoder.encode(authnRequestForIdP, "UTF-8");
         relayState = URLEncoder.encode(relayState, "UTF-8");
