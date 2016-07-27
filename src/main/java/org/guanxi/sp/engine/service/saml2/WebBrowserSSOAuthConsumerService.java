@@ -435,8 +435,9 @@ public class WebBrowserSSOAuthConsumerService extends MultiActionController
 
 				String attributeOID = null;
 				for (AttributeType attribute : attributes) {
-					if (attribute.getNameFormat().equals(
-							SAML.SAML2_ATTRIBUTE_PROFILE_BASIC)) {
+					if (attribute.getNameFormat() == null || //change to support O365
+							attribute.getNameFormat().equals(
+									SAML.SAML2_ATTRIBUTE_PROFILE_BASIC)) {
 						XmlObject[] attributeValues = attribute
 								.getAttributeValueArray();
 						for (int cc = 0; cc < attributeValues.length; cc++) {
