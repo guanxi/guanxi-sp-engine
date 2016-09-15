@@ -476,7 +476,10 @@ public class WebBrowserSSOAuthConsumerService extends MultiActionController
 											attrValue);
 								}
 								bag.addAttribute(attribute.getName(), attrValue);
-								bag.addAttribute(attributeOID, attrValue);
+								
+								if(!attribute.getName().equals(attributeOID)) {
+									bag.addAttribute(attributeOID, attrValue);
+								}
 							}
 							// What about eduPersonTargetedID?
 							else if (attributeOID
@@ -529,11 +532,14 @@ public class WebBrowserSSOAuthConsumerService extends MultiActionController
 														.getDomNode()
 														.getFirstChild()
 														.getNodeValue());
-										bag.addAttribute(attributeOID,
-												attributeValues[cc]
-														.getDomNode()
-														.getFirstChild()
-														.getNodeValue());
+										
+										if(!attribute.getName().equals(attributeOID)) {
+											bag.addAttribute(attributeOID,
+													attributeValues[cc]
+															.getDomNode()
+															.getFirstChild()
+															.getNodeValue());
+										}
 									}
 								}
 							}
