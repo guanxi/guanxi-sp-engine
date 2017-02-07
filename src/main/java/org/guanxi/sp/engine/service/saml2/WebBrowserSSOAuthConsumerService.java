@@ -552,7 +552,7 @@ public class WebBrowserSSOAuthConsumerService extends MultiActionController
 
 			return bag;
 		} catch (XmlException xe) {
-			throw new GuanxiException(xe.getMessage());
+			throw new GuanxiException(xe);
 		}
 	}
 
