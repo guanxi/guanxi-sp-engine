@@ -30,20 +30,20 @@ import javax.servlet.http.HttpSession;
 
 import org.apache.log4j.Logger;
 import org.guanxi.common.GuanxiException;
-import org.guanxi.common.entity.EntityFarm;
-import org.guanxi.common.entity.EntityManager;
 import org.guanxi.common.definitions.Guanxi;
 import org.guanxi.common.definitions.Shibboleth;
+import org.guanxi.common.entity.EntityFarm;
+import org.guanxi.common.entity.EntityManager;
 import org.guanxi.common.metadata.IdPMetadata;
 import org.guanxi.sp.Util;
 import org.guanxi.sp.engine.Config;
 import org.guanxi.xal.saml2.metadata.GuardRoleDescriptorExtensions;
 import org.guanxi.xal.saml_1_0.protocol.ResponseType;
 import org.guanxi.xal.saml_2_0.metadata.EntityDescriptorType;
+import org.springframework.context.MessageSource;
 import org.springframework.web.context.ServletContextAware;
 import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.mvc.multiaction.MultiActionController;
-import org.springframework.context.MessageSource;
 
 /**
  * Shibboleth AuthenticationStatement consumer service. This service accepts an AuthenticationStatement
@@ -134,9 +134,9 @@ public class AuthConsumerService extends MultiActionController implements Servle
     thread = new AuthConsumerServiceThread(this, guardSession,
                                            guardNativeMetadata.getAttributeConsumerServiceURL(),
                                            idpMetadata.getAttributeAuthorityURL(),
-                                           getPodderURL(guardSession, config),
-                                           guardEntityDescriptor.getEntityID(),
-                                           guardNativeMetadata.getKeystore(), guardNativeMetadata.getKeystorePassword(),
+                                           getPodderURL(guardSession, config, guardNativeMetadata),
+                                           getGuardEntrityId(guardEntityDescriptor),
+                                           getGuardNativeMetadata(guardEntityDescriptor,guardNativeMetadata),
                                            config.getTrustStore(), config.getTrustStorePassword(),
                                            (String)request.getAttribute(Config.REQUEST_ATTRIBUTE_IDP_PROVIDER_ID),
                                            (String)request.getAttribute(Config.REQUEST_ATTRIBUTE_IDP_NAME_IDENTIFIER),
@@ -147,6 +147,29 @@ public class AuthConsumerService extends MultiActionController implements Servle
 
     response.sendRedirect("process");
   }
+  
+  /**
+   * Opportunity for extending classes to determine the guardID
+   * 
+   * @param guardEntityDescriptor
+   * @return
+   */
+  protected String getGuardEntrityId(EntityDescriptorType guardEntityDescriptor) throws GuanxiException
+  {
+	  return guardEntityDescriptor.getEntityID();
+  }
+  
+  /**
+   * Opportunity for extending classes to determine the keystore guard role descriptor
+   * 
+   * @param guardEntityDescriptor
+   * @return
+   */
+  protected GuardRoleDescriptorExtensions getGuardNativeMetadata(EntityDescriptorType guardEntityDescriptor, 
+		  GuardRoleDescriptorExtensions guardNativeMetadata) throws GuanxiException
+  {
+	  return guardNativeMetadata;
+  }
 
   /**
    * Opportunity for extending classes to do some work to generate the podder URL
@@ -156,9 +179,7 @@ public class AuthConsumerService extends MultiActionController implements Servle
    * @return the Podder URL for the Guard identified by sessionID
    * @throws GuanxiException if an error occurs
    */
-  protected String getPodderURL(String sessionID, Config config) throws GuanxiException {
-	  EntityDescriptorType guardEntityDescriptor = (EntityDescriptorType)getServletContext().getAttribute(sessionID.replaceAll("GUARD", "ENGINE"));
-	  GuardRoleDescriptorExtensions guardNativeMetadata = Util.getGuardNativeMetadata(guardEntityDescriptor);
+  protected String getPodderURL(String sessionID, Config config, GuardRoleDescriptorExtensions guardNativeMetadata) throws GuanxiException {
 	  return guardNativeMetadata.getPodderURL();
   }
 

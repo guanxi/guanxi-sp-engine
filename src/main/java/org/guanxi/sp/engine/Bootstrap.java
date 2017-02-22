@@ -168,18 +168,20 @@ public class Bootstrap implements ApplicationListener, ApplicationContextAware, 
               Security.removeProvider(Guanxi.BOUNCY_CASTLE_PROVIDER_NAME);
             }
           }
-
-          // Stop the jobs
-          scheduler.shutdown();
         }
         catch(SecurityException se) {
           /* We'll end up here if a security manager is installed and it refuses us
            * permission to remove the BouncyCastle provider
            */
         }
-        catch (SchedulerException se) {
-          logger.error("Could not stop jobs", se);
-        }
+      }
+      
+      try {
+    	  // we always want to shutdown the scheduler otherwise we get
+    	  // hanging processes
+    	  scheduler.shutdown();
+      } catch (SchedulerException e) {
+    	  logger.error("Error shutting down scheduler:", e);
       }
     }
     
