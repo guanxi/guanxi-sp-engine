@@ -8,8 +8,14 @@
   <!-- The Engine's WAYF Location service. This is where Guards set up their sessions with
        the Engine and obtain the WAYF location in return, once the Engine has verfied
        them. -->
+  <bean class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer">
+	<property name="location">
+		<value>file:///${catalina.home}/conf/guanxi.properties</value>
+	</property>
+  </bean>
+       
   <bean id="genericProfileService"
-        class="org.guanxi.sp.engine.service.generic.GenericProfileService"
+        class="org.guanxi.sp.engine.service.generic.ClusteredGenericProfileService"
         init-method="init">
     <property name="messages" ref="messageSource"/>
     <property name="errorView"><value>message</value></property>
@@ -43,7 +49,7 @@
         <entry key="protectedappguard" value="https://localhost2/guanxi_wayf/WAYF" />
       </map>
     </property>
-    <property name="attributeConsumerService"><value>https://your.sp.com/samlengine/shibb/acs</value></property>
+    <property name="attributeConsumerService"><value>${shib.acs.url}</value></property>
     <property name="wayfViewJSP"><value>/shibboleth/wayf</value></property>
     
   </bean>
@@ -54,7 +60,7 @@
 
 		<property name="httpPOSTView"><value>/saml2/http-post</value></property>
     <property name="httpRedirectView"><value>/saml2/http-redirect</value></property>
-    <property name="assertionConsumerServiceURL"><value>https://your.sp.com/samlengine/s2/wbsso/acs</value></property>
+    <property name="assertionConsumerServiceURL"><value>${saml2.acs.url}</value></property>
     
   </bean>
 
@@ -63,7 +69,7 @@
         init-method="init">
 
     <property name="viewName"><value>/saml2/discovery</value></property>
-    <property name="edsBaseURL"><value>https://localhost/samlengine/guanxi_sp/eds</value></property>
+    <property name="edsBaseURL"><value>${saml.discovery.url}</value></property>
 
   </bean>
 </beans>

@@ -39,6 +39,7 @@ import org.guanxi.common.metadata.Metadata;
 import org.guanxi.common.entity.EntityManager;
 import org.guanxi.common.definitions.Shibboleth;
 import org.guanxi.common.definitions.Guanxi;
+import org.guanxi.xal.saml2.metadata.GuardRoleDescriptorExtensions;
 import org.guanxi.xal.saml_1_0.assertion.*;
 import org.guanxi.xal.saml_1_0.protocol.*;
 import org.guanxi.xal.soap.Body;
@@ -137,11 +138,7 @@ public class AuthConsumerServiceThread implements Runnable {
    * This is the keystore used to identify the client in the 
    * communication with the AA and Guard.
    */
-  private final String keystoreFile;
-  /**
-   * This is the password associated with the keystore file.
-   */
-  private final String keystorePassword;
+  private final GuardRoleDescriptorExtensions guardNativeMetadata;
   /**
    * This is the truststore that is used to validate the server
    * in the communication with the AA and Guard.
@@ -211,7 +208,7 @@ public class AuthConsumerServiceThread implements Runnable {
    * @param manager             This is the entity manager for the AA
    */
   public AuthConsumerServiceThread(AuthConsumerService parent, String guardSession, String acsURL, String aaURL, 
-                                   String podderURL, String entityID, String keystoreFile, String keystorePassword,
+                                   String podderURL, String entityID, GuardRoleDescriptorExtensions guardNativeMetadata,
                                    String truststoreFile, String truststorePassword, String idpProviderId, 
                                    String idpNameIdentifier, ResponseType samlResponse,
                                    MessageSource messages, HttpServletRequest request,
@@ -222,8 +219,7 @@ public class AuthConsumerServiceThread implements Runnable {
     this.aaURL              = aaURL;
     this.podderURL          = podderURL;
     this.entityID           = entityID;
-    this.keystoreFile       = keystoreFile;
-    this.keystorePassword   = keystorePassword;
+    this.guardNativeMetadata       = guardNativeMetadata;
     this.truststoreFile     = truststoreFile;
     this.truststorePassword = truststorePassword;
     this.idpProviderId      = idpProviderId;
@@ -476,7 +472,8 @@ public class AuthConsumerServiceThread implements Runnable {
 
     setStatus(readingAAResponse);
     try {
-      aaResponse = processAAConnection(aaURL, entityID, keystoreFile, keystorePassword, truststoreFile, truststorePassword, aaSoapRequest); // no close, so no finally
+      aaResponse = processAAConnection(aaURL, entityID, guardNativeMetadata.getKeystore(), guardNativeMetadata.getKeystorePassword()
+    		  , truststoreFile, truststorePassword, aaSoapRequest); // no close, so no finally
       logger.debug("Response from AA:\n" + aaResponse);
     }
     catch (Exception e) {
@@ -519,7 +516,7 @@ public class AuthConsumerServiceThread implements Runnable {
     
     setStatus(readingGuardResponse);
     try {
-      guardResponse = processGuardConnection(acsURL, entityID, keystoreFile, keystorePassword, truststoreFile, truststorePassword, guardSoapRequest, guardSession);
+      guardResponse = processGuardConnection(acsURL, entityID, guardNativeMetadata.getKeystore(), guardNativeMetadata.getKeystorePassword(), truststoreFile, truststorePassword, guardSoapRequest, guardSession);
     }
     catch (Exception e) {
       logger.error("Guard ACS connection error", e);

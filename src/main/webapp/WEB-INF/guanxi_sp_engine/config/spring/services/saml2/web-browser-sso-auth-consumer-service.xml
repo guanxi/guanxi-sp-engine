@@ -5,15 +5,11 @@
                           http://www.springframework.org/schema/beans/spring-beans-2.0.xsd">
 
   <bean id="saml2WBSSOAuthConsumerService"
-        class="org.guanxi.sp.engine.service.saml2.WebBrowserSSOAuthConsumerService"
+        class="org.guanxi.sp.engine.service.saml2.DynamicWebBrowserSSOAuthConsumerService"
         init-method="init"
         destroy-method="destroy">
-    <property name="messages" ref="messageSource"/>
-    <property name="podderView"><value>podderRedirector</value></property>
-    <property name="errorView"><value>message</value></property>
-    <property name="errorViewDisplayVar"><value>message</value></property>
-    <property name="logResponse"><value>false</value></property>
+    <property name="logResponse"><value>true</value></property>
+    <property name="allowUnsolicited"><value>true</value></property>
     <property name="subjectNameIDAttributeName"><value>REMOTE_USER</value></property>
   </bean>
-
 </beans>
